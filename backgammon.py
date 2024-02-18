@@ -188,20 +188,22 @@ def to_ascii(board):
     lines.append("")
     return "\n".join(lines)
 
-def parse_token(token, current_count):
+def update_board(line, s, board, j):
+    current_count = board[j]
+    token =  line[s:s + 3]
     match token:
         case "   ":
-            return current_count
+            pass
         case " ● ":
-            return current_count -1 if current_count > -5 else current_count
+            board[j] = current_count -1 if current_count > -5 else current_count
         case " ○ ":
-            return current_count + 1 if current_count < 5 else current_count
+            board[j] = current_count + 1 if current_count < 5 else current_count
         case " 6 " | " 7 " | " 8 " | " 9 " | "10 " | "11 " | "12 " | "13 " | "14 " | "15 " | "16 ":
-            n = str(token)
+            n = int(token)
             if current_count == 2:
-                return n
+                board[j] = n
             elif current_count == -2:
-                return -1 * n
+                board[j] = -1 * n
             else:
                 raise Exception(token)
         case x:
@@ -222,43 +224,15 @@ def from_ascii(ascii):
         line = lines[i + 2]
         for j in range(13, 19):
             s = 1 + (j - 13) * 3
-            board[j] = parse_token(line[s:s + 3], board[j])
+            update_board(line, s, board, j)
         for j in range(19, 25):
             s = 24 + (j - 19) * 3
-            token = line[s:s + 3]
-            match token:
-                case "   ":
-                    pass
-                case " ● ":
-                    board[j] = board[j] - 1
-                case " ○ ":
-                    board[j]= board[j] + 1
-                case x:
-                    raise Exception(x)
-
+            update_board(line, s, board, j)
         line = lines[-3 - i]
         for j in range(12, 6, -1):
             s = 1 + (12 - j) * 3
-            token = line[s:s + 3]
-            match token:
-                case "   ":
-                    pass
-                case " ● ":
-                    board[j] = board[j] - 1
-                case " ○ ":
-                    board[j]= board[j] + 1
-                case x:
-                    raise Exception(x)
+            update_board(line, s, board, j)
         for j in range(6, 0, -1):
             s = 24 + (6 - j) * 3
-            token = line[s:s + 3]
-            match token:
-                case "   ":
-                    pass
-                case " ● ":
-                    board[j] = board[j] - 1
-                case " ○ ":
-                    board[j]= board[j] + 1
-                case x:
-                    raise Exception(x)
+            update_board(line, s, board, j)
     return board
