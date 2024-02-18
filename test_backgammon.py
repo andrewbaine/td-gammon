@@ -102,3 +102,28 @@ def test_from_ascii():
     ascii = backgammon.to_ascii(expected)
     actual = backgammon.from_ascii(ascii)
     assert actual == expected
+
+
+def test_big_stack_from_ascii():
+    ascii = """___________________________________________
+|                  |   |                  |
+|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
+| ○           ●    |   | ●              ○ |
+| ○           ●    |   | ●                |
+| 6           ●    |   | ●                |
+| ○                |   | ●                |
+| ○                |   | ●                |
+|                  |BAR|                  |
+| ●                |   | ○                |
+| ●                |   | ○                |
+| ●           ○    |   | ○                |
+| ●           ○    |   | ○              ● |
+| ●           ○    |   | ○              ● |
+|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
+|__________________|___|__________________|
+"""
+    actual = backgammon.from_ascii(ascii)
+    board = backgammon.make_board()
+    backgammon.checked_move(board, True, [(24, 18), (18, 13)])
+
+    assert actual == board
