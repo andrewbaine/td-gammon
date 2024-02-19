@@ -1,3 +1,10 @@
+
+from enum import Enum
+class Color(Enum):
+    Dark = 0
+    Light = 1
+
+
 def make_board():
     return [
         0,
@@ -32,7 +39,7 @@ def checked_move(board, player, move):
     bar = 25 if player else 0
     other_bar = 0 if player else 25
     for (src, dest) in move:
-        if board[bar] > 0 and src != bar:
+        if board[bar] != 0 and src != bar:
             raise Exception("must reenter")
         src_occupied = board[src] > 0 if player else board[src] < 0
         if src_occupied > 0:
@@ -137,35 +144,37 @@ def allowed_moves(board, roll):
     return double_moves or s1 or s2
 
 
-def s(count, n):
+def s(count, n, checkers):
     if n < 1 or n > 5:
         raise Exception("shouldnt happen")
-    dark_checker =  " ● "
-    light_checker = " ○ "
     abs_count = abs(count)
     if abs_count > 5 and n == 3:
         return str(abs_count).rjust(2) + " "
-    else:
-        return "   " if abs_count < n else dark_checker if count < 0 else light_checker
+    if abs_count < n:
+        return "   "
+    (player_1_checker, player_2_checker) = checkers
+    return player_2_checker if count < 0 else player_1_checker
 
-def to_ascii(board):
+def to_ascii(board, player_1=Color.Light):
     lines = []
     lines.append("___________________________________________")
     lines.append("|                  |   |                  |")
     lines.append("|13 14 15 16 17 18 |   |19 20 21 22 23 24 |")
 
+    checkers =  (" ● ", " ○ ") if player_1 == Color.Dark else (" ○ ", " ● ")
+    
     for i in range(1, 6):
         line = ["|"]
         for j in range(13, 19):
             count = board[j]
-            line.append(s(count, i))
+            line.append(s(count, i, checkers))
         line.append("|")
         count = board[25]
-        line.append(s(count, i))
+        line.append(s(count, i, checkers))
         line.append("|")
         for j in range(19, 25):
             count = board[j]
-            line.append(s(count, i))
+            line.append(s(count, i, checkers))
         line.append("|")
         lines.append("".join(line))
     lines.append("|                  |BAR|                  |")
@@ -173,14 +182,14 @@ def to_ascii(board):
         line = ["|"]
         for j in range(12, 6, -1):
             count = board[j]
-            line.append(s(count, i))
+            line.append(s(count, i, checkers))
         line.append("|")
         count = board[0]
-        line.append(s(count, i))
+        line.append(s(count, i, checkers))
         line.append("|")
         for j in range(6, 0, -1):
             count = board[j]
-            line.append(s(count, i))
+            line.append(s(count, i, checkers))
         line.append("|")
         lines.append("".join(line))
     lines.append("|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |")
