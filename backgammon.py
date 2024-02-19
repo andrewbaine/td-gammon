@@ -228,6 +228,9 @@ def from_ascii(ascii):
         for j in range(19, 25):
             s = 24 + (j - 19) * 3
             update_board(line, s, board, j)
+        j = 25
+        s = 20
+        update_board(line, s, board, j)
         line = lines[-3 - i]
         for j in range(12, 6, -1):
             s = 1 + (12 - j) * 3
@@ -235,4 +238,7 @@ def from_ascii(ascii):
         for j in range(6, 0, -1):
             s = 24 + (6 - j) * 3
             update_board(line, s, board, j)
+        j = 0
+        s = 20
+        update_board(line, s, board, j)
     return board
