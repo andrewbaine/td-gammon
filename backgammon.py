@@ -155,7 +155,7 @@ def s(count, n, checkers):
     (player_1_checker, player_2_checker) = checkers
     return player_2_checker if count < 0 else player_1_checker
 
-def to_ascii(board, player_1_color=Color.Light):
+def to_str(board, player_1_color=Color.Light):
     lines = []
     lines.append("___________________________________________")
     lines.append("|                  |   |                  |")
@@ -219,7 +219,7 @@ def update_board(line, s, board, j, player_1_color):
             raise Exception(x)
     
 
-def from_ascii(ascii, player_1_color=Color.Light):
+def from_str(ascii, player_1_color=Color.Light):
     board = [0 for _ in range(0, 26)]
     lines = ascii.split("\n")
 
