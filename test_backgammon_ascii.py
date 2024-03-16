@@ -72,7 +72,7 @@ def test_starting_position_dark():
 
 def test_big_stack():
     board = backgammon.make_board()
-    backgammon.checked_move(board, True, [(24, 18), (18, 13)])
+    backgammon.unchecked_move(board, [(24, 18), (18, 13)], player_1=True)
     str = """___________________________________________
 |                  |   |                  |
 |13 14 15 16 17 18 |   |19 20 21 22 23 24 |
@@ -95,8 +95,8 @@ def test_big_stack():
 
 def test_hit():
     board = backgammon.make_board()
-    backgammon.checked_move(board, True, [(24, 18), (13, 11)])
-    backgammon.checked_move(board, False, [(1, 7), (7, 11)])
+    backgammon.unchecked_move(board, [(24, 18), (13, 11)], player_1=True)
+    backgammon.unchecked_move(board, [(1, 7), (7, 11)], player_1=False)
     str = """___________________________________________
 |                  |   |                  |
 |13 14 15 16 17 18 |   |19 20 21 22 23 24 |
@@ -137,13 +137,13 @@ def test_big_stack_from_str():
 |__________________|___|__________________|
 """
     board = backgammon.make_board()
-    backgammon.checked_move(board, True, [(24, 18), (18, 13)])
+    backgammon.unchecked_move(board, [(24, 18), (18, 13)], player_1=True)
     assert_equivalence(board, str)
 
 def test_hit_from_str():
     board = backgammon.make_board()
-    backgammon.checked_move(board, True, [(24, 18), (13, 11)])
-    backgammon.checked_move(board, False, [(1, 7), (7, 11)])
+    backgammon.unchecked_move(board, [(24, 18), (13, 11)], player_1=True)
+    backgammon.unchecked_move(board, [(1, 7), (7, 11)], player_1=False)
     str = """___________________________________________
 |                  |   |                  |
 |13 14 15 16 17 18 |   |19 20 21 22 23 24 |
@@ -166,9 +166,9 @@ def test_hit_from_str():
 def test_hit_from_str_2():
     """this should test white hitting black"""
     board = backgammon.make_board()
-    backgammon.checked_move(board, True, [(8, 5), (6, 5)])
-    backgammon.checked_move(board, False, [(1, 2), (12, 14)])
-    backgammon.checked_move(board, True, [(24, 18), (18, 14)])
+    backgammon.unchecked_move(board, [(8, 5), (6, 5)], player_1=True)
+    backgammon.unchecked_move(board, [(1, 2), (12, 14)], player_1=False)
+    backgammon.unchecked_move(board, [(24, 18), (18, 14)], player_1=True)
     str = """___________________________________________
 |                  |   |                  |
 |13 14 15 16 17 18 |   |19 20 21 22 23 24 |
