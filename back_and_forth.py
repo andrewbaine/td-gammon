@@ -18,18 +18,42 @@ d2 = roll()
 while d2 == d1:
     d2 = roll()
 
+color = backgammon.Color.Dark
 while True:
-    print(backgammon.to_str(board))
-    allowed_moves = mc.compute_moves(board, (d1, d2), player_1=player_1)
-    print("roll:", d1, d2)
-    for i, x in enumerate(allowed_moves):
-        print(i, x)
-    if allowed_moves:
-        selection = int(input("Move: "))
-        move = allowed_moves[selection]
-        backgammon.unchecked_move(board, move, player_1=player_1)
+    print(backgammon.to_str(board, player_1_color=color))
+    ## did the other guy just win?!
+    loss = True
+    sum = 0
+    for x in board:
+        if x < 0:
+            loss = False
+            break
+        elif x > 0:
+            sum += x
+    if loss:
+        result = [0, 0, 1, 0] if sum < 15 else [0, 0, 0, 1]
+        print(result)
+        break
     else:
-        print("no legal moves")
-    player_1 = not player_1
+        allowed_moves = mc.compute_moves(board, (d1, d2), player_1=True)
+        print("roll:", d1, d2)
+        for i, x in enumerate(allowed_moves):
+            print(i, x)
+        if allowed_moves:
+            selection = int(input("Move: "))
+            move = allowed_moves[selection]
+            backgammon.unchecked_move(board, move, player_1=True)
+        else:
+            print("no legal moves")
+    i = 0
+    while i < 13:
+        j = 25 - i
+        (board[i], board[j]) = (-1 * board[j], -1 * board[i])
+        i += 1
     d1 = roll()
     d2 = roll()
+    color = (
+        backgammon.Color.Dark
+        if color == backgammon.Color.Light
+        else backgammon.Color.Light
+    )
