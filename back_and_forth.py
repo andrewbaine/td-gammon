@@ -40,16 +40,13 @@ while True:
         for i, x in enumerate(allowed_moves):
             print(i, x)
         if allowed_moves:
+            selection = 0
             selection = int(input("Move: "))
             move = allowed_moves[selection]
             backgammon.unchecked_move(board, move, player_1=True)
         else:
             print("no legal moves")
-    i = 0
-    while i < 13:
-        j = 25 - i
-        (board[i], board[j]) = (-1 * board[j], -1 * board[i])
-        i += 1
+    backgammon.invert(board)
     d1 = roll()
     d2 = roll()
     color = (
