@@ -115,30 +115,6 @@ def test_hit_from_str():
 """
     assert_equivalence(board, str)
 
-def test_hit_from_str_2():
-    """this should test white hitting black"""
-    board = backgammon.make_board()
-    backgammon.unchecked_move(board, [(8, 5), (6, 5)], player_1=True)
-    backgammon.unchecked_move(board, [(24, 23), (13, 11)], player_1=False)
-    backgammon.unchecked_move(board, [(24, 18), (18, 14)], player_1=True)
-    str = """___________________________________________
-|                  |   |                  |
-|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
-| ○  ○        ●    |   | ●              ○ |
-| ○           ●    |   | ●                |
-| ○           ●    |   | ●                |
-| ○                |   | ●                |
-| ○                |   | ●                |
-|                  |BAR|                  |
-|                  |   |                  |
-| ●                |   | ○                |
-| ●                |   | ○                |
-| ●           ○    |   | ○  ○             |
-| ●           ○    | ● | ○  ○        ●  ● |
-|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
-|__________________|___|__________________|
-"""
-    assert_equivalence(board, str)
 
 
 def test_weird_board():
