@@ -187,6 +187,8 @@ def _dubs(board, result, d1, best=0):
                                                 ),
                                             )
                                         )
+                                    if l == 0:
+                                        break
                                 l += 1
                             if is_hit3:
                                 board[dest3] = -1
@@ -195,6 +197,8 @@ def _dubs(board, result, d1, best=0):
                             board[k] = pc3
                             if dominant_pip is None or k < dominant_pip:
                                 dominant_pip = k
+                            if k == 0:
+                                break
                         k += 1
                     if is_hit2:
                         board[dest2] = -1
@@ -203,6 +207,8 @@ def _dubs(board, result, d1, best=0):
                     board[j] = pc2
                     if dominant_pip is None or j < dominant_pip:
                         dominant_pip = j
+                    if j == 0:
+                        break
                 j += 1
             if is_hit1:
                 board[dest1] = -1
@@ -211,6 +217,8 @@ def _dubs(board, result, d1, best=0):
             board[i] = pc1
             if dominant_pip is None or i < dominant_pip:
                 dominant_pip = i
+            if i == 0:
+                break
     return best
 
 
