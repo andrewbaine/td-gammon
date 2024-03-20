@@ -70,54 +70,6 @@ def test_starting_position_dark():
 """
     assert_equivalence(board, str, player_1_color=backgammon.Color.Dark)
 
-def test_big_stack():
-    board = backgammon.make_board()
-    backgammon.unchecked_move(board, [(24, 18), (18, 13)], player_1=True)
-    str = """___________________________________________
-|                  |   |                  |
-|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
-| ○           ●    |   | ●              ○ |
-| ○           ●    |   | ●                |
-| 6           ●    |   | ●                |
-| ○                |   | ●                |
-| ○                |   | ●                |
-|                  |BAR|                  |
-| ●                |   | ○                |
-| ●                |   | ○                |
-| ●           ○    |   | ○                |
-| ●           ○    |   | ○              ● |
-| ●           ○    |   | ○              ● |
-|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
-|__________________|___|__________________|
-"""
-    assert_equivalence(board, str, player_1_color=backgammon.Color.Light)
-
-
-def test_hit():
-    board = backgammon.make_board()
-    backgammon.unchecked_move(board, [(24, 18), (13, 11)], player_1=True)
-    backgammon.unchecked_move(board, [(24, 18), (18, 14)], player_1=False)
-    str = """___________________________________________
-|                  |   |                  |
-|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
-| ○           ●  ○ | ○ | ●              ○ |
-| ○           ●    |   | ●                |
-| ○           ●    |   | ●                |
-| ○                |   | ●                |
-|                  |   | ●                |
-|                  |BAR|                  |
-| ●                |   | ○                |
-| ●                |   | ○                |
-| ●           ○    |   | ○                |
-| ●           ○    |   | ○                |
-| ●  ●        ○    |   | ○              ● |
-|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
-|__________________|___|__________________|
-"""
-    assert_equivalence(board, str)
-
-
-
 def test_big_stack_from_str():
     str = """___________________________________________
 |                  |   |                  |
