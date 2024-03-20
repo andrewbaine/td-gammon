@@ -3,11 +3,9 @@ def _m2(board, result, d1, d2, best=0):
     for i, pc1 in enumerate(board):
         if pc1 > 0:
             dest1 = i + d1
-            if i == 0 and board[dest1] < -1:
-                break
             if dominant_pip is None:
                 dominant_pip = i
-            if (
+            if not (
                 (board[dest1] < -1)  # occupied by opponent
                 if dest1 < 25
                 else (
@@ -15,46 +13,50 @@ def _m2(board, result, d1, d2, best=0):
                     or (dest1 > 25 and dominant_pip != i)  # over-bearoff
                 )
             ):
-                continue
+                board[i] = pc1 - 1
+                if i == dominant_pip and board[i] == 0:
+                    dominant_pip = None
 
-            board[i] = pc1 - 1
-            if i == dominant_pip and board[i] == 0:
-                dominant_pip = None
+                is_hit = dest1 < 25 and board[dest1] == -1
+                if is_hit:
+                    board[dest1] = 1
+                elif dest1 < 25:
+                    board[dest1] += 1
 
-            is_hit = dest1 < 25 and board[dest1] == -1
-            if is_hit:
-                board[dest1] = 1
-            elif dest1 < 25:
-                board[dest1] += 1
+                if d1 > best:
+                    best = d1
+                    result.add((best, ((25 - i, 25 - i - d1),)))
+                j = i if d1 < d2 else (i + 1)
+                while j < 26:
+                    pc2 = board[j]
+                    if pc2 > 0:
+                        if dominant_pip is None:
+                            dominant_pip = j
+                        dest2 = j + d2
+                        # if we can land on this dest1 or bearoff
+                        if (dest2 < 25 and board[dest2] > -2) or (
+                            dominant_pip is None
+                            or (
+                                dominant_pip > 18 and (dest2 == 25 or dominant_pip == j)
+                            )
+                        ):
+                            best = d1 + d2
+                            result.add(
+                                (best, ((25 - i, 25 - i - d1), (25 - j, 25 - j - d2)))
+                            )
+                        if j == 0:
+                            break
+                    j += 1
+                if is_hit:
+                    board[dest1] = -1
+                elif dest1 < 25:
+                    board[dest1] -= 1
 
-            if d1 > best:
-                best = d1
-                result.add((best, ((25 - i, 25 - i - d1),)))
-            j = i if d1 < d2 else (i + 1)
-            while j < 26:
-                pc2 = board[j]
-                if pc2 > 0:
-                    if dominant_pip is None:
-                        dominant_pip = j
-                    dest2 = j + d2
-                    # if we can land on this dest1 or bearoff
-                    if (dest2 < 25 and board[dest2] > -2) or (
-                        dominant_pip is None
-                        or (dominant_pip > 18 and (dest2 == 25 or dominant_pip == j))
-                    ):
-                        best = d1 + d2
-                        result.add(
-                            (best, ((25 - i, 25 - i - d1), (25 - j, 25 - j - d2)))
-                        )
-                j += 1
-            if is_hit:
-                board[dest1] = -1
-            elif dest1 < 25:
-                board[dest1] -= 1
-
-            board[i] = pc1
-            if dominant_pip is None or i < dominant_pip:
-                dominant_pip = i
+                board[i] = pc1
+                if dominant_pip is None or i < dominant_pip:
+                    dominant_pip = i
+            if i == 0:
+                break
     return best
 
 
