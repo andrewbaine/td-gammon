@@ -179,3 +179,11 @@ def from_str(ascii, player_1_color=Color.Light):
         s = 20
         __update_board(line, s, board, j, player_1_color)
     return board
+
+
+def invert(board):
+    i = 0
+    while i < 13:
+        j = 25 - i
+        (board[i], board[j]) = (-1 * board[j], -1 * board[i])
+        i += 1
