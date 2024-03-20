@@ -47,13 +47,13 @@ def unchecked_move(board, move, player_1=True):
                     board[dest] += 1
     else:
         for (src, dest) in move:
-            board[src] = board[src] + 1
-            if dest < 25:
-                if board[dest] == 1:
+            board[25 - src] = board[25 - src] + 1
+            if dest > 0:
+                if board[25 - dest] == 1:
                     board[25] += 1
-                    board[dest] = -1
+                    board[25 - dest] = -1
                 else:
-                    board[dest] -= 1
+                    board[25 - dest] -= 1
 
 def s(count, n, checkers):
     if n < 1 or n > 5:
@@ -108,7 +108,7 @@ def to_str(board, player_1_color=Color.Light):
     lines.append("")
     return "\n".join(lines)
 
-def update_board(line, s, board, j, player_1_color):
+def __update_board(line, s, board, j, player_1_color):
     current_count = board[j]
     token =  line[s:s + 3]
     match (token, player_1_color):
@@ -143,21 +143,21 @@ def from_str(ascii, player_1_color=Color.Light):
         line = lines[i + 2]
         for j in range(13, 19):
             s = 1 + (j - 13) * 3
-            update_board(line, s, board, j, player_1_color)
+            __update_board(line, s, board, j, player_1_color)
         for j in range(19, 25):
             s = 24 + (j - 19) * 3
-            update_board(line, s, board, j, player_1_color)
+            __update_board(line, s, board, j, player_1_color)
         j = 25
         s = 20
-        update_board(line, s, board, j, player_1_color)
+        __update_board(line, s, board, j, player_1_color)
         line = lines[-3 - i]
         for j in range(12, 6, -1):
             s = 1 + (12 - j) * 3
-            update_board(line, s, board, j, player_1_color)
+            __update_board(line, s, board, j, player_1_color)
         for j in range(6, 0, -1):
             s = 24 + (6 - j) * 3
-            update_board(line, s, board, j, player_1_color)
+            __update_board(line, s, board, j, player_1_color)
         j = 0
         s = 20
-        update_board(line, s, board, j, player_1_color)
+        __update_board(line, s, board, j, player_1_color)
     return board

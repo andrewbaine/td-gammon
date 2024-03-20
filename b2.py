@@ -1,4 +1,4 @@
-def m2(board, result, d1, d2, best=0):
+def _m2(board, result, d1, d2, best=0):
     dominant_pip = None
     for i, pc1 in enumerate(board):
         if pc1 > 0:
@@ -40,7 +40,7 @@ def m2(board, result, d1, d2, best=0):
                     # if we can land on this dest1 or bearoff
                     if (dest2 < 25 and board[dest2] > -2) or (
                         dominant_pip is None
-                        or (dominant_pip > 17 and (dest2 == 25 or dominant_pip == j))
+                        or (dominant_pip > 18 and (dest2 == 25 or dominant_pip == j))
                     ):
                         best = d1 + d2
                         result.add(
@@ -58,7 +58,7 @@ def m2(board, result, d1, d2, best=0):
     return best
 
 
-def dubs(board, result, d1, best=0):
+def _dubs(board, result, d1, best=0):
     dominant_pip = None
     for i, pc1 in enumerate(board):
         if pc1 > 0:
@@ -172,7 +172,7 @@ def dubs(board, result, d1, best=0):
                                         dominant_pip is None
                                         or (
                                             dominant_pip > 17
-                                            and (dest2 == 25 or dominant_pip == j)
+                                            and (dest4 == 25 or dominant_pip == l)
                                         )
                                     ):
                                         best = 4 * d1
@@ -214,37 +214,23 @@ def dubs(board, result, d1, best=0):
     return best
 
 
-def moves(board, d1, d2):
-    board = [x for x in reversed(board)]
-    result = set()
-    best = 0
-    if d1 != d2:
-        best = m2(board, result, d1, d2, best)
-        best = m2(board, result, d2, d1, best=best)
-    else:
-        best = dubs(board, result, d1)
-    return [x for x in reversed(sorted([b for (a, b) in result if a == best]))]
+class MoveComputer:
+    def __init__(self):
+        self.board = [0 for _ in range(26)]
 
-
-import backgammon
-
-if __name__ == "__main__":
-    str = """___________________________________________
-|                  |   |                  |
-|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
-|                  |   |                ○ |
-|                  |   |                  |
-|                  |   |                  |
-|                  |   |                  |
-|                  |   |                  |
-|                  |BAR|                  |
-|                  |   |                  |
-|                  |   |                  |
-|                  |   |                  |
-|                  |   |                  |
-|                  |   | ●  ●           ● |
-|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
-|__________________|___|__________________|
-"""
-    board = backgammon.from_str(str, player_1_color=backgammon.Color.Dark)
-    moves = moves(board, 2, 2)
+    def compute_moves(self, board, roll, player_1=True):
+        (d1, d2) = roll
+        if player_1:
+            for i, x in enumerate(board):
+                self.board[25 - i] = x
+        else:
+            for i, x in enumerate(board):
+                self.board[i] = -1 * x
+        result = set()
+        best = 0
+        if d1 != d2:
+            best = _m2(self.board, result, d1, d2, best)
+            best = _m2(self.board, result, d2, d1, best=best)
+        else:
+            best = _dubs(self.board, result, d1)
+        return [x for x in reversed(sorted([b for (a, b) in result if a == best]))]
