@@ -6,6 +6,7 @@ import itertools
 
 
 class Model(nn.Sequential):
+    # http://incompleteideas.net/book/first/ebook/node87.html
     def __init__(self, in_features, hidden_features, n_hidden_layers):
         super().__init__(
             *(
@@ -75,10 +76,7 @@ def set_tensor(board, tensor):
     tensor[195] = b / 15.0
 
 
-import os
-
-
-def episode(n, model, trainer):
+def episode(model, trainer):
 
     board = backgammon.make_board()
     scratch_board = [x for x in board]
@@ -87,7 +85,7 @@ def episode(n, model, trainer):
     tensor = torch.as_tensor([0 for _ in range(196)], dtype=torch.float)
 
     et = [
-        (torch.zeros_like(layer.weight), layer)
+        (torch.zeros_like(layer.weight), layer.weight)
         for layer in model
         if isinstance(layer, nn.Linear)
     ]
@@ -103,10 +101,12 @@ def episode(n, model, trainer):
         trainer.zero_grad()
         v = trainer(tensor)
         v.backward()
-        for e, layer in et:  # update e_t+1 based on e_t
+        for e, weight in et:  # update e_t+1 based on e_t
+            if weight.grad is None:
+                raise Exception()
             e.mul_(γ)
             e.mul_(λ)
-            e.add_(layer.weight.grad)
+            e.add_(weight.grad)
 
         ## did the other guy just win?!
         loss = True
@@ -121,9 +121,10 @@ def episode(n, model, trainer):
             v_next = -1 if sum < 15 else -2
             r = 0
             αδ = r + α * (γ * v_next - v)
-            for e, layer in et:
-                with torch.no_grad():
-                    layer.weight.add_(torch.mul(e, αδ))
+            for e, weight in et:
+                if weight.grad is None:
+                    raise Exception()
+                weight.add_(torch.mul(e, αδ))
             return (t, v_next * (1 if i % 2 == 0 else -1))
         else:
 
@@ -172,7 +173,7 @@ if __name__ == "__main__":
     for i in range(0, n_episodes):
         if i % 500 == 0:
             torch.save(network.state_dict(), "entire_model.{i}.pt".format(i=i))
-        (n, result) = episode(i, network, trainer)
+        (n, result) = episode(network, trainer)
         lengths.append(n)
         match result:
             case -2:
