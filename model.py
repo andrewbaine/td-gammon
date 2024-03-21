@@ -2,26 +2,6 @@ import torch
 
 import random
 import torch.nn as nn
-import itertools
-
-
-class Model(nn.Sequential):
-    # http://incompleteideas.net/book/first/ebook/node87.html
-    def __init__(self, in_features, hidden_features, n_hidden_layers):
-        super().__init__(
-            *(
-                [nn.Linear(in_features, hidden_features), nn.Sigmoid()]
-                + list(
-                    itertools.chain(
-                        *[
-                            [nn.Linear(hidden_features, hidden_features), nn.Sigmoid()]
-                            for _ in range(n_hidden_layers)
-                        ]
-                    )
-                )
-                + [nn.Linear(hidden_features, 4)]
-            ),
-        )
 
 
 class Trainer(nn.Sequential):
@@ -152,19 +132,21 @@ def episode(model, trainer):
             v_next = -1 * trainer(tensor).item()
             r = 0
             αδ = r + α * (γ * v_next - v)
-            for e, layer in et:
+            for e, weight in et:
                 with torch.no_grad():
-                    layer.weight.add_(torch.mul(e, αδ))
+                    weight.add_(torch.mul(e, αδ))
             d1 = roll()
             d2 = roll()
         t += 1
 
 
+import td_gammon
+
 if __name__ == "__main__":
     α = 0.05
     γ = 1.0
     λ = 0.7
-    network = Model(196, 80, 2)
+    network = td_gammon.Network(196, 80, 2)
     trainer = Trainer(network)
 
     n_episodes = 100000
