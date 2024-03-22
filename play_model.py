@@ -7,10 +7,10 @@ import random
 layers = [198, 40, 4]
 
 good = td_gammon.Network(*layers)
-good.load_state_dict(torch.load("model.500.pt"))
+good.load_state_dict(torch.load("model.2500.pt"))
 
 bad = td_gammon.Network(*layers)
-bad.load_state_dict(torch.load("model.5600.pt"))
+bad.load_state_dict(torch.load("model.1000.pt"))
 
 
 def roll():

@@ -6,34 +6,37 @@ import backgammon
 import b2
 import td_gammon
 
-observe = td_gammon.observe
-
 
 class Trainer(nn.Sequential):
     def __init__(self, model):
-        equity = nn.Linear(4, 1, bias=False)
-        equity.weight = nn.Parameter(
+        utility = nn.Linear(4, 1, bias=False)
+        utility.weight = nn.Parameter(
             torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
         )
-        super().__init__(model, equity)
-
-    def reset(self):
-        for m in reversed(self):
-            m.weight.copy_(
+        super().__init__(model, utility)
+        self.__reset_utility = lambda _: (
+            utility.weight.copy_(
                 torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
             )
-            break
+        )
+
+    def reset_utility_tensor(self):
+        self.__reset_utility(None)
+        # for m in reversed(self):
+        #     m.weight.copy_(
+        #         torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
+        #     )
+        #     break
 
 
-def best(gamestate, scratch_board, tensor, moves, trainer):
-    (board, player_1) = gamestate
+def best(bck, observer, gamestate, dice, trainer):
+    (_, player_1) = gamestate
+    moves = bck.allowed_moves = bck.available_moves(gamestate, dice)
     best = None
     best_move = None
     for move in moves:
-        for j, x in enumerate(board):
-            scratch_board[j] = x
-        backgammon.unchecked_move(scratch_board, player_1)
-        td_gammon.observe((scratch_board, not player_1), tensor)
+        s = bck.next(gamestate, move)
+        tensor = observer.observe(s)
         y = trainer(tensor).item()
         if best is None or ((y > best) if player_1 else (y < best)):
             best = y
@@ -41,32 +44,19 @@ def best(gamestate, scratch_board, tensor, moves, trainer):
     return best_move
 
 
-def roll():
-    return random.randint(1, 6)
-
-
-def episode(trainer):
+def episode(bck, observer, trainer):
     α = 0.10
     λ = 0.7
 
-    board = backgammon.make_board()
-    scratch_board = [x for x in board]
-    mc = b2.MoveComputer()
-
-    tensor = torch.as_tensor([0 for _ in range(198)], dtype=torch.float)
+    state = bck.s0()
 
     et = [torch.zeros_like(w, requires_grad=False) for w in trainer.parameters()]
 
-    d1 = roll()
-    d2 = roll()
-    while d2 == d1:
-        d1 = roll()
-        d2 = roll()
+    dice = backgammon.first_roll()
 
     t = 0
-    player_1 = d1 > d2
     while True:
-        observe((board, player_1), tensor)
+        tensor = observer.observe(state)
         trainer.zero_grad()
         v = trainer(tensor)
         v.backward()
@@ -77,69 +67,49 @@ def episode(trainer):
             e.mul_(λ)
             e.add_(weights.grad)
         with torch.no_grad():
-            ## did the other guy just win?!
-            loss = True
-            sum = 0
-            for x in board:
-                if player_1:
-                    if x < 0:  # my opponent still has a piece
-                        loss = False
-                        break
-                    elif x > 0:  # count my pips
-                        sum += x
-                else:
-                    if x > 0:
-                        loss = False
-                        break
-                    elif x < 0:
-                        sum -= x
-            if loss:
+            done = bck.done(state)
+            if done:
                 # was I gammoned?
-                v_next = (
-                    (-1 if sum < 15 else -2) if player_1 else (1 if sum < 15 else 2)
-                )
-                r = 0
+                v_next = done
                 αδ = α * (v_next - v)
                 for i, weights in enumerate(trainer.parameters()):
                     weights.add_(torch.mul(et[i], αδ))
-                trainer.reset()
+                trainer.reset_utility_tensor()
                 return (t, v_next)
             else:
-                allowed_moves = mc.compute_moves((board, player_1), (d1, d2))
-                minimum = None
-                best_move = None
-                random.shuffle(allowed_moves)
-                best_move = best(
-                    (board, player_1), scratch_board, tensor, allowed_moves, trainer
-                )
-                if best_move is not None:
-                    backgammon.unchecked_move(board, best_move, player_1=player_1)
+                best_move = best(bck, observer, state, dice, trainer)
+                state = bck.next(state, best_move)
 
-                # after playing the best move, compute v_next, the equity to p1 at the next phase
-                player_1 = not player_1
-                observe((board, player_1), tensor)
+                tensor = observer.observe(state)
                 v_next = trainer(tensor).item()
                 αδ = α * (v_next - v)
                 for i, weights in enumerate(trainer.parameters()):
                     weights.add_(torch.mul(et[i], αδ))
-                trainer.reset()
-                d1 = roll()
-                d2 = roll()
+                trainer.reset_utility_tensor()
+                dice = backgammon.roll()
         t += 1
 
+
+import backgammon_env
 
 if __name__ == "__main__":
     layers = [198, 40, 4]
     network = td_gammon.Network(*layers)
     trainer = Trainer(network)
+    observer = backgammon_env.Teasoro198()
 
     n_episodes = 100000
     results = [0, 0, 0, 0]
     lengths = []
+    bck = backgammon_env.Backgammon()
     for i in range(0, n_episodes):
-        if i % 100 == 0:
+        if (
+            (i < 1000 and (i % 100 == 0))
+            or (i < 10000 and (i % 500) == 0)
+            or (i % 1000 == 0)
+        ):
             torch.save(network.state_dict(), "model.{i}.pt".format(i=i))
-        (n, result) = episode(trainer)
+        (n, result) = episode(bck, observer, trainer)
         lengths.append(n)
         match result:
             case -2:
@@ -152,7 +122,6 @@ if __name__ == "__main__":
                 results[3] += 1
             case _:
                 raise Exception("unexpected")
-        print(n)
-        print(results)
+        print(results, n)
     print(lengths, results)
     torch.save(network.state_dict(), "model.final.pt")

@@ -1,4 +1,17 @@
 from enum import Enum
+import random
+
+
+def roll():
+    return (random.randint(1, 6), random.randint(1, 6))
+
+
+def first_roll():
+    while True:
+        d1 = random.randint(1, 6)
+        d2 = random.randint(1, 6)
+        if d1 != d2:
+            return (d1, d2)
 
 
 class Color(Enum):
