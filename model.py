@@ -2,160 +2,144 @@ import torch
 
 import random
 import torch.nn as nn
+import backgammon
+import b2
+import td_gammon
+
+observe = td_gammon.observe
 
 
 class Trainer(nn.Sequential):
     def __init__(self, model):
         equity = nn.Linear(4, 1, bias=False)
-        weights = torch.tensor([[2, 1, -1, -2]], dtype=torch.float32)
-
-        equity.weight = nn.Parameter(weights)
-
+        equity.weight = nn.Parameter(
+            torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
+        )
         super().__init__(model, equity)
 
+    def reset(self):
+        for m in reversed(self):
+            m.weight.copy_(
+                torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
+            )
+            break
 
-import backgammon
-import b2
 
-import random
+def best(gamestate, scratch_board, tensor, moves, trainer):
+    (board, player_1) = gamestate
+    best = None
+    best_move = None
+    for move in moves:
+        for j, x in enumerate(board):
+            scratch_board[j] = x
+        backgammon.unchecked_move(scratch_board, player_1)
+        td_gammon.observe((scratch_board, not player_1), tensor)
+        y = trainer(tensor).item()
+        if best is None or ((y > best) if player_1 else (y < best)):
+            best = y
+            best_move = move
+    return best_move
 
 
 def roll():
     return random.randint(1, 6)
 
 
-def set_tensor(board, tensor):
-    a = 15.0
-    b = 15.0
-    for i in range(0, 24):
-        for j in range(0, 3):
-            tensor[4 * i + j] = 0.0
-            tensor[98 + 4 * i + j] = 0.0
-        pc = board[i + 1]
-        if pc > 0:
-            a -= pc
-            tensor[4 * i] = 1.0
-            if pc > 1:
-                tensor[4 * i + 1] = 1.0
-                if pc > 2:
-                    tensor[4 * i + 2] = 1.0
-                    if pc > 3:
-                        tensor[4 * i + 3] = (pc - 3.0) / 2.0
-        elif pc < 0:
-            b += pc
-            tensor[98 + 4 * i] = 1.0
-            if pc < -1:
-                tensor[98 + 4 * i + 1] = 1.0
-                if pc < -2:
-                    tensor[98 + 4 * i + 2] = 1.0
-                    if pc < -3:
-                        tensor[98 + 4 * i + 3] = (pc + 3.0) / 2.0
-    tensor[96] = board[0] / 2.0
-    tensor[97] = a / 15.0
-    tensor[194] = board[25] / 2.0
-    tensor[195] = b / 15.0
-
-
-def episode(model, trainer):
+def episode(trainer):
+    α = 0.10
+    λ = 0.7
 
     board = backgammon.make_board()
     scratch_board = [x for x in board]
     mc = b2.MoveComputer()
 
-    tensor = torch.as_tensor([0 for _ in range(196)], dtype=torch.float)
+    tensor = torch.as_tensor([0 for _ in range(198)], dtype=torch.float)
 
-    et = [
-        (torch.zeros_like(layer.weight), layer.weight)
-        for layer in model
-        if isinstance(layer, nn.Linear)
-    ]
+    et = [torch.zeros_like(w, requires_grad=False) for w in trainer.parameters()]
 
     d1 = roll()
     d2 = roll()
     while d2 == d1:
+        d1 = roll()
         d2 = roll()
 
     t = 0
+    player_1 = d1 > d2
     while True:
-        set_tensor(board, tensor)
+        observe((board, player_1), tensor)
         trainer.zero_grad()
         v = trainer(tensor)
         v.backward()
-        for e, weight in et:  # update e_t+1 based on e_t
-            if weight.grad is None:
+        for i, weights in enumerate(trainer.parameters()):  # update e_t+1 based on e_t
+            if weights.grad is None:
                 raise Exception()
-            e.mul_(γ)
+            e = et[i]
             e.mul_(λ)
-            e.add_(weight.grad)
+            e.add_(weights.grad)
+        with torch.no_grad():
+            ## did the other guy just win?!
+            loss = True
+            sum = 0
+            for x in board:
+                if player_1:
+                    if x < 0:  # my opponent still has a piece
+                        loss = False
+                        break
+                    elif x > 0:  # count my pips
+                        sum += x
+                else:
+                    if x > 0:
+                        loss = False
+                        break
+                    elif x < 0:
+                        sum -= x
+            if loss:
+                # was I gammoned?
+                v_next = (
+                    (-1 if sum < 15 else -2) if player_1 else (1 if sum < 15 else 2)
+                )
+                r = 0
+                αδ = α * (v_next - v)
+                for i, weights in enumerate(trainer.parameters()):
+                    weights.add_(torch.mul(et[i], αδ))
+                trainer.reset()
+                return (t, v_next)
+            else:
+                allowed_moves = mc.compute_moves((board, player_1), (d1, d2))
+                minimum = None
+                best_move = None
+                random.shuffle(allowed_moves)
+                best_move = best(
+                    (board, player_1), scratch_board, tensor, allowed_moves, trainer
+                )
+                if best_move is not None:
+                    backgammon.unchecked_move(board, best_move, player_1=player_1)
 
-        ## did the other guy just win?!
-        loss = True
-        sum = 0
-        for x in board:
-            if x < 0:
-                loss = False
-                break
-            elif x > 0:
-                sum += x
-        if loss:
-            v_next = -1 if sum < 15 else -2
-            r = 0
-            αδ = r + α * (γ * v_next - v)
-            for e, weight in et:
-                if weight.grad is None:
-                    raise Exception()
-                weight.add_(torch.mul(e, αδ))
-            return (t, v_next * (1 if i % 2 == 0 else -1))
-        else:
-
-            set_tensor(board, tensor)
-
-            allowed_moves = mc.compute_moves(board, (d1, d2), player_1=True)
-            minimum = None
-            best_move = None
-            random.shuffle(allowed_moves)
-            for move in allowed_moves:
-                for j, pc in enumerate(board):
-                    scratch_board[j] = pc
-                backgammon.unchecked_move(scratch_board, move, player_1=True)
-                backgammon.invert(scratch_board)
-                set_tensor(scratch_board, tensor)
-                y = trainer(tensor).item()
-                if minimum is None or y < minimum:
-                    minimum = y
-                    best_move = move
-            if best_move is not None:
-                backgammon.unchecked_move(board, best_move, player_1=True)
-
-            backgammon.invert(board)
-            set_tensor(board, tensor)
-            v_next = -1 * trainer(tensor).item()
-            r = 0
-            αδ = r + α * (γ * v_next - v)
-            for e, weight in et:
-                with torch.no_grad():
-                    weight.add_(torch.mul(e, αδ))
-            d1 = roll()
-            d2 = roll()
+                # after playing the best move, compute v_next, the equity to p1 at the next phase
+                player_1 = not player_1
+                observe((board, player_1), tensor)
+                v_next = trainer(tensor).item()
+                αδ = α * (v_next - v)
+                for i, weights in enumerate(trainer.parameters()):
+                    weights.add_(torch.mul(et[i], αδ))
+                trainer.reset()
+                d1 = roll()
+                d2 = roll()
         t += 1
 
 
-import td_gammon
-
 if __name__ == "__main__":
-    α = 0.05
-    γ = 1.0
-    λ = 0.7
-    network = td_gammon.Network(196, 80, 2)
+    layers = [198, 40, 4]
+    network = td_gammon.Network(*layers)
     trainer = Trainer(network)
 
     n_episodes = 100000
     results = [0, 0, 0, 0]
     lengths = []
     for i in range(0, n_episodes):
-        if i % 500 == 0:
-            torch.save(network.state_dict(), "entire_model.{i}.pt".format(i=i))
-        (n, result) = episode(network, trainer)
+        if i % 100 == 0:
+            torch.save(network.state_dict(), "model.{i}.pt".format(i=i))
+        (n, result) = episode(trainer)
         lengths.append(n)
         match result:
             case -2:
@@ -171,4 +155,4 @@ if __name__ == "__main__":
         print(n)
         print(results)
     print(lengths, results)
-    torch.save(network.state_dict(), "entire_model.final.pt")
+    torch.save(network.state_dict(), "model.final.pt")

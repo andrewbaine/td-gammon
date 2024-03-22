@@ -484,13 +484,34 @@ test_cases = [
         player_1_color=Light,
         player=Light,
     ),
+    Case(
+        board="""___________________________________________
+|                  |   |                  |
+|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
+| ○           ○    |   | ●        ○  ●    |
+| ○                |   | ●           ●    |
+| ○                |   | ●           ●    |
+| ○                |   |                  |
+| ○                |   |                  |
+|                  |BAR|                  |
+| ●                |   | ○                |
+| ●                |   | ○                |
+| ●           ○    |   | ○                |
+| ●           ○    | ● | ○              ● |
+| ●           ○    | ● | ○              ● |
+|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
+|__________________|___|__________________|
+""",
+        roll=(2, 1),
+        expected_moves=[((25, 24), (25, 23))],
+        player_1_color=Light,
+        player=Dark,
+    ),
 ]
 
 
 @pytest.mark.parametrize("t", test_cases)
 def tests(t):
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
-    moves = move_computer.compute_moves(
-        board, t.roll, player_1=(t.player == t.player_1_color)
-    )
+    moves = move_computer.compute_moves((board, (t.player == t.player_1_color)), t.roll)
     assert moves == t.expected_moves, t.comment

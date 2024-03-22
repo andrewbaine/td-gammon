@@ -182,8 +182,6 @@ def from_str(ascii, player_1_color=Color.Light):
 
 
 def invert(board):
-    i = 0
-    while i < 13:
+    for i in range(13):
         j = 25 - i
         (board[i], board[j]) = (-1 * board[j], -1 * board[i])
-        i += 1

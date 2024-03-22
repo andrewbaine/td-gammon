@@ -26,7 +26,7 @@ def _m2(board, result, d1, d2, best=0):
                 if d1 > best:
                     best = d1
                     result.add((best, ((25 - i, 25 - i - d1),)))
-                j = i if d1 < d2 else (i + 1)
+                j = i
                 while j < 26:
                     pc2 = board[j]
                     if pc2 > 0:
@@ -41,9 +41,24 @@ def _m2(board, result, d1, d2, best=0):
                             )
                         ):
                             best = d1 + d2
-                            result.add(
-                                (best, ((25 - i, 25 - i - d1), (25 - j, 25 - j - d2)))
-                            )
+                            if i == j:
+                                result.add(
+                                    (
+                                        best,
+                                        (
+                                            (25 - i, 25 - i - (d1 if d1 < d2 else d2)),
+                                            (25 - j, 25 - j - (d2 if d1 < d2 else d1)),
+                                        ),
+                                    )
+                                )
+                            else:
+                                result.add(
+                                    (
+                                        best,
+                                        ((25 - i, 25 - i - d1), (25 - j, 25 - j - d2)),
+                                    )
+                                )
+
                         if j == 0:
                             break
                     j += 1
@@ -228,7 +243,8 @@ class MoveComputer:
     def __init__(self):
         self.board = [0 for _ in range(26)]
 
-    def compute_moves(self, board, roll, player_1=True):
+    def compute_moves(self, gamestate, roll):
+        (board, player_1) = gamestate
         (d1, d2) = roll
         if player_1:
             for i, x in enumerate(board):
