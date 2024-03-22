@@ -1,99 +1,61 @@
 import td_gammon
 import torch
 import backgammon
-import b2
-import random
+import network
+import backgammon_env
+import model
 
 layers = [198, 40, 4]
 
-good = td_gammon.Network(*layers)
-good.load_state_dict(torch.load("model.700.pt"))
+n = td_gammon.Network(*layers)
+n.load_state_dict(torch.load("model.700.pt"))
+n = network.with_utility(n)
 
 
-def roll():
-    return random.randint(1, 6)
-
-
-mc = b2.MoveComputer()
-tensor = torch.as_tensor([0 for _ in range(198)], dtype=torch.float)
+bck = backgammon_env.Backgammon()
+observer = backgammon_env.Teasoro198()
 
 with torch.no_grad():
-    for i in range(1):
-        board = backgammon.make_board()
-        scratch_board = [x for x in board]
-        d1 = roll()
-        d2 = roll()
 
-        while d2 == d1:
-            d1 = roll()
-            d2 = roll()
+    dice = backgammon.first_roll()
+    (d1, d2) = dice
+    human_first = d1 < d2
 
-        player_1 = d1 > d2
-        human_first = d1 < d2
-
-        while True:
-            # did I lose?
-            loss = True
-            sum = 0
-            if player_1:
-                for i, x in enumerate(board):
-                    if x < 0:
-                        loss = False
-                        break
-                    elif x > 0:
-                        sum += x
-            else:
-                for i, x in enumerate(board):
-                    if x > 0:
-                        loss = False
-                        break
-                    elif x < 0:
-                        sum -= x
-            if loss:
-                if sum == 15:
-                    # gammon
+    state = bck.s0()
+    while True:
+        (board, player_1) = state
+        done = bck.done(state)
+        if done is not None:
+            match done:
+                case -2:
                     print(("human" if player_1 else "robot") + " won by 2 points")
-
-                else:
+                case -1:
                     print(("human" if player_1 else "robot") + " won 1 point")
-                break
-            moves = mc.compute_moves((board, player_1), (d1, d2))
-            if player_1:
-                min = None
-                best_move = None
-                for move in moves:
-                    for i, x in enumerate(board):
-                        scratch_board[i] = x
-                    backgammon.unchecked_move(scratch_board, move, player_1=player_1)
-                    td_gammon.observe((scratch_board, (not player_1)), tensor)
-                    y = torch.dot(
-                        good(tensor),
-                        torch.tensor(
-                            [x for x in td_gammon.utility_tensor],
-                            requires_grad=False,
-                            dtype=torch.float,
-                        ),
-                    ).item()
-                    if min is None or y < min:
-                        min = y
-                        best_move = move
-                if best_move:
-                    print("Rolled", (d1, d2), "; played ", best_move)
-                    backgammon.unchecked_move(board, best_move, player_1=player_1)
+                case 1:
+                    print(("human" if not player_1 else "robot") + " won 1 point")
+                case 2:
+                    print(("human" if not player_1 else "robot") + " won by 2 points")
+                case _:
+                    raise Exception("unexpected")
+            break
+        if player_1 and human_first or (not player_1 and not human_first):
+            if human_first:
+                print(backgammon.to_str(board))
             else:
-                if human_first:
-                    print(backgammon.to_str(board))
-                else:
-                    backgammon.invert(board)
-                    print(backgammon.to_str(board))
-                    backgammon.invert(board)
-                print("Roll:", (d1, d2))
-                if moves:
-                    for i, move in enumerate(moves):
-                        print(i, move)
-                    i = int(input("Select move: "))
-                    move = moves[i]
-                    backgammon.unchecked_move(board, move, player_1=player_1)
-            player_1 = not player_1
-            d1 = roll()
-            d2 = roll()
+                backgammon.invert(board)
+                print(backgammon.to_str(board))
+                backgammon.invert(board)
+            print("Roll:", dice)
+            move = None
+            moves = bck.available_moves(state, dice)
+            if moves:
+                for i, move in enumerate(moves):
+                    print(i, move)
+                i = int(input("Select move: "))
+                move = moves[i]
+            state = bck.next(state, move)
+        else:
+            move = model.best(bck, observer, state, dice, network)
+            print("Rolled", (d1, d2), "; played ", move)
+            state = bck.next(state, move)
+        dice = backgammon.roll()

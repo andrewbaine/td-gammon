@@ -1,8 +1,6 @@
 import torch.nn as nn
 import itertools
 
-utility_tensor = (2, 1, -1, -2)
-
 
 class Network(nn.Sequential):
     # http://incompleteideas.net/book/first/ebook/node87.html

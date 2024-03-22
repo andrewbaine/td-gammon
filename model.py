@@ -1,35 +1,47 @@
 import torch
 
-import random
 import torch.nn as nn
 import backgammon
 import b2
 import td_gammon
 
+import network
 
-class Trainer(nn.Sequential):
-    def __init__(self, model):
-        utility = nn.Linear(4, 1, bias=False)
-        utility.weight = nn.Parameter(
-            torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
-        )
-        super().__init__(model, utility)
-        self.__reset_utility = lambda _: (
-            utility.weight.copy_(
-                torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
+
+class Trainer:
+    def __init__(self, model, α=0.10, λ=0.7):
+        self.α = α
+        self.λ = λ
+        self.nn = network.with_utility(model)
+        self.eligibility_trace = [
+            torch.zeros_like(w, requires_grad=False) if w.requires_grad else None
+            for w in self.nn.parameters()
+        ]
+
+    def v(self, observation):
+        return self.nn(observation)
+
+    def train(self, v_next, observation):
+        self.nn.zero_grad()
+        v = self.nn(observation)
+        # v.backward()
+        error = torch.subtract(v_next, v)
+        error.backward()
+        et = self.eligibility_trace
+        αδ = torch.mul(self.α, error)
+        with torch.no_grad():
+            for i, weights in enumerate(self.nn.parameters()):
+                if weights.requires_grad:
+                    e = et[i]
+                    e.mul_(self.λ)
+                    e.add_(weights.grad)
+                    weights.add_(torch.mul(e, αδ))
+            self.nn.utility.weight = nn.Parameter(
+                torch.tensor([x for x in (-2, -1, 1, 2)], dtype=torch.float)
             )
-        )
-
-    def reset_utility_tensor(self):
-        self.__reset_utility(None)
-        # for m in reversed(self):
-        #     m.weight.copy_(
-        #         torch.tensor([x for x in td_gammon.utility_tensor], dtype=torch.float32)
-        #     )
-        #     break
 
 
-def best(bck, observer, gamestate, dice, trainer):
+def best(bck, observer, gamestate, dice, network):
     (_, player_1) = gamestate
     moves = bck.allowed_moves = bck.available_moves(gamestate, dice)
     best = None
@@ -37,56 +49,39 @@ def best(bck, observer, gamestate, dice, trainer):
     for move in moves:
         s = bck.next(gamestate, move)
         tensor = observer.observe(s)
-        y = trainer(tensor).item()
-        if best is None or ((y > best) if player_1 else (y < best)):
+        y = network(tensor).item()
+        if best is None or ((y < best) if player_1 else (y > best)):
             best = y
             best_move = move
     return best_move
 
 
-def episode(bck, observer, trainer):
-    α = 0.10
-    λ = 0.7
+def td_episode(bck, observer, trainer):
 
     state = bck.s0()
-
-    et = [torch.zeros_like(w, requires_grad=False) for w in trainer.parameters()]
-
     dice = backgammon.first_roll()
+    #   (board, _) = state
+    #   print(backgammon.to_str(board))
 
     t = 0
     while True:
-        tensor = observer.observe(state)
-        trainer.zero_grad()
-        v = trainer(tensor)
-        v.backward()
-        for i, weights in enumerate(trainer.parameters()):  # update e_t+1 based on e_t
-            if weights.grad is None:
-                raise Exception()
-            e = et[i]
-            e.mul_(λ)
-            e.add_(weights.grad)
-        with torch.no_grad():
-            done = bck.done(state)
-            if done:
-                # was I gammoned?
-                v_next = done
-                αδ = α * (v_next - v)
-                for i, weights in enumerate(trainer.parameters()):
-                    weights.add_(torch.mul(et[i], αδ))
-                trainer.reset_utility_tensor()
-                return (t, v_next)
-            else:
-                best_move = best(bck, observer, state, dice, trainer)
-                state = bck.next(state, best_move)
-
-                tensor = observer.observe(state)
-                v_next = trainer(tensor).item()
-                αδ = α * (v_next - v)
-                for i, weights in enumerate(trainer.parameters()):
-                    weights.add_(torch.mul(et[i], αδ))
-                trainer.reset_utility_tensor()
-                dice = backgammon.roll()
+        observation = observer.observe(state)
+        done = bck.done(state)
+        if done:
+            v_next = torch.tensor([done])
+            #                (board, _) = state
+            #                print(backgammon.to_str(board))
+            #                print(v_next)
+            trainer.train(v_next, observation)
+            return (t, done)
+        else:
+            with torch.no_grad():
+                best_move = best(bck, observer, state, dice, trainer.nn)
+            state = bck.next(state, best_move)
+            next_observation = observer.observe(state)
+            v_next = trainer.v(next_observation)
+            trainer.train(v_next, observation)
+            dice = backgammon.roll()
         t += 1
 
 
@@ -94,8 +89,8 @@ import backgammon_env
 
 if __name__ == "__main__":
     layers = [198, 40, 4]
-    network = td_gammon.Network(*layers)
-    trainer = Trainer(network)
+    net = td_gammon.Network(*layers)
+    trainer = Trainer(net)
     observer = backgammon_env.Teasoro198()
 
     n_episodes = 100000
@@ -108,8 +103,8 @@ if __name__ == "__main__":
             or (i < 10000 and (i % 500) == 0)
             or (i % 1000 == 0)
         ):
-            torch.save(network.state_dict(), "model.{i}.pt".format(i=i))
-        (n, result) = episode(bck, observer, trainer)
+            torch.save(net.state_dict(), "model.{i}.pt".format(i=i))
+        (n, result) = td_episode(bck, observer, trainer)
         lengths.append(n)
         match result:
             case -2:
@@ -124,4 +119,4 @@ if __name__ == "__main__":
                 raise Exception("unexpected")
         print(results, n)
     print(lengths, results)
-    torch.save(network.state_dict(), "model.final.pt")
+    torch.save(net.state_dict(), "model.final.pt")
