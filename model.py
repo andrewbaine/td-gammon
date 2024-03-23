@@ -14,8 +14,7 @@ class Trainer:
         self.λ = λ
         self.nn = network.with_utility(model)
         self.eligibility_trace = [
-            torch.zeros_like(w, requires_grad=False) if w.requires_grad else None
-            for w in self.nn.parameters()
+            torch.zeros_like(w, requires_grad=False) for w in self.nn.parameters()
         ]
 
     def v(self, observation):
@@ -24,18 +23,17 @@ class Trainer:
     def train(self, v_next, observation):
         self.nn.zero_grad()
         v = self.nn(observation)
-        # v.backward()
-        error = torch.subtract(v_next, v)
-        error.backward()
-        et = self.eligibility_trace
-        αδ = torch.mul(self.α, error)
+        v.backward()
         with torch.no_grad():
+            δ = v_next - v.item()
+            αδ = self.α * δ
+            et = self.eligibility_trace
             for i, weights in enumerate(self.nn.parameters()):
-                if weights.requires_grad:
-                    e = et[i]
-                    e.mul_(self.λ)
-                    e.add_(weights.grad)
-                    weights.add_(torch.mul(e, αδ))
+                if weights.grad is None:
+                    raise Exception("we need grad")
+                et[i] = torch.add(torch.mul(et[i], self.λ), weights.grad)
+                weights.add_(torch.mul(et[i], αδ))
+            # utility function is always -2x1 - x2 + x3 + 2x4
             self.nn.utility.weight = nn.Parameter(
                 torch.tensor([x for x in (-2, -1, 1, 2)], dtype=torch.float)
             )
@@ -57,7 +55,7 @@ def best(bck, observer, gamestate, dice, network):
 
 
 def td_episode(bck, observer, trainer):
-
+    # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
     state = bck.s0()
     dice = backgammon.first_roll()
     #   (board, _) = state
@@ -65,22 +63,18 @@ def td_episode(bck, observer, trainer):
 
     t = 0
     while True:
-        observation = observer.observe(state)
+        o = observer.observe(state)
         done = bck.done(state)
         if done:
-            v_next = torch.tensor([done])
-            #                (board, _) = state
-            #                print(backgammon.to_str(board))
-            #                print(v_next)
-            trainer.train(v_next, observation)
+            trainer.train(done, o)
             return (t, done)
         else:
             with torch.no_grad():
                 best_move = best(bck, observer, state, dice, trainer.nn)
             state = bck.next(state, best_move)
             next_observation = observer.observe(state)
-            v_next = trainer.v(next_observation)
-            trainer.train(v_next, observation)
+            v_next = trainer.v(next_observation).item()
+            trainer.train(v_next, o)
             dice = backgammon.roll()
         t += 1
 
