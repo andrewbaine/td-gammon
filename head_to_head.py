@@ -15,29 +15,22 @@ def trial(a, b, games=100, cb=None):
     with torch.no_grad():
         for i in range(games):
             dice = backgammon.first_roll()
-            (d1, d2) = dice
-            player_1_is_n1 = d1 > d2
-            (p1, p2) = (
-                ((n1, observer_1), (n2, observer_2))
-                if player_1_is_n1
-                else ((n2, observer_2), (n1, observer_1))
-            )
             state = bck.s0()
 
             while True:
                 (board, player_1) = state
-                (n, observer) = p1 if player_1 else p2
+                (n, observer) = a if player_1 else b
                 done = bck.done(state)
                 if done is not None:
                     match done:
                         case -2:
-                            results[0 if player_1_is_n1 else 3] += 1
+                            results[0] += 1
                         case -1:
-                            results[1 if player_1_is_n1 else 2] += 1
+                            results[1] += 1
                         case 1:
-                            results[2 if player_1_is_n1 else 1] += 1
+                            results[2] += 1
                         case 2:
-                            results[3 if player_1_is_n1 else 0] += 1
+                            results[3] += 1
                         case _:
                             raise Exception("unexpected")
                     break

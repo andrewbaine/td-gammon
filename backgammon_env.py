@@ -1,6 +1,7 @@
 import backgammon
 import b2
 import torch
+import random
 
 
 class Backgammon:
@@ -9,8 +10,10 @@ class Backgammon:
         self.board = backgammon.make_board()
         self.player_1 = True
 
-    def s0(self):
-        return (tuple(self.board), True)
+    def s0(self, player_1=None):
+        if player_1 is None:
+            player_1 = random.random() < 0.5
+        return (tuple(self.board), random.random() < 0.5)
 
     def available_moves(self, state, roll):
         return self.mc.compute_moves(state, roll)

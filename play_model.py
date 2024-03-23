@@ -1,15 +1,14 @@
-import td_gammon
 import torch
-import torch.nn as nn
 import backgammon_env
+import network
 
 layers = [198, 40, 4]
 
 
-good = td_gammon.Network(*layers)
+good = network.layered(*layers)
 good.load_state_dict(torch.load("model.800.pt"))
 
-bad = td_gammon.Network(*layers)
+bad = network.layered(*layers)
 bad.load_state_dict(torch.load("model.0.pt"))
 
 

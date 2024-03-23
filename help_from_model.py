@@ -1,11 +1,10 @@
-import td_gammon
 import torch
 import backgammon
 import network
 
 layers = [198, 40, 4]
 
-nn = td_gammon.Network(*layers)
+nn = network.layered(*layers)
 nn.load_state_dict(torch.load("model.3900.pt"))
 nn = network.with_utility(nn)
 
