@@ -13,7 +13,7 @@ class Backgammon:
     def s0(self, player_1=None):
         if player_1 is None:
             player_1 = random.random() < 0.5
-        return (tuple(self.board), random.random() < 0.5)
+        return (tuple(self.board), player_1)
 
     def available_moves(self, state, roll):
         return self.mc.compute_moves(state, roll)
@@ -50,7 +50,7 @@ class Teasoro198:
 
     def observe(self, state):
         (board, player_1) = state
-        tensor = torch.as_tensor([0 for _ in range(198)], dtype=torch.float)
+        tensor = [0.0 for _ in range(198)]
         a = 15.0
         b = 15.0
         for i, pc in enumerate(board):

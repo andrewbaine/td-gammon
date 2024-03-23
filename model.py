@@ -16,11 +16,11 @@ class Trainer:
         ]
 
     def v(self, observation):
-        return self.nn(observation)
+        return self.nn(torch.tensor(observation))
 
     def train(self, v_next, observation):
         self.nn.zero_grad()
-        v = self.nn(observation)
+        v = self.nn(torch.tensor(observation))
         v.backward()
         with torch.no_grad():
             δ = v_next - v.item()  # td error
@@ -44,9 +44,9 @@ def best(bck, observer, gamestate, dice, network):
     best_move = None
     for move in moves:
         s = bck.next(gamestate, move)
-        tensor = observer.observe(s)
-        y = network(tensor).item()
-        if best is None or ((y < best) if player_1 else (y > best)):
+        o = observer.observe(s)
+        y = network(torch.tensor(o, dtype=torch.float)).item()
+        if best is None or ((y > best) if player_1 else (y < best)):
             best = y
             best_move = move
     return best_move
@@ -56,19 +56,23 @@ def td_episode(bck, observer, trainer, num):
     # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
     state = bck.s0(player_1=(num % 2 == 0))
     dice = backgammon.first_roll()
-    #   (board, _) = state
-    #   print(backgammon.to_str(board))
 
     t = 0
+    # print("===== begin =====")
     while True:
+        (board, player_1) = state
+        # print(backgammon.to_str(board))
+        # print(t, "player", 1 if player_1 else 2, "to play", dice)
         o = observer.observe(state)
         done = bck.done(state)
         if done:
+            # print("done", done)
             trainer.train(done, o)
             return (t, done)
         else:
             with torch.no_grad():
                 best_move = best(bck, observer, state, dice, trainer.nn)
+                # print("playing", best_move)
             state = bck.next(state, best_move)
             next_observation = observer.observe(state)
             v_next = trainer.v(next_observation).item()
@@ -85,15 +89,11 @@ if __name__ == "__main__":
     trainer = Trainer(net)
     observer = backgammon_env.Teasoro198()
 
-    n_episodes = 100000
+    n_episodes = 10000
     results = [0, 0, 0, 0]
     lengths = []
     bck = backgammon_env.Backgammon()
     for i in range(0, n_episodes):
-        if i > 1000:
-            trainer.α = 0.1
-        if i > 5000:
-            trainer.α = 0.05
         if (
             (i < 1000 and (i % 100 == 0))
             or (i < 10000 and (i % 500) == 0)
