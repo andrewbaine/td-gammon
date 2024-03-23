@@ -19,7 +19,7 @@ def trial(a, b, games=100, cb=None):
 
             while True:
                 (board, player_1) = state
-                (n, observer) = a if player_1 else b
+                (n, observer) = (n1, observer_1) if player_1 else (n2, observer_2)
                 done = bck.done(state)
                 if done is not None:
                     match done:
