@@ -243,9 +243,8 @@ class MoveComputer:
     def __init__(self):
         self.board = [0 for _ in range(26)]
 
-    def compute_moves(self, gamestate, roll):
-        (board, player_1) = gamestate
-        (d1, d2) = roll
+    def compute_moves(self, state):
+        (board, player_1, (d1, d2)) = state
         if player_1:
             for i, x in enumerate(board):
                 self.board[25 - i] = x

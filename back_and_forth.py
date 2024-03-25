@@ -35,7 +35,7 @@ while True:
         print(result)
         break
     else:
-        allowed_moves = mc.compute_moves((board, True), (d1, d2))
+        allowed_moves = mc.compute_moves((board, True, (d1, d2)))
         print("roll:", d1, d2)
         for i, x in enumerate(allowed_moves):
             print(i, x)

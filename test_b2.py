@@ -513,5 +513,5 @@ test_cases = [
 @pytest.mark.parametrize("t", test_cases)
 def tests(t):
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
-    moves = move_computer.compute_moves((board, (t.player == t.player_1_color)), t.roll)
+    moves = move_computer.compute_moves((board, (t.player == t.player_1_color), t.roll))
     assert moves == t.expected_moves, t.comment

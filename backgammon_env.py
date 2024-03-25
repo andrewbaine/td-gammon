@@ -1,7 +1,7 @@
-import backgammon
-import b2
-import torch
 import random
+
+import b2
+import backgammon
 
 
 class Backgammon:
@@ -16,7 +16,8 @@ class Backgammon:
         return (tuple(self.board), player_1)
 
     def available_moves(self, state, roll):
-        return self.mc.compute_moves(state, roll)
+        (board, player_1) = state
+        return self.mc.compute_moves((board, player_1, roll))
 
     def next(self, state, action):
         (board, player_1) = state
