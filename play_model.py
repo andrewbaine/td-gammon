@@ -26,4 +26,5 @@ results = head_to_head.trial(
         (-2 * results[0] + -1 * results[1] + results[2] + 2 * results[3])
         / (sum(results)),
     ),
+    games=1000,
 )
