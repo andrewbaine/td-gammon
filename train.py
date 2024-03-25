@@ -10,7 +10,7 @@ if __name__ == "__main__":
     trainer = Trainer(net)
     observer = tesauro.Tesauro198()
 
-    n_episodes = 200000
+    n_episodes = 300000
     results = [0, 0, 0, 0]
     lengths = []
     bck = backgammon_env.Backgammon()
