@@ -12,7 +12,7 @@ class Trainer:
         self.λ = λ
         self.nn = network.with_utility(model)
         self.eligibility_trace = [
-            torch.zeros_like(w, requires_grad=False) for w in self.nn.parameters()
+            (w, torch.zeros_like(w, requires_grad=False)) for w in model.parameters()
         ]
 
     def v(self, observation):
@@ -25,16 +25,10 @@ class Trainer:
         with torch.no_grad():
             δ = v_next - v.item()  # td error
             αδ = self.α * δ  # learning rate * td error
-            et = self.eligibility_trace
-            for i, weights in enumerate(self.nn.parameters()):
-                if weights.grad is None:
-                    raise Exception("we need grad")
-                et[i] = torch.add(torch.mul(et[i], self.λ), weights.grad)
-                weights.add_(torch.mul(et[i], αδ))
-            # utility function is always -2x1 - x2 + x3 + 2x4
-            self.nn.utility.weight = nn.Parameter(
-                torch.tensor([x for x in (-2, -1, 1, 2)], dtype=torch.float)
-            )
+            for w, e in self.eligibility_trace:
+                e.mul_(self.λ)
+                e.add_(w.grad)
+                w.add_(torch.mul(e, αδ))
 
 
 def best(bck, observer, gamestate, dice, network):
