@@ -1,6 +1,7 @@
 import torch
 import network
 import pytest
+import model
 
 net = network.utility()
 
