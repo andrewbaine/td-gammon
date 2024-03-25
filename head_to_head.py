@@ -13,12 +13,12 @@ def trial(a, b, games=100, cb=None):
     n1 = network.with_utility(n1)
     n2 = network.with_utility(n2)
     with torch.no_grad():
-        for i in range(games):
+        for _ in range(games):
             dice = backgammon.first_roll()
             state = bck.s0()
 
             while True:
-                (board, player_1) = state
+                (_, player_1) = state
                 (n, observer) = (n1, observer_1) if player_1 else (n2, observer_2)
                 done = bck.done(state)
                 if done is not None:
@@ -32,7 +32,7 @@ def trial(a, b, games=100, cb=None):
                         case 2:
                             results[3] += 1
                         case _:
-                            raise Exception("unexpected")
+                            assert False
                     break
                 move = model.best(bck, observer, state, dice, n)
                 state = bck.next(state, move)
