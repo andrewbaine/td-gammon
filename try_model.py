@@ -10,6 +10,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("m1")
     parser.add_argument("m2")
+    parser.add_argument("--games", type=int, default=1)
     args = parser.parse_args()
 
     layers = [198, 40, 4]
@@ -33,5 +34,5 @@ if __name__ == "__main__":
             (-2 * results[0] + -1 * results[1] + results[2] + 2 * results[3])
             / (sum(results)),
         ),
-        games=1000,
+        games=args.games,
     )
