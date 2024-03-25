@@ -1,8 +1,9 @@
 import torch
+
 import backgammon
-import network
-import model
 import backgammon_env
+import model
+import network
 
 
 def trial(a, b, games=100, cb=None):
