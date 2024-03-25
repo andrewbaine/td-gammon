@@ -1,6 +1,10 @@
 import torch
+
 import backgammon
+import backgammon_env
+import model
 import network
+import tesauro
 
 layers = [198, 40, 4]
 
@@ -10,11 +14,9 @@ nn = network.with_utility(nn)
 
 i_am_player_1 = int(input("Are you first? 1/0 for Yes/No: "))
 
-import backgammon_env
-import model
 
 bck = backgammon_env.Backgammon()
-observer = backgammon_env.Teasoro198()
+observer = tesauro.Tesauro198()
 
 state = bck.s0()
 

@@ -1,19 +1,20 @@
 import torch
 import backgammon_env
 import network
+import tesauro
 
 layers = [198, 40, 4]
 
 
 good = network.layered(*layers)
-good.load_state_dict(torch.load("model.3000.pt"))
+good.load_state_dict(torch.load("model.2000.pt"))
 
 bad = network.layered(*layers)
-bad.load_state_dict(torch.load("model.2500.pt"))
+bad.load_state_dict(torch.load("model.1000.pt"))
 
 
 bck = backgammon_env.Backgammon()
-observer = backgammon_env.Teasoro198()
+observer = tesauro.Tesauro198()
 
 import head_to_head
 

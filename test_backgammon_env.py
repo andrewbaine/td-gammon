@@ -1,13 +1,12 @@
 import backgammon_env
-import torch
+import tesauro
 
 
-def test_tesoro():
+def test_tesauro():
     bck = backgammon_env.Backgammon()
-    observer = backgammon_env.Teasoro198()
+    observer = tesauro.Tesauro198()
     state = bck.s0(player_1=True)
     o = observer.observe(state)
-    print(state)
     assert o == [
         0,  # 1
         0,

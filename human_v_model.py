@@ -1,8 +1,10 @@
 import torch
+
 import backgammon
-import network
 import backgammon_env
 import model
+import network
+import tesauro
 
 layers = [198, 40, 4]
 
@@ -12,7 +14,7 @@ n = network.with_utility(n)
 
 
 bck = backgammon_env.Backgammon()
-observer = backgammon_env.Teasoro198()
+observer = tesauro.Tesauro198()
 
 with torch.no_grad():
 
