@@ -46,13 +46,11 @@ class Trainer:
         while True:
             done = self._bck.done(state)
             if done:
-                # print("done", done)
                 self.train(done, state)
                 return (t, done)
             else:
                 with torch.no_grad():
                     best_move = self.best(state, dice)
-                    # print("playing", best_move)
                 next_state = self._bck.next(state, best_move)
                 tensor = self.observe(next_state)
                 v_next = self.nn(tensor).item()
