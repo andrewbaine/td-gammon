@@ -26,7 +26,6 @@ if __name__ == "__main__":
             assert False
     assert observe is not None
 
-    input_layers = args.hidden
     args = parser.parse_args()
     bck = backgammon_env.Backgammon()
     t = observe(bck.s0(player_1=True))
