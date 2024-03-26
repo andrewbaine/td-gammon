@@ -188,7 +188,7 @@ def _dubs(board, result, d1, best=0):
                                     if (dest4 < 25 and board[dest4] > -2) or (
                                         dominant_pip is None
                                         or (
-                                            dominant_pip > 17
+                                            dominant_pip > 18
                                             and (dest4 == 25 or dominant_pip == l)
                                         )
                                     ):
