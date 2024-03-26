@@ -9,17 +9,20 @@ import tesauro
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--hidden-1", type=int, default=40)
+    parser.add_argument("--hidden-2", type=int, default=40)
     parser.add_argument("m1")
     parser.add_argument("m2")
     parser.add_argument("--games", type=int, default=1)
     args = parser.parse_args()
 
-    layers = [198, 40, 4]
+    l1 = [198, args.hidden_1, 4]
+    l2 = [198, args.hidden_2, 4]
 
-    network_1 = network.layered(*layers)
+    network_1 = network.layered(*l1)
     network_1.load_state_dict(torch.load(args.m1))
 
-    network_2 = network.layered(*layers)
+    network_2 = network.layered(*l2)
     network_2.load_state_dict(torch.load(args.m2))
 
     bck = backgammon_env.Backgammon()
