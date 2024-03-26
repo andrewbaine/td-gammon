@@ -50,7 +50,7 @@ class Trainer:
     def td_episode(self, i):
         # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
         state = self._bck.s0(player_1=(i % 2 == 0))
-        dice = backgammon.first_roll()
+        dice = first_roll()
 
         t = 0
         while True:
@@ -67,6 +67,17 @@ class Trainer:
                 tensor = self.observe(next_state)
                 v_next = self.nn(tensor).item()
                 self.train(v_next, state)
-                dice = backgammon.roll()
+                dice = roll()
                 state = next_state
             t += 1
+
+
+def roll():
+    return tuple(torch.randint(1, 7, (2,)).tolist())
+
+
+def first_roll():
+    while True:
+        (d1, d2) = roll()
+        if d1 != d2:
+            return (d1, d2)

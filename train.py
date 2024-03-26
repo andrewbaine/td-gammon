@@ -29,7 +29,7 @@ if __name__ == "__main__":
     input_layers = args.hidden
     args = parser.parse_args()
     bck = backgammon_env.Backgammon()
-    t = observe(bck.s0())
+    t = observe(bck.s0(player_1=True))
     layers = [t.size()[0], args.hidden, 4]
     nn = network.layered(*layers)
     trainer = Trainer(bck, nn, observe)
