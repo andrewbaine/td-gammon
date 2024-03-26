@@ -1,8 +1,7 @@
 import torch
 
-import backgammon
-
 import network
+import policy
 
 
 class Trainer:
@@ -15,6 +14,7 @@ class Trainer:
             (w, torch.zeros_like(w, requires_grad=False)) for w in model.parameters()
         ]
         self.observe = observe
+        self._policy = policy.Policy_1_ply(bck, observe, self.nn)
 
     def v(self, state):
         tensor = self.observe(state)
@@ -34,18 +34,8 @@ class Trainer:
                 w.add_(torch.mul(e, αδ))
 
     def best(self, state, dice):
-        (_, player_1) = state
-        moves = self._bck.available_moves(state, dice)
-        best = None
-        best_move = None
-        for move in moves:
-            s = self._bck.next(state, move)
-            tensor = self.observe(s)
-            y = self.nn(tensor).item()
-            if best is None or ((y > best) if player_1 else (y < best)):
-                best = y
-                best_move = move
-        return best_move
+        (board, player_1) = state
+        return self._policy.choose_action((board, player_1, dice))
 
     def td_episode(self, i):
         # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
