@@ -3,16 +3,12 @@ import torch
 import backgammon
 import backgammon_env
 import model
-import network
 
 
 def trial(a, b, games=100, cb=None):
     bck = backgammon_env.Backgammon()
-    (n1, observer_1) = a
-    (n2, observer_2) = b
+    [trainer_1, trainer_2] = [model.Trainer(bck, n, observe) for (n, observe) in [a, b]]
     results = [0, 0, 0, 0]
-    n1 = network.with_utility(n1)
-    n2 = network.with_utility(n2)
     with torch.no_grad():
         for _ in range(games):
             dice = backgammon.first_roll()
@@ -20,7 +16,7 @@ def trial(a, b, games=100, cb=None):
 
             while True:
                 (_, player_1) = state
-                (n, observer) = (n1, observer_1) if player_1 else (n2, observer_2)
+                trainer = (trainer_1) if player_1 else (trainer_2)
                 done = bck.done(state)
                 if done is not None:
                     match done:
@@ -35,7 +31,7 @@ def trial(a, b, games=100, cb=None):
                         case _:
                             assert False
                     break
-                move = model.best(bck, observer, state, dice, n)
+                move = trainer.best(state, dice)
                 state = bck.next(state, move)
                 dice = backgammon.roll()
             if cb is not None:

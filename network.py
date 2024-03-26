@@ -22,10 +22,14 @@ def layered(*layers):
     )
 
 
+def utility_tensor():
+    return torch.tensor([x for x in (-2, -1, 1, 2)], dtype=torch.float)
+
+
 def utility():
     u = nn.Linear(4, 1, bias=False)
     u.weight = nn.Parameter(
-        torch.tensor([x for x in (-2, -1, 1, 2)], dtype=torch.float),
+        utility_tensor(),
     )
     return u
 

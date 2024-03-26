@@ -3,6 +3,7 @@ import argparse
 import torch
 
 import backgammon_env
+import head_to_head
 import network
 import tesauro
 
@@ -15,24 +16,29 @@ if __name__ == "__main__":
 
     layers = [198, 40, 4]
 
-    good = network.layered(*layers)
-    good.load_state_dict(torch.load(args.m1))
+    network_1 = network.layered(*layers)
+    network_1.load_state_dict(torch.load(args.m1))
 
-    bad = network.layered(*layers)
-    bad.load_state_dict(torch.load(args.m2))
+    network_2 = network.layered(*layers)
+    network_2.load_state_dict(torch.load(args.m2))
 
     bck = backgammon_env.Backgammon()
-    observer = tesauro.Tesauro198()
-
-    import head_to_head
+    observe = tesauro.observe
 
     results = head_to_head.trial(
-        (good, observer),
-        (bad, observer),
+        (network_1, observe),
+        (network_2, observe),
         cb=lambda results: print(
             results,
             (-2 * results[0] + -1 * results[1] + results[2] + 2 * results[3])
             / (sum(results)),
         ),
         games=args.games,
+    )
+    print(
+        (-2 * results[0] + -1 * results[1] + results[2] + 2 * results[3])
+        / (sum(results)),
+        args.m1,
+        "v",
+        args.m2,
     )

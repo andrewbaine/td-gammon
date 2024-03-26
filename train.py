@@ -1,28 +1,48 @@
 import backgammon_env
 import network
-from model import Trainer, td_episode
+from model import Trainer
 import tesauro
 import torch
+import argparse
+
+from pathlib import Path
 
 if __name__ == "__main__":
-    layers = [198, 40, 4]
-    net = network.layered(*layers)
-    trainer = Trainer(net)
-    observer = tesauro.Tesauro198()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--iterations", type=int, default=300000)
+    parser.add_argument("--encoding", choices=["tesauro198"], required=True)
+    parser.add_argument("--hidden", type=int, default=40)
+    parser.add_argument("name")
+    args = parser.parse_args()
 
-    n_episodes = 300000
-    results = [0, 0, 0, 0]
-    lengths = []
+    Path(args.name).mkdir(parents=True, exist_ok=True)
+
+    observer = None
+    tensor = None
+    match args.encoding:
+        case "tesauro198":
+            observe = tesauro.observe
+        case _:
+            assert False
+    assert observe is not None
+
+    input_layers = args.hidden
+    args = parser.parse_args()
     bck = backgammon_env.Backgammon()
-    for i in range(0, n_episodes):
+    t = observe(bck.s0())
+    layers = [t.size()[0], args.hidden, 4]
+    nn = network.layered(*layers)
+    trainer = Trainer(bck, nn, observe)
+
+    results = [0, 0, 0, 0]
+    for i in range(0, args.iterations):
         if (
             (i < 1000 and (i % 100 == 0))
             or (i < 10000 and (i % 500) == 0)
             or (i % 1000 == 0)
         ):
-            torch.save(net.state_dict(), "model.{i}.pt".format(i=i))
-        (n, result) = td_episode(bck, observer, trainer, i)
-        lengths.append(n)
+            torch.save(nn.state_dict(), "{dir}/model.{i}.pt".format(i=i, dir=args.name))
+        (n, result) = trainer.td_episode(i)
         match result:
             case -2:
                 results[0] += 1
@@ -44,5 +64,8 @@ if __name__ == "__main__":
             == 7.0
         )
 
-    print(lengths, results)
-    torch.save(net.state_dict(), "model.final.pt")
+    print(results)
+    torch.save(
+        nn.state_dict(),
+        "{dir}/model.{i}.final.pt".format(i=args.iterations, dir=args.name),
+    )

@@ -17,17 +17,15 @@ def test_predictability_of_network():
 
     b = backgammon_env.Backgammon()
     s = b.s0(player_1=True)
-    observer = tesauro.Tesauro198()
-    o = observer.observe(s)
-    t = torch.tensor(o)
-    v = nn(t)
+    tensor = tesauro.observe(s)
+    v = nn(tensor).tolist()
     expected = [
         0.3743259906768799,
         0.5034601092338562,
         0.4764396548271179,
         0.43971505761146545,
     ]
-    assert v.tolist() == expected
+    assert v == expected
 
 
 def test_predictability_of_network_after_train():
@@ -43,16 +41,12 @@ def test_predictability_of_network_after_train():
     s = b.s0(player_1=True)
     m = ((8, 5), (6, 5))
     s1 = b.next(s, m)
-    observer = tesauro.Tesauro198()
-    trainer = model.Trainer(nn)
+    observe = tesauro.observe
+    trainer = model.Trainer(b, nn, observe)
 
-    o = observer.observe(s)
-    t = torch.tensor(o)
-    v = nn(t)
+    v = nn(observe(s))
 
-    o1 = observer.observe(s1)
-    t1 = torch.tensor(o1)
-    v1 = nn(t1)
+    v1 = nn(observe(s1))
 
     assert v.tolist() == [
         0.3743259906768799,
@@ -67,15 +61,15 @@ def test_predictability_of_network_after_train():
         0.43810516595840454,
     ]
 
-    trainer.train(v1.dot(torch.tensor([-2, -1, 1, 2], dtype=torch.float)).item(), o)
+    trainer.train(v1.dot(network.utility_tensor()).item(), s)
 
-    assert nn(t).tolist() == [
+    assert nn(observe(s)).tolist() == [
         0.37418854236602783,
         0.5033813714981079,
         0.47652003169059753,
         0.43986862897872925,
     ]
-    assert nn(t1).tolist() == [
+    assert nn(observe(s1)).tolist() == [
         0.3717195987701416,
         0.5024778246879578,
         0.4750007390975952,
