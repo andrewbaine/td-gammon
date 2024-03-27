@@ -11,11 +11,10 @@ import network
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--games", type=int, default=1)
-    parser.add_argument("--dir", type=str, default="tesauro80")
+    parser.add_argument("--dir", type=str, required=True)
     parser.add_argument("--hidden", type=int, default=80)
     args = parser.parse_args()
 
-    p = "tesauro80"
     layers = [198, args.hidden, 4]
 
     network_1 = network.layered(*layers)
@@ -26,8 +25,8 @@ if __name__ == "__main__":
 
     files = [
         f
-        for f in listdir(p)
-        if isfile(join(p, f)) and re.match("model\\.\\d+0000.pt", f)
+        for f in listdir(args.dir)
+        if isfile(join(args.dir, f)) and re.match("model\\.\\d+0000.pt", f)
     ]
 
     d = {}
