@@ -71,4 +71,6 @@ if __name__ == "__main__":
     ]
     results.sort()
     for _, equity, k, v in results:
-        print(k, equity, v)
+        print(
+            "{key}:\t{v:6.3f}\t{results}".format(key=k, v=(equity / sum(v)), results=v)
+        )
