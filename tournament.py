@@ -13,6 +13,8 @@ if __name__ == "__main__":
     parser.add_argument("--games", type=int, default=1)
     parser.add_argument("--dir", type=str, required=True)
     parser.add_argument("--hidden", type=int, default=80)
+    parser.add_argument("--start", type=int, default=0)
+    parser.add_argument("--step", type=int, default=1000)
     parser.add_argument(
         "--softmax", action=argparse.BooleanOptionalAction, default=False
     )
@@ -30,7 +32,10 @@ if __name__ == "__main__":
     files = [
         f
         for f in listdir(args.dir)
-        if isfile(join(args.dir, f)) and re.match("model\\.\\d+0000.pt", f)
+        if isfile(join(args.dir, f))
+        and re.match("model\\.\\d+000.pt", f)
+        and int(f.split(".")[1]) >= args.start
+        and (int(f.split(".")[1]) % args.step) == 0
     ]
 
     d = {}
@@ -60,7 +65,10 @@ if __name__ == "__main__":
                     f1_results[i] += x
                     f2_results[3 - i] += x
 
-    results = [(-2 * v[0] - v[1] + v[2] + 2 * v[3], k, v) for k, v in d.items()]
+    results = [
+        (int(k.split(".")[1]), -2 * v[0] - v[1] + v[2] + 2 * v[3], k, v)
+        for k, v in d.items()
+    ]
     results.sort()
-    for equity, k, v in results:
+    for _, equity, k, v in results:
         print(k, equity, v)
