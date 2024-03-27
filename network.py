@@ -19,7 +19,7 @@ def layered(*layers, softmax=False):
         )
     )
     if softmax:
-        layers.append(nn.Softmax())
+        layers.append(nn.Softmax(dim=0))
     return nn.Sequential(*layers)
 
 
