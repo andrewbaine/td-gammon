@@ -52,15 +52,13 @@ if __name__ == "__main__":
             if done is not None:
                 match done:
                     case -2:
-                        print(("human" if player_1 else "robot") + " won by 2 points")
+                        print(("robot" if human_first else "human") + " won 2 points")
                     case -1:
-                        print(("human" if player_1 else "robot") + " won 1 point")
+                        print(("robot" if human_first else "human") + " won 1 point")
                     case 1:
-                        print(("human" if not player_1 else "robot") + " won 1 point")
+                        print(("human" if human_first else "robot") + " won 1 point")
                     case 2:
-                        print(
-                            ("human" if not player_1 else "robot") + " won by 2 points"
-                        )
+                        print(("human" if human_first else "robot") + " won 2 points")
                     case _:
                         raise Exception("unexpected")
                 break
