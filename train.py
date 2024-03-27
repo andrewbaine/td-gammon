@@ -12,6 +12,9 @@ if __name__ == "__main__":
     parser.add_argument("--iterations", type=int, default=300000)
     parser.add_argument("--encoding", choices=["tesauro198"], required=True)
     parser.add_argument("--hidden", type=int, default=40)
+    parser.add_argument(
+        "--softmax", action=argparse.BooleanOptionalAction, default=False
+    )
     parser.add_argument("name")
     args = parser.parse_args()
 
@@ -30,7 +33,7 @@ if __name__ == "__main__":
     bck = backgammon_env.Backgammon()
     t = observe(bck.s0(player_1=True))
     layers = [t.size()[0], args.hidden, 4]
-    nn = network.layered(*layers)
+    nn = network.layered(*layers, softmax=args.softmax)
     trainer = Trainer(bck, nn, observe)
 
     results = [0, 0, 0, 0]

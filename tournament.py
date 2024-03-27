@@ -13,13 +13,17 @@ if __name__ == "__main__":
     parser.add_argument("--games", type=int, default=1)
     parser.add_argument("--dir", type=str, required=True)
     parser.add_argument("--hidden", type=int, default=80)
+    parser.add_argument(
+        "--softmax", action=argparse.BooleanOptionalAction, default=False
+    )
+
     args = parser.parse_args()
 
     layers = [198, args.hidden, 4]
 
-    network_1 = network.layered(*layers)
+    network_1 = network.layered(*layers, softmax=args.softmax)
 
-    network_2 = network.layered(*layers)
+    network_2 = network.layered(*layers, softmax=args.softmax)
 
     observe = tesauro.observe
 

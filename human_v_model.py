@@ -14,6 +14,9 @@ if __name__ == "__main__":
     parser.add_argument("--hidden", type=int, default=40)
     parser.add_argument("--model", required=True)
     parser.add_argument("--encoding", choices=["tesauro198"], required=True)
+    parser.add_argument(
+        "--softmax", action=argparse.BooleanOptionalAction, default=False
+    )
     args = parser.parse_args()
 
     bck = backgammon_env.Backgammon()
@@ -29,7 +32,7 @@ if __name__ == "__main__":
     t = observe(bck.s0(player_1=True))
     layers = [t.size()[0], args.hidden, 4]
 
-    nn = network.layered(*layers)
+    nn = network.layered(*layers, softmax=args.softmax)
     nn.load_state_dict(torch.load(args.model))
     nn = network.with_utility(nn)
     policy = policy.Policy_1_ply(bck, observe, nn)

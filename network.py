@@ -5,21 +5,22 @@ import itertools
 from collections import OrderedDict
 
 
-def layered(*layers):
-    return nn.Sequential(
-        *list(
-            itertools.chain(
-                *[
-                    (
-                        [nn.Linear(n, layers[i + 1]), nn.Sigmoid()]
-                        if i < (len(layers) - 1)
-                        else []
-                    )
-                    for (i, n) in enumerate(layers)
-                ]
-            )
+def layered(*layers, softmax=False):
+    layers = list(
+        itertools.chain(
+            *[
+                (
+                    [nn.Linear(n, layers[i + 1]), nn.Sigmoid()]
+                    if i < (len(layers) - 1)
+                    else []
+                )
+                for (i, n) in enumerate(layers)
+            ]
         )
     )
+    if softmax:
+        layers.append(nn.Softmax())
+    return nn.Sequential(*layers)
 
 
 def utility_tensor():
