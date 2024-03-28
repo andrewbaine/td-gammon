@@ -65,12 +65,17 @@ if __name__ == "__main__":
                     f1_results[i] += x
                     f2_results[3 - i] += x
 
-    results = [
-        (int(k.split(".")[1]), -2 * v[0] - v[1] + v[2] + 2 * v[3], k, v)
-        for k, v in d.items()
-    ]
+    results = [(-2 * v[0] - v[1] + v[2] + 2 * v[3], k, v) for k, v in d.items()]
+
     results.sort()
-    for _, equity, k, v in results:
+    results = [
+        (int(k.split(".")[1]), i, e, k, v) for i, (e, k, v) in enumerate(results)
+    ]
+
+    results.sort()
+    for _, rank, equity, k, v in results:
         print(
-            "{key}:\t{v:6.3f}\t{results}".format(key=k, v=(equity / sum(v)), results=v)
+            "{key}:\t{rank}\t{v:6.3f}\t{results}".format(
+                key=k, rank=rank, v=(equity / sum(v)), results=v
+            )
         )
