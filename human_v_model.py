@@ -4,7 +4,6 @@ import torch
 
 import backgammon
 import backgammon_env
-import model
 import network
 import tesauro
 import policy
