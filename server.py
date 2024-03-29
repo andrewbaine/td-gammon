@@ -158,10 +158,15 @@ def main():
 
     n = args.games
 
+    benchmark_player = "gnubg"
+    player_under_evaluation = "andrewbaine"
+
     input = "\n".join(
         [
             "new session",
-            "set player andrewbaine external localhost:8901",
+            "set player {player} external localhost:{port}".format(
+                player=player_under_evaluation, port=args.port
+            ),
             "set jacoby off",
             "new session {n}".format(n=n),
             "",
@@ -175,12 +180,12 @@ def main():
     results = [
         count(completed_process.stdout, x)
         for x in [
-            "gnubg wins a backgammon",
-            "gnubg wins a gammon",
-            "gnubg wins a single game",
-            "andrewbaine wins a single game",
-            "andrewbaine wins a gammon",
-            "andrewbaine wins a backgammon",
+            "{p} wins a backgammon".format(p=benchmark_player),
+            "{p} wins a gammon".format(p=benchmark_player),
+            "{p} wins a single game".format(p=benchmark_player),
+            "{p} wins a single game".format(p=player_under_evaluation),
+            "{p} wins a gammon".format(p=player_under_evaluation),
+            "{p} wins a backgammon".format(p=player_under_evaluation),
         ]
     ]
     print("done")
