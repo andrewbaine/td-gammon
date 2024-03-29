@@ -36,9 +36,20 @@ Board = namedtuple(
 )
 
 
-def get_board(line):
+def count(haystack, needle):
+    n = 0
+    start = 0
+    while True:
+        i = haystack.find(needle, start)
+        if i == -1:
+            break
+        else:
+            n += 1
+            start = i + len(needle)
+    return n
 
-    print("processing", line)
+
+def get_board(line):
     tokens = line.split(":")
     print(tokens)
     print(len(tokens))
@@ -122,6 +133,7 @@ def main():
     )
     parser.add_argument("--debug", action=argparse.BooleanOptionalAction)
     parser.add_argument("--port", type=int, default=8901)
+    parser.add_argument("--games", type=int, default=10)
 
     args = parser.parse_args()
     bck = backgammon_env.Backgammon()
@@ -144,13 +156,14 @@ def main():
     t = threading.Thread(target=serve, args=(args.port, pol, args.debug))
     t.start()
 
+    n = args.games
+
     input = "\n".join(
         [
             "new session",
             "set player andrewbaine external localhost:8901",
             "set jacoby off",
-            "new session 2",
-            "export session text session.txt",
+            "new session {n}".format(n=n),
             "",
         ]
     )
@@ -159,8 +172,19 @@ def main():
     )
     t.join()
     print(completed_process)
+    results = [
+        count(completed_process.stdout, x)
+        for x in [
+            "gnubg wins a backgammon",
+            "gnubg wins a gammon",
+            "gnubg wins a single game",
+            "andrewbaine wins a single game",
+            "andrewbaine wins a gammon",
+            "andrewbaine wins a backgammon",
+        ]
+    ]
     print("done")
-    connection = None
+    print(results)
 
 
 def serve(port, pol, debug=False):
