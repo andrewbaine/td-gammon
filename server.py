@@ -90,8 +90,6 @@ def get_response(pol, b):
     player_1 = b.turn == 1
     (dice, dice_1) = b.dice
     assert dice == dice_1
-    print(b)
-    print(backgammon.to_str(b.board))
 
     if dice == (0, 0):
         if b.was_doubled:
@@ -118,6 +116,8 @@ def main():
     parser.add_argument(
         "--softmax", action=argparse.BooleanOptionalAction, default=False
     )
+    parser.add_argument("--debug", action=argparse.BooleanOptionalAction)
+
     args = parser.parse_args()
     bck = backgammon_env.Backgammon()
     observe = None
@@ -153,7 +153,11 @@ def main():
                 for line in lines(connection):
                     b = get_board(line)
                     response = get_response(pol, b)
-                    print("response", response)
+                    if args.debug:
+                        print(line)
+                        print(backgammon.to_str(b.board))
+                        print("dice", b.dice[0])
+                        print("response", response)
                     connection.send((response + "\n").encode())
         except KeyboardInterrupt:
             if connection:
