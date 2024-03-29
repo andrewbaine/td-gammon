@@ -51,8 +51,6 @@ def count(haystack, needle):
 
 def get_board(line):
     tokens = line.split(":")
-    print(tokens)
-    print(len(tokens))
     assert len(tokens) == 53
 
     assert tokens[0] == "board"
@@ -176,7 +174,8 @@ def main():
         ["gnubg", "-q", "-t"], input=input, capture_output=True, text=True
     )
     t.join()
-    print(completed_process)
+    if completed_process.stderr:
+        raise Exception(completed_process.stderr)
     results = [
         count(completed_process.stdout, x)
         for x in [
@@ -188,7 +187,6 @@ def main():
             "{p} wins a backgammon".format(p=player_under_evaluation),
         ]
     ]
-    print("done")
     print(results)
 
 
