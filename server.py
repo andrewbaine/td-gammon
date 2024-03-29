@@ -1,7 +1,9 @@
+import subprocess
 import argparse
 from collections import namedtuple
 import socket
 import policy
+import threading
 
 import torch
 
@@ -84,6 +86,8 @@ def lines(connection):
                 word = b"".join(chunks).decode().strip()
                 chunks.clear()
                 yield word
+        else:
+            return
 
 
 def get_response(pol, b):
@@ -117,6 +121,7 @@ def main():
         "--softmax", action=argparse.BooleanOptionalAction, default=False
     )
     parser.add_argument("--debug", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--port", type=int, default=8901)
 
     args = parser.parse_args()
     bck = backgammon_env.Backgammon()
@@ -136,24 +141,44 @@ def main():
     nn.load_state_dict(torch.load(args.model))
     nn = network.with_utility(nn)
     pol = policy.Policy_1_ply(bck, observe, nn)
+    t = threading.Thread(target=serve, args=(args.port, pol, args.debug))
+    t.start()
 
+    input = "\n".join(
+        [
+            "new session",
+            "set player andrewbaine external localhost:8901",
+            "set jacoby off",
+            "new session 2",
+            "export session text session.txt",
+            "",
+        ]
+    )
+    completed_process = subprocess.run(
+        ["gnubg", "-q", "-t"], input=input, capture_output=True, text=True
+    )
+    t.join()
+    print(completed_process)
+    print("done")
+    connection = None
+
+
+def serve(port, pol, debug=False):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    server_address = ("localhost", 8901)
+    server_address = ("localhost", port)
     server.bind(server_address)
 
     server.listen(1)
-    connection = None
+
     try:
-        connection, client = server.accept()
-        print(client)
+        connection, _ = server.accept()
         try:
             with torch.no_grad():
-
                 for line in lines(connection):
                     b = get_board(line)
                     response = get_response(pol, b)
-                    if args.debug:
+                    if debug:
                         print(line)
                         print(backgammon.to_str(b.board))
                         print("dice", b.dice[0])
