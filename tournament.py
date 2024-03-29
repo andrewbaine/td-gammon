@@ -40,7 +40,6 @@ if __name__ == "__main__":
 
     d = {}
     for f1 in files:
-        print(f1)
         if f1 not in d:
             d[f1] = [0, 0, 0, 0]
         f1_results = d[f1]
@@ -73,9 +72,5 @@ if __name__ == "__main__":
     ]
 
     results.sort()
-    for _, rank, equity, k, v in results:
-        print(
-            "{key}:\t{rank}\t{v:6.3f}\t{results}".format(
-                key=k, rank=rank, v=(equity / sum(v)), results=v
-            )
-        )
+    for key, rank, equity, long_key, v in results:
+        print("{key}\t{v:6.3f}".format(key=key, v=(equity / sum(v))))
