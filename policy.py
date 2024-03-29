@@ -1,4 +1,67 @@
 import heapq
+import numpy
+
+
+def evaluate_action_1_ply(bck, observe, nn, state, action):
+    (board, player_1, _) = state
+    s = bck.next((board, player_1), action)
+    t = observe(s)
+    return nn(t).item()
+
+
+def choose_action_1_ply(bck, observe, nn, state):
+    (board, player_1, dice) = state
+    assert bck.done((board, player_1)) is None  # remove in production
+    moves = bck.available_moves((board, player_1), dice)
+
+    best = None
+    best_move = None
+
+    for action in moves:
+        y = evaluate_action_1_ply(bck, observe, nn, state, action)
+        if best is None or ((y > best) if player_1 else (y < best)):
+            best = y
+            best_move = action
+    return best_move
+
+
+def evaluate_action_2_ply(bck, observe, nn, state, action):
+    (board, player_1, _) = state
+    assert bck.done((board, player_1)) is None  # remove in production
+    s = bck.next((board, player_1), action)
+    if bck.done(s):
+        t = observe(s)
+        return nn(t).item()
+
+    equity = 0
+    count = 0
+    (board, player_1) = s
+    for d1 in range(1, 7):
+        for d2 in range(d1, 7):
+            factor = 1 if d1 == d2 else 2
+            dice = (d1, d2)
+            action = choose_action_1_ply(bck, observe, nn, state)
+            e = evaluate_action_1_ply(bck, observe, nn, state, action)
+            equity += factor * e
+            count += factor
+    assert count == 36
+    return equity / count
+
+
+def choose_action_2_ply(bck, observe, nn, state):
+    assert bck.done(state) is None  # remove in production
+    (board, player_1, dice) = state
+    moves = bck.available_moves((board, player_1), dice)
+
+    best = None
+    best_move = None
+
+    for action in moves:
+        y = evaluate_action_2_ply(bck, observe, nn, state, action)
+        if best is None or ((y > best) if player_1 else (y < best)):
+            best = y
+            best_move = action
+    return best_move
 
 
 class Policy:
@@ -7,67 +70,36 @@ class Policy:
         self._observe = observe
         self._nn = nn
 
-    def evaluate_action(self, state, action):
-        assert False
-
     def choose_action(self, state):
-        (board, player_1, dice) = state
-        moves = self._bck.available_moves((board, player_1), dice)
-
-        best = None
-        best_move = None
-
-        for action in moves:
-            y = self.evaluate_action(state, action)
-            if best is None or ((y > best) if player_1 else (y < best)):
-                best = y
-                best_move = action
-        return best_move
+        assert False
 
 
 class Policy_1_ply(Policy):
     def __init__(self, bck, observe, nn):
         super().__init__(bck, observe, nn)
 
-    def evaluate_action(self, state, action):
-        (board, player_1, _) = state
-        s = self._bck.next((board, player_1), action)
-        t = self._observe(s)
-        return self._nn(t).item()
+    def choose_action(self, state):
+        return choose_action_1_ply(self._bck, self._observe, self._nn, state)
 
 
-class Policy_2_ply_exhaustive(Policy):
+class Policy_2_ply_exhaustive(Policy_1_ply):
     def __init__(self, bck, observe, nn):
         super().__init__(bck, observe, nn)
 
-    def evaluate_action(self, state, action):
-        (board, player_1, _) = state
-        s1 = self._bck.next((board, player_1), action)
-
-        if self._bck.done(s1):
-            t = self._observe(s1)
-            return self._nn(t).item()
-        else:
-            (b1, p1) = s1
-            equity_sum = 0
-            equity_count = 0
-            for d1 in range(1, 7):
-                for d2 in range(d1, 7):
-                    # best 1 ply action
-                    a = super().choose_action((b1, p1, (d1, d2)))
-                    s2 = self._bck.next(s1, a)
-                    t = self._observe(s2)
-                    equity = self._nn(t).item()
-                    factor = 1 if d1 == d2 else 2
-                    equity_sum += equity * factor
-                    equity_count += factor
-            assert equity_sum == 36
-            return equity_sum / equity_count
+    def choose_action(self, state):
+        return choose_action_1_ply(self._bck, self._observe, self._nn, state)
 
 
-class Policy_2_ply_seletive(Policy_2_ply_exhaustive):
+class Policy_2_ply_selective(Policy_2_ply_exhaustive):
     def __init__(self, bck, observe, nn, min_comparisons=3, max_comparisons=None):
-        super().__init__(bck, observe, nn)
+        super(Policy_2_ply_selective, self).__init__(bck, observe, nn)
+        assert min_comparisons is None or min_comparisons > -1
+        assert max_comparisons is None or max_comparisons > -1
+        assert (
+            min_comparisons is None
+            or max_comparisons is None
+            or min_comparisons < max_comparisons
+        )
         self._min_comparisons = min_comparisons
         self._max_comparisons = max_comparisons
 
@@ -78,23 +110,21 @@ class Policy_2_ply_seletive(Policy_2_ply_exhaustive):
             return None
 
         h = []
-        vs = []
         # collect the 1 ply evaluations
         for action in moves:
-            v = super().evaluate_action(state, action)
-            vs.append(v)
+
+            v = evaluate_action_1_ply(self._bck, self._observe, self._nn, state, action)
             item = (-1 * v if player_1 else v, action)
             heapq.heappush(h, item)
 
         # compute the standard deviation
-        vs = [v for (_, v) in moves]
-        mean = mean = sum(vs) / len(vs)
-        variance = sum([((x - mean) ** 2) for x in vs]) / len(vs)
-        std = variance**0.5
+        std = numpy.std([v for (v, _) in h])
 
         # pop off our best 1_ply candidate
         (best_equity_1_ply, best_action) = heapq.heappop(h)
-        best_equity = super().evaluate_action(state, best_action)
+        best_equity = evaluate_action_2_ply(
+            self._bck, self._observe, self._nn, state, best_action
+        )
         comparison_count = 0
 
         # for (potentially every, but probably only a few)
@@ -109,15 +139,18 @@ class Policy_2_ply_seletive(Policy_2_ply_exhaustive):
                 self._max_comparisons is not None
                 and comparison_count > self._max_comparisons
             )
+            move_under_consideration_differs_too_much = (
+                abs(equity_1_ply - best_equity_1_ply) > std
+            )
             if stop_allowed and (
-                comparison_count_exceeded
-                or (abs(equity_1_ply - best_equity_1_ply) > std)
+                comparison_count_exceeded or move_under_consideration_differs_too_much
             ):
                 break
             else:
-                equity = super().evaluate_action(state, action)
+                equity = evaluate_action_2_ply(
+                    self._bck, self._observe, self._nn, state, action
+                )
                 if (equity > best_equity) if player_1 else (equity < best_equity):
-                    print("2 ply superior!")
                     best_equity = equity
                     best_action = action
             comparison_count += 1
