@@ -7,7 +7,7 @@ y = []
 
 
 for line in sys.stdin:
-    tokens = [int(x) for x in line.strip().split("\t")]
+    tokens = [float(x.strip()) for x in line.strip().split("\t")]
     x.append(tokens[0])
     y.append(tokens[1])
 
