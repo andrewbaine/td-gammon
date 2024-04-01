@@ -1,14 +1,21 @@
 zero_t = (0, 1, 0)
 start_t = (1, 16, -1)
-move_t = (0, 16, 1)
-hit_t = (-1, 0, 2)
+move_dest = (0, 16, 1)
+hit_dest = (-1, 0, 2)
 bar_t = (-14, 1, -1)
 empty_t = (-15, 1, 0)
 any_t = (-15, 16, 0)
+impossible_t = (0, 0, 0)
 
 
 def r():
     return range(26)
+
+
+def with_move(moves, start, end, is_hit):
+    ms = [m for m in moves]
+    ms.append((start, end, is_hit))
+    return ms
 
 
 def all_moves_die_start(die, start):
@@ -28,13 +35,13 @@ def all_moves_die_start(die, start):
         assert end > 0
         if start == 25:
             move = [
-                start_t if i == start else move_t if i == end else any_t for i in r()
+                start_t if i == start else move_dest if i == end else any_t for i in r()
             ]
             hit = [
                 (
-                    (1, 16, -1)
+                    start_t
                     if i == start
-                    else hit_t if i == end else bar_t if i == 0 else any_t
+                    else hit_dest if i == end else bar_t if i == 0 else any_t
                 )
                 for i in r()
             ]
@@ -47,7 +54,7 @@ def all_moves_die_start(die, start):
             (
                 zero_t
                 if i == 25
-                else (start_t if i == start else move_t if i == end else any_t)
+                else (start_t if i == start else move_dest if i == end else any_t)
             )
             for i in r()
         ]
@@ -58,7 +65,7 @@ def all_moves_die_start(die, start):
                 else (
                     start_t
                     if i == start
-                    else hit_t if i == end else bar_t if i == 0 else any_t
+                    else hit_dest if i == end else bar_t if i == 0 else any_t
                 )
             )
             for i in r()
@@ -91,26 +98,150 @@ def all_moves_dubs(die):
     assert False
 
 
+def remove_impossible(f):
+    def pred(x):
+        (sum, moves, vector) = x
+        assert len(vector) == 26
+        return all(low < high for (low, high, _) in vector)
+
+    def g(move, die, start):
+        return filter(pred, f(move, die, start))
+
+    return g
+
+
+@remove_impossible
+def combine_move_with_die_and_start(move, die, start):
+    (sum, moves, vector) = move
+    end = start - die
+    # over-bearoff
+    move_vs = []
+    hit_vs = []
+    for i, t in enumerate(vector):
+        (low, high, v) = t
+        if (end < 0 and i > start) or (end == 0 and i > 6):
+            hit_vs.append(impossible_t)
+            if v > 1:
+                move_vs.append(impossible_t)
+            elif v == 1:
+                if low == -1:
+                    assert high == 0
+                    move_vs.append(t)
+                else:
+                    move_vs.append(impossible_t)
+            elif v == 0:
+                move_vs.append(empty_t)
+            elif v < 0:
+                move_vs.append((-v, 1 - v, v))
+            else:
+                assert False
+        elif i > start:
+            if i == 25:
+                if low == -15:
+                    assert high == 1
+                    move_vs.append(t)
+                    hit_vs.append(t)
+                else:
+                    assert low >= 0
+                    t = (low, low + 1, v)
+                    move_vs.append(t)
+                    hit_vs.append(t)
+            else:
+                move_vs.append(t)
+                hit_vs.append(t)
+        elif i == start:
+            if low == -1:
+                assert high == 0
+                if v < 1:
+                    assert False
+                elif v < 2:
+                    move_vs.append(impossible_t)
+                    hit_vs.append(impossible_t)
+                else:
+                    assert v >= 2
+                    t = (-1, 0, v - 1)
+                    move_vs.append(t)
+                    hit_vs.append(t)
+            elif low >= 0:
+                assert high == 16
+                t = (low + 1, high, v - 1)
+                move_vs.append(t)
+                hit_vs.append(t)
+            else:
+                assert low == -15
+                assert high == 16
+                move_vs.append(start_t)
+                hit_vs.append(start_t)
+        elif i > end:
+            hit_vs.append(t)
+            move_vs.append(t)
+        elif i == end:
+            is_hit_destination = low == -1 and high == 0
+            is_move_destination = low == 0 and high == 16
+            if is_hit_destination:
+                move_vs.append((low, high, v + 1))
+                hit_vs.append(impossible_t)
+            elif is_move_destination:
+                move_vs.append((low, high, v + 1))
+                hit_vs.append(impossible_t)
+            else:
+                move_vs.append(move_dest)
+                hit_vs.append(hit_dest)
+        elif i > 0:
+            assert i < end
+            move_vs.append((low, high, v))
+            hit_vs.append((low, high, v))
+        else:
+            assert i == 0
+            move_vs.append((low, high, v))
+            hit_vs.append((low, high, v + 1))  # put a piece on their bar
+    return [
+        (sum + die, with_move(moves, start, end, False), move_vs),
+        (sum + die, with_move(moves, start, end, True), hit_vs),
+    ]
+
+
 def all_moves_a_b(a, b):
-    assert 0 < a < 7
-    assert 0 < b < 7
-    assert a != b
-    assert False
+    result = []
+    moves = []
+    for s1 in range(25, 0, -1):
+        for x in all_moves_die_start(a, s1):
+            moves.append(x)
+        for start in range(s1, s1 - 1, -1):
+            for move in moves:
+                for x in combine_move_with_die_and_start(move, b, start):
+                    result.append(x)
+
+    return result
 
 
-def all_moves_top(d1, d2):
-    if d1 == d2:
-        return all_moves_dubs(d1)
-    else:
-        xs = all_moves_a_b(d1, d2)
-        ys = all_moves_a_b(d2, d1)
+# for d in range(1, 7):
+#     for x in all_moves_die(d):
+#         (die, move, vector) = x
+#         assert die == d
+#         print(move)
+#         print("\t", [a for (a, b, c) in vector])
+#         print("\t", [b for (a, b, c) in vector])
+#         print("\t", [c for (a, b, c) in vector])
 
 
-for d in range(1, 7):
-    for x in all_moves_die(d):
-        (die, move, vector) = x
-        assert die == d
-        print(move)
-        print("\t", [a for (a, b, c) in vector])
-        print("\t", [b for (a, b, c) in vector])
-        print("\t", [c for (a, b, c) in vector])
+# xs = []
+# start_index = 0
+# for d1 in range(1, 7):
+#     for d2 in range(1, d):
+#         moves_dict = {}
+#         vectors_dict = {}
+#         for sum, moves, vector in all_moves_a_b(d1, d2):
+#             moves_key = tuple(moves)
+#             print(moves_key)
+#             assert moves_key not in moves_dict
+#             moves_dict[moves_key] = (sum, moves, vector)
+
+#             vectors_key = tuple(vector)
+#             print(vectors_key)
+#             assert vectors_key not in vectors_dict
+#             vectors_dict[vectors_key] = (sum, moves, vector)
+
+
+print(len(all_moves_a_b(2, 1)))
+print("we rocked it")
