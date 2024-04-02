@@ -1,3 +1,6 @@
+import torch
+from torch import tensor
+
 zero_t = (0, 1, 0)
 start_t = (1, 16, -1)
 move_dest = (0, 16, 1)
@@ -225,23 +228,87 @@ def all_moves_a_b(a, b):
 #         print("\t", [c for (a, b, c) in vector])
 
 
-# xs = []
-# start_index = 0
-# for d1 in range(1, 7):
-#     for d2 in range(1, d):
-#         moves_dict = {}
-#         vectors_dict = {}
-#         for sum, moves, vector in all_moves_a_b(d1, d2):
-#             moves_key = tuple(moves)
-#             print(moves_key)
-#             assert moves_key not in moves_dict
-#             moves_dict[moves_key] = (sum, moves, vector)
-
-#             vectors_key = tuple(vector)
-#             print(vectors_key)
-#             assert vectors_key not in vectors_dict
-#             vectors_dict[vectors_key] = (sum, moves, vector)
+xs = []
 
 
-print(len(all_moves_a_b(2, 1)))
+def find_index(a, b):
+    if a == b:
+        assert False
+    if a < b:
+        (a, b) = (b, a)
+    match a:
+        case 2:  # 0
+            return b - 1
+        case 3:  # 1, 2
+            return b
+        case 4:
+            return 2 + b
+        case 5:
+            return 5 + b
+        case 6:
+            return 10 + b
+
+
+for d1 in range(1, 7):
+    for d2 in range(1, d1):
+        lengths_tensor = []
+        moves_tensor = []
+        lower_bounds = []
+        upper_bounds = []
+        vectors_tensor = []
+        xs.append(
+            (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vectors_tensor)
+        )
+        moves_dict = {}
+        vectors_dict = {}
+        for sum, moves, vector in all_moves_a_b(d1, d2):
+            lengths_tensor.append(sum)
+            assert len(moves) == 2
+            [(a, b, x), (c, d, y)] = moves
+            moves_tensor.append([a, b, 1 if x else 0, c, d, 1 if y else 0])
+
+            moves_key = tuple(moves)
+            print("move", moves_key)
+            assert moves_key not in moves_dict
+            moves_dict[moves_key] = (sum, moves, vector)
+
+            vectors_key = tuple(vector)
+            print("vector", vectors_key)
+            assert vectors_key not in vectors_dict
+            vectors_dict[vectors_key] = (sum, moves, vector)
+            l = []
+            h = []
+            v = []
+            for a, b, c in vector:
+                l.append(a)
+                h.append(b)
+                v.append(c)
+            lower_bounds.append(l)
+            upper_bounds.append(h)
+            vectors_tensor.append(v)
+
+xs = [
+    (
+        tensor(lengths_tensor),
+        tensor(moves_tensor),
+        tensor(lower_bounds),
+        tensor(upper_bounds),
+        tensor(vector_tensor),
+    )
+    for (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vector_tensor) in xs
+]
+
+roll = (4, 2)
+i = find_index(*roll)
+(lengths, moves, lower, upper, vector) = xs[i]
+
+import backgammon
+
+board = tensor(backgammon.make_board())
+
+indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+ms = moves[indices]
+print(ms)
+
+# print(len(all_moves_a_b(2, 1)))
 print("we rocked it")
