@@ -2,7 +2,6 @@ import pytest
 from torch import tensor
 
 import backgammon
-import bt_2
 import test_b2
 import read_move_tensors
 
@@ -15,7 +14,6 @@ def tests(t):
     player_1 = t.player == t.player_1_color
     if not player_1:
         backgammon.invert(board)
-    (d1, d2) = t.roll
     state = (tensor(board), True, t.roll)
     moves = move_tensors.compute_moves(state)
     assert moves is not None
