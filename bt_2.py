@@ -17,8 +17,24 @@ def r():
 
 def with_move(moves, start, end, is_hit):
     ms = [m for m in moves]
-    ms.append((start, end, is_hit))
+    ms.append(start)
+    ms.append(end)
+    ms.append(1 if is_hit else 0)
     return ms
+
+
+def split_out(m):
+    ps = []
+    qs = []
+    rs = []
+    for a, b, c in m:
+        ps.append(a)
+        qs.append(b)
+        rs.append(c)
+    assert len(ps) == 26
+    assert len(qs) == 26
+    assert len(rs) == 26
+    return ps, qs, rs
 
 
 def all_moves_die_start(die, start):
@@ -28,12 +44,16 @@ def all_moves_die_start(die, start):
     move = (start, end)
     if end < 0:
         # over-bearoff
-        move = [empty_t if i > start else start_t if i == start else any_t for i in r()]
-        return [(die, [(start, end, False)], move)]
+        low, high, vector = split_out(
+            [empty_t if i > start else start_t if i == start else any_t for i in r()]
+        )
+        return [([start, end, 0], low, high, vector)]
     elif end == 0:
         # exact bearoff
-        move = [empty_t if i > 6 else start_t if i == start else any_t for i in r()]
-        return [(die, [(start, end, False)], move)]
+        low, high, vector = split_out(
+            [empty_t if i > 6 else start_t if i == start else any_t for i in r()]
+        )
+        return [([start, end, 0], low, high, vector)]
     else:
         assert end > 0
         if start == 25:
@@ -48,9 +68,11 @@ def all_moves_die_start(die, start):
                 )
                 for i in r()
             ]
+            a, b, c = split_out(move)
+            d, e, f = split_out(hit)
             return [
-                (die, [(start, end, False)], move),
-                (die, [(start, end, True)], hit),
+                ([start, end, 0], a, b, c),
+                ([start, end, 1], d, e, f),
             ]
         assert start != 25
         move = [
@@ -73,7 +95,9 @@ def all_moves_die_start(die, start):
             )
             for i in r()
         ]
-        return [(die, [(start, end, False)], move), (die, [(start, end, True)], hit)]
+        a, b, c = split_out(move)
+        s, t, u = split_out(hit)
+        return [([start, end, 0], a, b, c), ([start, end, 1], s, t, u)]
 
 
 def all_moves_die(die):
@@ -84,28 +108,14 @@ def all_moves_die(die):
     return result
 
 
-def memoize(f):
-    cache = {}
-
-    def g(limit, dice):
-        key = (limit, tuple(dice))
-        if key not in cache:
-            cache[key] = f(limit, dice)
-        return cache[key]
-
-    return g
-
-
-def all_moves_dubs(die):
-    assert 0 < die < 7
-    assert False
-
-
 def remove_impossible(f):
     def pred(x):
-        (sum, moves, vector) = x
+        (_, low, high, vector) = x
         assert len(vector) == 26
-        return all(low < high for (low, high, _) in vector)
+        for l, h in zip(low, high):
+            if l >= h:
+                return False
+        return True
 
     def g(move, die, start):
         return filter(pred, f(move, die, start))
@@ -115,13 +125,15 @@ def remove_impossible(f):
 
 @remove_impossible
 def combine_move_with_die_and_start(move, die, start):
-    (sum, moves, vector) = move
+    (moves, lows, highs, vs) = move
     end = start - die
     # over-bearoff
     move_vs = []
     hit_vs = []
-    for i, t in enumerate(vector):
-        (low, high, v) = t
+
+    for i, t in enumerate(zip(lows, highs, vs)):
+        low, high, v = t
+        assert low < high
         if (end < 0 and i > start) or (end == 0 and i > 6):
             hit_vs.append(impossible_t)
             if v > 1:
@@ -202,9 +214,12 @@ def combine_move_with_die_and_start(move, die, start):
             assert i == 0
             move_vs.append((low, high, v))
             hit_vs.append((low, high, v + 1))  # put a piece on their bar
+
+    a, b, c = split_out(move_vs)
+    d, e, f = split_out(hit_vs)
     return [
-        (sum + die, with_move(moves, start, end, False), move_vs),
-        (sum + die, with_move(moves, start, end, True), hit_vs),
+        (with_move(moves, start, end, False), a, b, c),
+        (with_move(moves, start, end, True), d, e, f),
     ]
 
 
@@ -214,10 +229,10 @@ def all_moves_a_b(a, b):
     for s1 in range(25, 0, -1):
         for x in all_moves_die_start(a, s1):
             moves.append(x)
-        for start in range(s1, s1 - 1, -1):
-            for move in moves:
-                for x in combine_move_with_die_and_start(move, b, start):
-                    result.append(x)
+        start = s1
+        for move in moves:
+            for x in combine_move_with_die_and_start(move, b, start):
+                result.append(x)
     return result
 
 
@@ -225,14 +240,11 @@ def all_moves_dice(d1, d2):
     filtered = []
     for d1, d2 in [(d1, d2), (d2, d1)]:
         for x in all_moves_a_b(d1, d2):
-            (sum, moves, vector) = x
-            [[s1, e1, h1], [s2, e2, h2]] = moves
+            (moves, high, low, vector) = x
+            [s1, e1, h1, s2, e2, h2] = moves
             if s1 != s2 or e1 > e2:
                 filtered.append(x)
     return filtered
-
-
-xs = []
 
 
 def find_index(a, b):
@@ -254,109 +266,163 @@ def find_index(a, b):
             return 9 + b
 
 
-i = 0
-for d1 in range(1, 7):
-    for d2 in range(1, d1):
-        i += 1
-        lengths_tensor = []
-        moves_tensor = []
-        lower_bounds = []
-        upper_bounds = []
-        vectors_tensor = []
-        xs.append(
-            (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vectors_tensor)
-        )
-        moves_dict = {}
-        for sum, moves, vector in all_moves_dice(d1, d2):
-            lengths_tensor.append(sum)
-            assert len(moves) == 2
-            [(a, b, x), (c, d, y)] = moves
-            moves_tensor.append([(a, b, 1 if x else 0), (c, d, 1 if y else 0)])
-
-            moves_key = tuple(moves)
-            assert moves_key not in moves_dict
-            moves_dict[moves_key] = (sum, moves, vector)
-
-            l = []
-            h = []
-            v = []
-            for a, b, c in vector:
-                l.append(a)
-                h.append(b)
-                v.append(c)
-            lower_bounds.append(l)
-            upper_bounds.append(h)
-            vectors_tensor.append(v)
-assert i == 15
-assert len(xs) == 15
-xs = [
-    (
-        tensor(lengths_tensor),
-        tensor(moves_tensor),
-        tensor(lower_bounds),
-        tensor(upper_bounds),
-        tensor(vector_tensor),
-    )
-    for (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vector_tensor) in xs
-]
-assert len(xs) == 15
-
-ys = []
-moves_dict = {}
-for die in range(1, 7):
-    lengths_tensor = []
+def tensorize(moves):
     moves_tensor = []
     lower_bounds = []
     upper_bounds = []
     vectors_tensor = []
-    ys.append(
-        (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vectors_tensor)
-    )
-    for sum, moves, vector in all_moves_die(die):
-        lengths_tensor.append(sum)
-        assert len(moves) == 1
-        [(a, b, x)] = moves
-        moves_tensor.append([(a, b, 1 if x else 0)])
+    moves_dict = set()
+    for moves, low, high, vector in moves:
+
         moves_key = tuple(moves)
         assert moves_key not in moves_dict
-        moves_dict[moves_key] = (sum, moves, vector)
-        l = []
-        h = []
-        v = []
-        for a, b, c in vector:
-            l.append(a)
-            h.append(b)
-            v.append(c)
-        lower_bounds.append(l)
-        upper_bounds.append(h)
-        vectors_tensor.append(v)
-ys = [
-    (
-        tensor(lengths_tensor),
+        moves_dict.add(moves_key)
+        moves_tensor.append(moves)
+
+        lower_bounds.append(low)
+        upper_bounds.append(high)
+        vectors_tensor.append(vector)
+    return (
         tensor(moves_tensor),
         tensor(lower_bounds),
         tensor(upper_bounds),
-        tensor(vector_tensor),
+        tensor(vectors_tensor),
     )
-    for (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vector_tensor) in ys
-]
+
+
+xs = []
+
+i = 0
+for d1 in range(1, 7):
+    for d2 in range(1, d1):
+        i += 1
+        moves = all_moves_dice(d1, d2)
+        xs.append(tensorize(moves))
+
+assert i == 15
+assert len(xs) == 15
+
+ys = []
+for die in range(1, 7):
+    moves = all_moves_die(die)
+    ys.append(tensorize(moves))
 assert len(ys) == 6
+
+
+def all_doubles(d):
+    all_ss = set()
+    moves_caches = [set() for i in range(4)]
+
+    moves = []
+    moves_2 = []
+    moves_3 = []
+    moves_4 = []
+    for s1 in range(25, 0, -1):
+        moves_cache = moves_caches[0]
+        mm1 = []
+        for x in all_moves_die_start(d, s1):
+            (ms, _, __, ___) = x
+            assert len(ms) == 3
+            key = tuple(ms)
+            assert key not in moves_cache
+            moves_cache.add(key)
+            moves.append(x)
+            mm1.append(x)
+        for s2 in range(s1, 0, -1):
+            moves_cache = moves_caches[1]
+            mm2 = []
+            for m1 in mm1:
+                for x in combine_move_with_die_and_start(m1, d, s2):
+                    (ms, _, __, ___) = x
+                    assert len(ms) == 6
+                    key = tuple(ms)
+                    assert key not in moves_cache
+                    moves_cache.add(key)
+                    moves_2.append(x)
+                    mm2.append(x)
+            for s3 in range(s2, 0, -1):
+                moves_cache = moves_caches[2]
+                mm3 = []
+                for m2 in mm2:
+                    for x in combine_move_with_die_and_start(m2, d, s3):
+                        (ms, _, __, ___) = x
+                        assert len(ms) == 9
+                        key = tuple(ms)
+                        assert key not in moves_cache
+                        moves_cache.add(key)
+                        moves_3.append(x)
+                        mm3.append(x)
+                for s4 in range(s3, 0, -1):
+                    moves_cache = moves_caches[3]
+                    assert (s1, s2, s3, s4) not in all_ss
+                    all_ss.add((s1, s2, s3, s4))
+                    for m3 in mm3:
+                        for x in combine_move_with_die_and_start(m3, d, s4):
+                            (ms, _, __, ___) = x
+                            assert len(ms) == 12
+                            key = tuple(ms)
+                            assert key not in moves_cache
+                            moves_cache.add(key)
+                            moves_4.append(x)
+    return (moves, moves_2, moves_3, moves_4)
+
+
+dubs_4 = []
+dubs_3 = []
+dubs_2 = []
+dubs_1 = []
+for die in range(1, 7):
+    (a, b, c, d) = all_doubles(die)
+    dubs_1.append(tensorize(a))
+    dubs_2.append(tensorize(b))
+    dubs_3.append(tensorize(c))
+    dubs_4.append(tensorize(d))
+    print("for die we have", die, len(d))
+
+
+def dubs(board, die):
+    (moves, lower, upper, vector) = dubs_4[i]
+    indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+    ms = moves[indices]
+    if ms.size()[0] == 0:
+        (moves, lower, upper, vector) = dubs_3[i]
+        indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+        ms = moves[indices]
+        if ms.size()[0] == 0:
+            (moves, lower, upper, vector) = dubs_2[i]
+            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+            ms = moves[indices]
+            if ms.size()[0] == 0:
+                (moves, lower, upper, vector) = ys[i]
+                indices = torch.all(lower <= board, dim=1) & torch.all(
+                    upper > board, dim=1
+                )
+                ms = moves[indices]
+            else:
+                return ms
+
+        else:
+            return ms
+    else:
+        return ms
 
 
 def compute_moves(board, dice):
     d1, d2 = dice
+    if d1 == d2:
+        return dubs(board, d1)
     assert d1 != d2
     i = find_index(*dice)
-    (lengths, moves, lower, upper, vector) = xs[i]
+    (moves, lower, upper, vector) = xs[i]
     indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
     ms = moves[indices]
     if ms.size()[0] == 0:
         big, small = (d1, d2) if d1 > d2 else (d2, d1)
-        (lengths, moves, lower, upper, vector) = ys[big - 1]
+        (moves, lower, upper, vector) = ys[big - 1]
         indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
         ms = moves[indices]
         if ms.size()[0] == 0:
-            (lengths, moves, lower, upper, vector) = ys[small - 1]
+            (moves, lower, upper, vector) = ys[small - 1]
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
             ms = moves[indices]
         else:

@@ -15,8 +15,9 @@ def tests(t):
     (d1, d2) = t.roll
     if d1 != d2:
         moves = bt_2.compute_moves(tensor(board), t.roll)
+        print(moves)
         moves = moves.tolist()
-        moves = [[(a, b) for [a, b, c] in x] for x in moves]
+        moves = [[(a, b) for (a, b) in zip(x[::3], x[1::3])] for x in moves]
         for x in moves:
             x.sort()
             x.reverse()
