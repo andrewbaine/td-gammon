@@ -167,7 +167,11 @@ def combine_move_with_die_and_start(move, die, start):
                     hit_vs.append(t)
             elif low >= 0:
                 assert high == 16
-                t = (low + 1, high, v - 1)
+                t = None
+                if v > 0:
+                    t = (low, high, v - 1)
+                else:
+                    t = (low + 1, high, v - 1)
                 move_vs.append(t)
                 hit_vs.append(t)
             else:
