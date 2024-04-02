@@ -247,25 +247,6 @@ def all_moves_dice(d1, d2):
     return filtered
 
 
-def find_index(a, b):
-    if a == b:
-        assert False
-    if a < b:
-        (a, b) = (b, a)
-    assert a > b
-    match a:
-        case 2:  # 0
-            return b - 1
-        case 3:  # 1, 2
-            return b
-        case 4:
-            return 2 + b
-        case 5:
-            return 5 + b
-        case 6:
-            return 9 + b
-
-
 def tensorize(moves):
     moves_tensor = []
     lower_bounds = []
@@ -283,30 +264,11 @@ def tensorize(moves):
         upper_bounds.append(high)
         vectors_tensor.append(vector)
     return (
-        tensor(moves_tensor),
-        tensor(lower_bounds),
-        tensor(upper_bounds),
-        tensor(vectors_tensor),
+        tensor(moves_tensor, dtype=torch.int8),
+        tensor(lower_bounds, dtype=torch.int8),
+        tensor(upper_bounds, dtype=torch.int8),
+        tensor(vectors_tensor, dtype=torch.int8),
     )
-
-
-xs = []
-
-i = 0
-for d1 in range(1, 7):
-    for d2 in range(1, d1):
-        i += 1
-        moves = all_moves_dice(d1, d2)
-        xs.append(tensorize(moves))
-
-assert i == 15
-assert len(xs) == 15
-
-ys = []
-for die in range(1, 7):
-    moves = all_moves_die(die)
-    ys.append(tensorize(moves))
-assert len(ys) == 6
 
 
 def all_doubles(d):
@@ -365,69 +327,3 @@ def all_doubles(d):
                             moves_cache.add(key)
                             moves_4.append(x)
     return (moves, moves_2, moves_3, moves_4)
-
-
-dubs_4 = []
-dubs_3 = []
-dubs_2 = []
-dubs_1 = []
-for die in range(1, 7):
-    (a, b, c, d) = all_doubles(die)
-    dubs_1.append(tensorize(a))
-    dubs_2.append(tensorize(b))
-    dubs_3.append(tensorize(c))
-    dubs_4.append(tensorize(d))
-
-
-def dubs(board, die):
-    i = die - 1
-    (moves, lower, upper, vector) = dubs_4[i]
-    indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-    ms = moves[indices]
-    if ms.size()[0] == 0:
-        (moves, lower, upper, vector) = dubs_3[i]
-        indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-        ms = moves[indices]
-        if ms.size()[0] == 0:
-            (moves, lower, upper, vector) = dubs_2[i]
-            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            ms = moves[indices]
-            if ms.size()[0] == 0:
-                (moves, lower, upper, vector) = dubs_1[i]
-                indices = torch.all(lower <= board, dim=1) & torch.all(
-                    upper > board, dim=1
-                )
-                ms = moves[indices]
-                return ms
-            else:
-                return ms
-
-        else:
-            return ms
-    else:
-        return ms
-
-
-def compute_moves(board, dice):
-    d1, d2 = dice
-    if d1 == d2:
-        return dubs(board, d1)
-    assert d1 != d2
-    i = find_index(*dice)
-    (moves, lower, upper, vector) = xs[i]
-    indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-    ms = moves[indices]
-    if ms.size()[0] == 0:
-        big, small = (d1, d2) if d1 > d2 else (d2, d1)
-        (moves, lower, upper, vector) = ys[big - 1]
-        indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-        ms = moves[indices]
-        if ms.size()[0] == 0:
-            (moves, lower, upper, vector) = ys[small - 1]
-            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            ms = moves[indices]
-        else:
-            return ms
-
-    else:
-        return ms

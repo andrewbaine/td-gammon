@@ -4,6 +4,9 @@ from torch import tensor
 import backgammon
 import bt_2
 import test_b2
+import read_move_tensors
+
+move_tensors = read_move_tensors.MoveTensors("move_tensors/2024-04-02T18:08:53.790539")
 
 
 @pytest.mark.parametrize("t", test_b2.test_cases)
@@ -13,7 +16,8 @@ def tests(t):
     if not player_1:
         backgammon.invert(board)
     (d1, d2) = t.roll
-    moves = bt_2.compute_moves(tensor(board), t.roll)
+    state = (tensor(board), True, t.roll)
+    moves = move_tensors.compute_moves(state)
     assert moves is not None
     moves = moves.tolist()
     moves = [[(a, b) for (a, b) in zip(x[::3], x[1::3])] for x in moves]
