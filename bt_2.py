@@ -214,8 +214,18 @@ def all_moves_a_b(a, b):
             for move in moves:
                 for x in combine_move_with_die_and_start(move, b, start):
                     result.append(x)
-
     return result
+
+
+def all_moves_dice(d1, d2):
+    filtered = []
+    for d1, d2 in [(d1, d2), (d2, d1)]:
+        for x in all_moves_a_b(d1, d2):
+            (sum, moves, vector) = x
+            [[s1, e1, h1], [s2, e2, h2]] = moves
+            if s1 != s2 or e1 > e2:
+                filtered.append(x)
+    return filtered
 
 
 xs = []
@@ -253,22 +263,16 @@ for d1 in range(1, 7):
             (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vectors_tensor)
         )
         moves_dict = {}
-        vectors_dict = {}
-        for sum, moves, vector in all_moves_a_b(d1, d2):
+        for sum, moves, vector in all_moves_dice(d1, d2):
             lengths_tensor.append(sum)
             assert len(moves) == 2
             [(a, b, x), (c, d, y)] = moves
             moves_tensor.append([(a, b, 1 if x else 0), (c, d, 1 if y else 0)])
 
             moves_key = tuple(moves)
-            print("move", moves_key)
             assert moves_key not in moves_dict
             moves_dict[moves_key] = (sum, moves, vector)
 
-            vectors_key = tuple(vector)
-            print("vector", vectors_key)
-            assert vectors_key not in vectors_dict
-            vectors_dict[vectors_key] = (sum, moves, vector)
             l = []
             h = []
             v = []
@@ -302,4 +306,4 @@ def compute_moves(board, dice):
     return ms
 
 
-# print(len(all_moves_a_b(2, 1)))
+print(len(all_moves_a_b(2, 1)))
