@@ -377,10 +377,10 @@ for die in range(1, 7):
     dubs_2.append(tensorize(b))
     dubs_3.append(tensorize(c))
     dubs_4.append(tensorize(d))
-    print("for die we have", die, len(d))
 
 
 def dubs(board, die):
+    i = die - 1
     (moves, lower, upper, vector) = dubs_4[i]
     indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
     ms = moves[indices]
@@ -393,11 +393,12 @@ def dubs(board, die):
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
             ms = moves[indices]
             if ms.size()[0] == 0:
-                (moves, lower, upper, vector) = ys[i]
+                (moves, lower, upper, vector) = dubs_1[i]
                 indices = torch.all(lower <= board, dim=1) & torch.all(
                     upper > board, dim=1
                 )
                 ms = moves[indices]
+                return ms
             else:
                 return ms
 
@@ -430,6 +431,3 @@ def compute_moves(board, dice):
 
     else:
         return ms
-
-
-print(len(all_moves_a_b(2, 1)))

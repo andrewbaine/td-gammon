@@ -13,17 +13,14 @@ def tests(t):
     if not player_1:
         backgammon.invert(board)
     (d1, d2) = t.roll
-    if d1 != d2:
-        moves = bt_2.compute_moves(tensor(board), t.roll)
-        print(moves)
-        moves = moves.tolist()
-        moves = [[(a, b) for (a, b) in zip(x[::3], x[1::3])] for x in moves]
-        for x in moves:
-            x.sort()
-            x.reverse()
-        moves = [tuple(x) for x in moves]
-        moves.sort()
-        moves.reverse()
-        assert moves == t.expected_moves, t.comment
-    else:
-        assert True
+    moves = bt_2.compute_moves(tensor(board), t.roll)
+    assert moves is not None
+    moves = moves.tolist()
+    moves = [[(a, b) for (a, b) in zip(x[::3], x[1::3])] for x in moves]
+    for x in moves:
+        x.sort()
+        x.reverse()
+    moves = [tuple(x) for x in moves]
+    moves.sort()
+    moves.reverse()
+    assert moves == t.expected_moves, t.comment
