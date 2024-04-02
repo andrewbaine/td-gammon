@@ -301,13 +301,69 @@ xs = [
 ]
 assert len(xs) == 15
 
+ys = []
+moves_dict = {}
+for die in range(1, 7):
+    lengths_tensor = []
+    moves_tensor = []
+    lower_bounds = []
+    upper_bounds = []
+    vectors_tensor = []
+    ys.append(
+        (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vectors_tensor)
+    )
+    for sum, moves, vector in all_moves_die(die):
+        lengths_tensor.append(sum)
+        assert len(moves) == 1
+        [(a, b, x)] = moves
+        moves_tensor.append([(a, b, 1 if x else 0)])
+        moves_key = tuple(moves)
+        assert moves_key not in moves_dict
+        moves_dict[moves_key] = (sum, moves, vector)
+        l = []
+        h = []
+        v = []
+        for a, b, c in vector:
+            l.append(a)
+            h.append(b)
+            v.append(c)
+        lower_bounds.append(l)
+        upper_bounds.append(h)
+        vectors_tensor.append(v)
+ys = [
+    (
+        tensor(lengths_tensor),
+        tensor(moves_tensor),
+        tensor(lower_bounds),
+        tensor(upper_bounds),
+        tensor(vector_tensor),
+    )
+    for (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vector_tensor) in ys
+]
+assert len(ys) == 6
+
 
 def compute_moves(board, dice):
+    d1, d2 = dice
+    assert d1 != d2
     i = find_index(*dice)
     (lengths, moves, lower, upper, vector) = xs[i]
     indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
     ms = moves[indices]
-    return ms
+    if ms.size()[0] == 0:
+        big, small = (d1, d2) if d1 > d2 else (d2, d1)
+        (lengths, moves, lower, upper, vector) = ys[big - 1]
+        indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+        ms = moves[indices]
+        if ms.size()[0] == 0:
+            (lengths, moves, lower, upper, vector) = ys[small - 1]
+            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+            ms = moves[indices]
+        else:
+            return ms
+
+    else:
+        return ms
 
 
 print(len(all_moves_a_b(2, 1)))
