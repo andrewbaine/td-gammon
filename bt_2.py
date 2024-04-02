@@ -218,16 +218,6 @@ def all_moves_a_b(a, b):
     return result
 
 
-# for d in range(1, 7):
-#     for x in all_moves_die(d):
-#         (die, move, vector) = x
-#         assert die == d
-#         print(move)
-#         print("\t", [a for (a, b, c) in vector])
-#         print("\t", [b for (a, b, c) in vector])
-#         print("\t", [c for (a, b, c) in vector])
-
-
 xs = []
 
 
@@ -236,6 +226,7 @@ def find_index(a, b):
         assert False
     if a < b:
         (a, b) = (b, a)
+    assert a > b
     match a:
         case 2:  # 0
             return b - 1
@@ -246,11 +237,13 @@ def find_index(a, b):
         case 5:
             return 5 + b
         case 6:
-            return 10 + b
+            return 9 + b
 
 
+i = 0
 for d1 in range(1, 7):
     for d2 in range(1, d1):
+        i += 1
         lengths_tensor = []
         moves_tensor = []
         lower_bounds = []
@@ -265,7 +258,7 @@ for d1 in range(1, 7):
             lengths_tensor.append(sum)
             assert len(moves) == 2
             [(a, b, x), (c, d, y)] = moves
-            moves_tensor.append([a, b, 1 if x else 0, c, d, 1 if y else 0])
+            moves_tensor.append([(a, b, 1 if x else 0), (c, d, 1 if y else 0)])
 
             moves_key = tuple(moves)
             print("move", moves_key)
@@ -286,7 +279,8 @@ for d1 in range(1, 7):
             lower_bounds.append(l)
             upper_bounds.append(h)
             vectors_tensor.append(v)
-
+assert i == 15
+assert len(xs) == 15
 xs = [
     (
         tensor(lengths_tensor),
@@ -297,18 +291,15 @@ xs = [
     )
     for (lengths_tensor, moves_tensor, lower_bounds, upper_bounds, vector_tensor) in xs
 ]
+assert len(xs) == 15
 
-roll = (4, 2)
-i = find_index(*roll)
-(lengths, moves, lower, upper, vector) = xs[i]
 
-import backgammon
+def compute_moves(board, dice):
+    i = find_index(*dice)
+    (lengths, moves, lower, upper, vector) = xs[i]
+    indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+    ms = moves[indices]
+    return ms
 
-board = tensor(backgammon.make_board())
-
-indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-ms = moves[indices]
-print(ms)
 
 # print(len(all_moves_a_b(2, 1)))
-print("we rocked it")
