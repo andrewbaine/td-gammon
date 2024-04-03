@@ -158,7 +158,7 @@ turn = (
 
 @generate("move_line")
 def move_line():
-    yield whitespace
+    yield optional_whitespace
     n = yield move_number
     yield optional_whitespace
     turns = yield turn.sep_by(optional_whitespace, min=0, max=2)
@@ -166,18 +166,32 @@ def move_line():
     return (n, turns)
 
 
+@generate("game_number_line")
+def game_number_line():
+    yield optional_whitespace
+    n = yield regex(r"Game (\d+)", group=1).map(int)
+    yield end_of_line
+
+
+@generate("player_line")
+def player_line():
+    yield optional_whitespace
+    p1 = yield player
+    yield optional_whitespace
+    p2 = yield player
+    yield end_of_line
+    return (p1, p2)
+
+
 @generate("game")
 def game():
-    yield whitespace
-    game_number = yield regex(r"Game (\d+)", group=1).map(int)
-    yield whitespace
-    player_1 = yield player
-    yield whitespace
-    player_2 = yield player
-    yield end_of_line
+    yield blank_line.many()
+    game_number = yield game_number_line
+    players = yield player_line
+    yield blank_line.many()
     moves = yield move_line.many()
     sum = yield summary_line.optional()
-    return (game_number, player_1, player_2, moves, sum)
+    return (game_number, players, moves, sum)
 
 
 @generate
