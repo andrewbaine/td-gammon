@@ -10,17 +10,28 @@ end_of_line = regex(r"[ \t]*\n")
 
 
 @generate
+def optional_whitespace():
+    yield regex(r"[ \t]*")
+
+
+@generate
+def required_whitespace():
+    yield regex(r"[ \t]+")
+
+
+@generate
 def comment():
     yield string(";")
-    yield whitespace
+    yield optional_whitespace
     yield string("[")
-    yield whitespace.optional()
+    yield optional_whitespace
     key = yield regex(r'([^"]*)')
     yield string('"')
     value = yield regex(r'([^"]*)')
     yield string('"')
-    yield whitespace.optional()
+    yield optional_whitespace
     yield string("]")
+    yield end_of_line
     return (key, value)
 
 
@@ -38,9 +49,9 @@ def match_length_line():
 @generate("player")
 def player():
     tokens = yield regex(r"[^:\s]*").sep_by(whitespace)
-    yield whitespace.optional()
+    yield optional_whitespace
     yield string(":")
-    yield whitespace.optional()
+    yield optional_whitespace
     c = yield number
     p = " ".join(tokens)
     return (p, c)
@@ -107,8 +118,8 @@ Play = namedtuple("Play", ["dice", "actions"])
 def play():
     d = yield dice
     yield string(":")
-    yield whitespace
-    actions = yield decision
+    yield whitespace.optional()
+    actions = yield (decision.optional())
     return Play(dice=d, actions=actions)
 
 
@@ -119,10 +130,19 @@ def move_number():
     return n
 
 
-@generate("summary_line")
+@generate("summary")
 def summary():
     s = yield regex(r"Wins \d+ point(s?)")
     return s
+
+
+@generate("summary_line")
+def summary_line():
+    yield whitespace
+    s = yield summary
+    yield end_of_line
+    suffix = yield string(" and the match").optional(default="")
+    return s + suffix
 
 
 turn = (
@@ -163,7 +183,7 @@ blank_lines = end_of_line.many()
 
 @generate
 def file():
-    comments = yield comment.sep_by(end_of_line)
+    comments = yield comment.many()
     yield whitespace
     m = yield match_length_line
     games = yield game.sep_by(blank_lines)
