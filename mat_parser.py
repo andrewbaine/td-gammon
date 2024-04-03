@@ -154,7 +154,8 @@ def game():
     player_2 = yield player
     yield end_of_line
     moves = yield move_line.many()
-    return (game_number, player_1, player_2, moves)
+    sum = yield summary_line.optional()
+    return (game_number, player_1, player_2, moves, sum)
 
 
 blank_lines = end_of_line.many()
