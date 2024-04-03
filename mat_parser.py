@@ -1,14 +1,18 @@
+from collections import namedtuple
+
+Action = namedtuple("Action", ["name", "details"])
+
 from parsy import decimal_digit, generate, regex, string, whitespace
 
-semicolon = string(";")
+number = regex(r"\d+").map(int)
 
 end_of_line = regex(r"[ \t]*\n")
 
 
 @generate
 def comment():
-    yield semicolon
-    yield whitespace.optional()
+    yield string(";")
+    yield whitespace
     yield string("[")
     yield whitespace.optional()
     key = yield regex(r'([^"]*)')
@@ -28,11 +32,12 @@ match_length = regex(r"(\d+) point match", group=1).map(int)
 
 @generate("player")
 def player():
+    tokens = yield regex(r"[^:\s]*").sep_by(whitespace)
     yield whitespace.optional()
-    p = yield regex(r"[^:]*").map(lambda s: s.strip())
     yield string(":")
     yield whitespace.optional()
-    c = yield regex(r"\d+").map(int)
+    c = yield number
+    p = " ".join(tokens)
     return (p, c)
 
 
@@ -40,6 +45,16 @@ def player():
 def cannot_move():
     yield string("Cannot Move")
     return []
+
+
+@generate("double")
+def double():
+    yield string("Doubles")
+    yield whitespace
+    yield string("=>")
+    yield whitespace
+    n = yield number
+    return Action(name="double", details=n)
 
 
 @generate("roll")
@@ -50,7 +65,6 @@ def roll():
     return (d1, d2)
 
 
-number = regex(r"\d+").map(int)
 pip = number
 bar = string("bar")
 src = pip | bar
@@ -77,7 +91,9 @@ def move_checker():
 
 #    return (s, d, hit)
 
-decision = cannot_move | move_checker.sep_by(whitespace)
+many_moves = move_checker.sep_by(whitespace)
+
+decision = cannot_move | many_moves
 
 
 @generate("action")
@@ -96,13 +112,23 @@ def move_number():
     return n
 
 
+@generate("drop")
+def drop():
+    yield string("Drops")
+    return Action(name="drop", details=None)
+
+
+play_or_double_or_take_or_drop = double | action | drop
+
+
 @generate("move_line")
 def move_line():
     yield whitespace
     n = yield move_number
-    a1 = yield action
     yield whitespace
-    a2 = yield action.optional()
+    a1 = yield play_or_double_or_take_or_drop
+    yield whitespace
+    a2 = yield play_or_double_or_take_or_drop.optional()
     return (n, a1, a2)
 
 
