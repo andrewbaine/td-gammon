@@ -6,7 +6,7 @@ from parsy import decimal_digit, generate, regex, string
 
 number = regex(r"\d+").map(int)
 
-end_of_line = regex(r"[ \t]*\n")
+end_of_line = regex(r"[ \t]*\r?\n")
 
 
 @generate
@@ -19,8 +19,8 @@ def required_whitespace():
     yield regex(r"[ \t]+")
 
 
-newline = string("\n")
-blank_line = regex(r"[ \t]*\n")
+newline = regex("\r?\n")
+blank_line = regex(r"[ \t]*\r?\n")
 
 
 @generate("player")
@@ -116,7 +116,7 @@ turn = (
 
 
 @generate
-def comment_line():
+def structured_comment_line():
     yield string(";")
     yield optional_whitespace
     yield string("[")
@@ -129,6 +129,19 @@ def comment_line():
     yield string("]")
     yield end_of_line
     return (key, value)
+
+
+@generate
+def unstructured_comment_line():
+    yield optional_whitespace
+    yield string(";")
+    yield optional_whitespace
+    line = yield regex(r"[^\r\n]*")
+    yield end_of_line
+    return line
+
+
+comment_line = structured_comment_line | unstructured_comment_line
 
 
 @generate("summary_line")
@@ -192,4 +205,5 @@ def file():
     yield blank_line.many()
     m = yield match_length_line
     games = yield game.many()
+    yield blank_line.many()
     return (comments, m, games)
