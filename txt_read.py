@@ -21,21 +21,29 @@ def comment():
 
 
 newline = string("\n")
-blank_line = regex(r"^\s\t*$").then(newline)
+blank_line = regex(r"[ \t]*\n")
+
+match_length = regex(r"(\d+) point match", group=1).map(int)
 
 
 @generate
 def file():
     comments = yield comment.sep_by(end_of_line)
-    return comments
+    yield whitespace
+    m = yield match_length
+    yield whitespace
+    return comments, m
 
 
 parser = comment
 
 
-def load_match(s):
-    (x, _) = file.parse_partial(file_content)
+def load_match(f):
+    s = f.read()
+    (x, remainder) = file.parse_partial(s)
     print(x)
+    print("-------")
+    print(remainder)
 
 
 if __name__ == "__main__":
