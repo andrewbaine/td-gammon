@@ -19,32 +19,8 @@ def required_whitespace():
     yield regex(r"[ \t]+")
 
 
-@generate
-def comment():
-    yield string(";")
-    yield optional_whitespace
-    yield string("[")
-    yield optional_whitespace
-    key = yield regex(r'([^"]*)')
-    yield string('"')
-    value = yield regex(r'([^"]*)')
-    yield string('"')
-    yield optional_whitespace
-    yield string("]")
-    yield end_of_line
-    return (key, value)
-
-
 newline = string("\n")
 blank_line = regex(r"[ \t]*\n")
-
-
-@generate("match_length_line")
-def match_length_line():
-    yield optional_whitespace
-    match_length = yield regex(r"(\d+) point match", group=1).map(int)
-    yield end_of_line
-    return match_length
 
 
 @generate("player")
@@ -138,15 +114,6 @@ def summary():
     return s
 
 
-@generate("summary_line")
-def summary_line():
-    yield optional_whitespace
-    s = yield summary
-    suffix = yield string(" and the match").optional(default="")
-    yield end_of_line
-    return s + suffix
-
-
 turn = (
     double
     | string("Takes").map(lambda x: Action(name="take", details=None))
@@ -156,13 +123,38 @@ turn = (
 )
 
 
+@generate
+def comment_line():
+    yield string(";")
+    yield optional_whitespace
+    yield string("[")
+    yield optional_whitespace
+    key = yield regex(r'([^"]*)')
+    yield string('"')
+    value = yield regex(r'([^"]*)')
+    yield string('"')
+    yield optional_whitespace
+    yield string("]")
+    yield end_of_line
+    return (key, value)
+
+
+@generate("summary_line")
+def summary_line():
+    yield optional_whitespace
+    s = yield summary
+    suffix = yield string(" and the match").optional(default="")
+    yield end_of_line
+    return s + suffix
+
+
 @generate("move_line")
 def move_line():
     yield optional_whitespace
     n = yield move_number
     yield optional_whitespace
     turns = yield turn.sep_by(optional_whitespace, min=0, max=2)
-    yield end_of_line.optional()
+    yield end_of_line
     return (n, turns)
 
 
@@ -183,6 +175,14 @@ def player_line():
     return (p1, p2)
 
 
+@generate("match_length_line")
+def match_length_line():
+    yield optional_whitespace
+    match_length = yield regex(r"(\d+) point match", group=1).map(int)
+    yield end_of_line
+    return match_length
+
+
 @generate("game")
 def game():
     yield blank_line.many()
@@ -196,8 +196,8 @@ def game():
 
 @generate
 def file():
-    comments = yield comment.many()
-    yield whitespace
+    comments = yield comment_line.many()
+    yield blank_line.many()
     m = yield match_length_line
-    games = yield game.sep_by(end_of_line.many())
+    games = yield game.many()
     return (comments, m, games)
