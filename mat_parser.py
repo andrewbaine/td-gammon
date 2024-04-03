@@ -38,9 +38,7 @@ def player():
 
 @generate("cannot_move")
 def cannot_move():
-    yield whitespace.optional()
     yield string("Cannot Move")
-    yield whitespace.optional()
     return []
 
 
@@ -61,7 +59,6 @@ dest = pip
 
 @generate("modifier")
 def modifier():
-    yield whitespace.optional()
     yield string("(")
     n = yield number
     yield string(")")
@@ -70,7 +67,6 @@ def modifier():
 
 @generate("move_checker")
 def move_checker():
-    yield whitespace.optional()
     s = yield src
     yield string("/")
     d = yield dest
@@ -81,17 +77,16 @@ def move_checker():
 
 #    return (s, d, hit)
 
-decision = cannot_move | move_checker.many()
+decision = cannot_move | move_checker.sep_by(whitespace)
 
 
 @generate("action")
 def action():
-    r = yield roll
-    yield whitespace.optional()
+    dice = yield roll
     yield string(":")
-    yield whitespace.optional()
+    yield whitespace
     actions = yield decision
-    return (r, actions)
+    return (dice, actions)
 
 
 @generate("move_number")
@@ -108,7 +103,6 @@ def move_line():
     a1 = yield action
     yield whitespace
     a2 = yield action.optional()
-    yield end_of_line
     return (n, a1, a2)
 
 
