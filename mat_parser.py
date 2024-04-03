@@ -2,7 +2,7 @@ from collections import namedtuple
 
 Action = namedtuple("Action", ["name", "details"])
 
-from parsy import decimal_digit, generate, regex, string, whitespace
+from parsy import decimal_digit, generate, regex, string
 
 number = regex(r"\d+").map(int)
 
@@ -32,12 +32,6 @@ def player():
     c = yield number
     p = " ".join(tokens)
     return (p, c)
-
-
-@generate("cannot_move")
-def cannot_move():
-    yield string("Cannot Move")
-    return []
 
 
 @generate("double")
@@ -83,11 +77,9 @@ def move_checker():
     return (s, d, hit, mod)
 
 
-#    return (s, d, hit)
-
-many_moves = move_checker.sep_by(optional_whitespace)
-
-decision = cannot_move | many_moves | string("")
+decision = string("Cannot Move").map(lambda _: []) | move_checker.sep_by(
+    optional_whitespace
+)
 
 Play = namedtuple("Play", ["dice", "actions"])
 
