@@ -27,7 +27,12 @@ def comment():
 newline = string("\n")
 blank_line = regex(r"[ \t]*\n")
 
-match_length = regex(r"(\d+) point match", group=1).map(int)
+
+@generate("match_length_line")
+def match_length_line():
+    match_length = yield regex(r"(\d+) point match", group=1).map(int)
+    yield end_of_line
+    return match_length
 
 
 @generate("player")
@@ -57,9 +62,8 @@ def double():
     return Action(name="double", details=n)
 
 
-@generate("roll")
-def roll():
-    yield whitespace.optional()
+@generate("dice")
+def dice():
     d1 = yield decimal_digit.map(int)
     d2 = yield decimal_digit.map(int)
     return (d1, d2)
@@ -68,7 +72,8 @@ def roll():
 pip = number
 bar = string("bar")
 src = pip | bar
-dest = pip
+off = string("off")
+dest = pip | off
 
 
 @generate("modifier")
@@ -95,14 +100,16 @@ many_moves = move_checker.sep_by(whitespace)
 
 decision = cannot_move | many_moves
 
+Play = namedtuple("Play", ["dice", "actions"])
 
-@generate("action")
-def action():
-    dice = yield roll
+
+@generate("play")
+def play():
+    d = yield dice
     yield string(":")
     yield whitespace
     actions = yield decision
-    return (dice, actions)
+    return Play(dice=d, actions=actions)
 
 
 @generate("move_number")
@@ -112,13 +119,19 @@ def move_number():
     return n
 
 
-@generate("drop")
-def drop():
-    yield string("Drops")
-    return Action(name="drop", details=None)
+@generate("summary_line")
+def summary():
+    s = yield regex(r"Wins \d+ point(s?)")
+    return s
 
 
-play_or_double_or_take_or_drop = double | action | drop
+turn = (
+    double
+    | string("Takes").map(lambda x: Action(name="take", details=None))
+    | string("Drops").map(lambda x: Action(name="drop", details=None))
+    | play.map(lambda x: Action(name="play", details=x))
+    | summary.map(lambda x: Action(name="summary", details=x))
+)
 
 
 @generate("move_line")
@@ -126,14 +139,14 @@ def move_line():
     yield whitespace
     n = yield move_number
     yield whitespace
-    a1 = yield play_or_double_or_take_or_drop
-    yield whitespace
-    a2 = yield play_or_double_or_take_or_drop.optional()
-    return (n, a1, a2)
+    turns = yield turn.sep_by(whitespace, min=0, max=2)
+    yield end_of_line.optional()
+    return (n, turns)
 
 
 @generate("game")
 def game():
+    yield whitespace
     game_number = yield regex(r"Game (\d+)", group=1).map(int)
     yield whitespace
     player_1 = yield player
@@ -144,11 +157,13 @@ def game():
     return (game_number, player_1, player_2, moves)
 
 
+blank_lines = end_of_line.many()
+
+
 @generate
 def file():
     comments = yield comment.sep_by(end_of_line)
     yield whitespace
-    m = yield match_length
-    yield whitespace
-    games = yield game.many()
+    m = yield match_length_line
+    games = yield game.sep_by(blank_lines)
     return (comments, m, games)

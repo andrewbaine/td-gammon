@@ -3,10 +3,8 @@ import mat_parser
 
 def load_match(f):
     s = f.read()
-    (x, remainder) = mat_parser.file.parse_partial(s)
+    x = mat_parser.file.parse(s)
     print(x)
-    print("-------")
-    print(remainder)
 
 
 if __name__ == "__main__":
