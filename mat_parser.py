@@ -41,6 +41,7 @@ blank_line = regex(r"[ \t]*\n")
 
 @generate("match_length_line")
 def match_length_line():
+    yield optional_whitespace
     match_length = yield regex(r"(\d+) point match", group=1).map(int)
     yield end_of_line
     return match_length
@@ -48,7 +49,7 @@ def match_length_line():
 
 @generate("player")
 def player():
-    tokens = yield regex(r"[^:\s]*").sep_by(whitespace)
+    tokens = yield regex(r"[^:\s]*").sep_by(required_whitespace)
     yield optional_whitespace
     yield string(":")
     yield optional_whitespace
@@ -66,15 +67,16 @@ def cannot_move():
 @generate("double")
 def double():
     yield string("Doubles")
-    yield whitespace
+    yield optional_whitespace
     yield string("=>")
-    yield whitespace
+    yield optional_whitespace
     n = yield number
     return Action(name="double", details=n)
 
 
 @generate("dice")
 def dice():
+    yield optional_whitespace
     d1 = yield decimal_digit.map(int)
     d2 = yield decimal_digit.map(int)
     return (d1, d2)
@@ -107,9 +109,9 @@ def move_checker():
 
 #    return (s, d, hit)
 
-many_moves = move_checker.sep_by(whitespace)
+many_moves = move_checker.sep_by(optional_whitespace)
 
-decision = cannot_move | many_moves
+decision = cannot_move | many_moves | string("")
 
 Play = namedtuple("Play", ["dice", "actions"])
 
@@ -118,8 +120,8 @@ Play = namedtuple("Play", ["dice", "actions"])
 def play():
     d = yield dice
     yield string(":")
-    yield whitespace.optional()
-    actions = yield (decision.optional())
+    yield optional_whitespace
+    actions = yield decision
     return Play(dice=d, actions=actions)
 
 
@@ -138,10 +140,10 @@ def summary():
 
 @generate("summary_line")
 def summary_line():
-    yield whitespace
+    yield optional_whitespace
     s = yield summary
-    yield end_of_line
     suffix = yield string(" and the match").optional(default="")
+    yield end_of_line
     return s + suffix
 
 
@@ -158,8 +160,8 @@ turn = (
 def move_line():
     yield whitespace
     n = yield move_number
-    yield whitespace
-    turns = yield turn.sep_by(whitespace, min=0, max=2)
+    yield optional_whitespace
+    turns = yield turn.sep_by(optional_whitespace, min=0, max=2)
     yield end_of_line.optional()
     return (n, turns)
 
@@ -178,13 +180,10 @@ def game():
     return (game_number, player_1, player_2, moves, sum)
 
 
-blank_lines = end_of_line.many()
-
-
 @generate
 def file():
     comments = yield comment.many()
     yield whitespace
     m = yield match_length_line
-    games = yield game.sep_by(blank_lines)
+    games = yield game.sep_by(end_of_line.many())
     return (comments, m, games)
