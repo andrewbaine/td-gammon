@@ -123,6 +123,10 @@ def remove_impossible(f):
     return g
 
 
+def noop():
+    return [([], [-15 for x in r()], [16 for x in r()], [0 for x in r()])]
+
+
 @remove_impossible
 def combine_move_with_die_and_start(move, die, start):
     (moves, lows, highs, vs) = move

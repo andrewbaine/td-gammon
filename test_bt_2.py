@@ -5,7 +5,7 @@ import backgammon
 import test_b2
 import read_move_tensors
 
-move_tensors = read_move_tensors.MoveTensors("move_tensors/2024-04-02T18:08:53.790539")
+move_tensors = read_move_tensors.MoveTensors("move_tensors/2024-04-03T18:04:06.010956")
 
 
 @pytest.mark.parametrize("t", test_b2.test_cases)
@@ -25,4 +25,6 @@ def tests(t):
     moves = [tuple(x) for x in moves]
     moves.sort()
     moves.reverse()
+    if moves == [()]:
+        moves = []
     assert moves == t.expected_moves, t.comment

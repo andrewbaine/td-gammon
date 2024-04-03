@@ -6,6 +6,10 @@ import bt_2
 import torch
 
 
+def noop_dir(prefix):
+    return os.path.join(prefix, "noop")
+
+
 def singles_dir(prefix, d1):
     return os.path.join(prefix, "singles", str(d1))
 
@@ -35,7 +39,13 @@ if __name__ == "__main__":
         prefix = "move_tensors/{date}".format(date=current_date.isoformat())
 
     os.makedirs(prefix, exist_ok=False)
+
+    dir = noop_dir(prefix)
+    os.makedirs(dir)
+    write(dir, bt_2.noop())
+
     for d1 in range(1, 7):
+        print("doing die", d1)
         dir = singles_dir(prefix, d1)
         os.makedirs(dir)
         write(dir, bt_2.all_moves_die(d1))
@@ -47,3 +57,4 @@ if __name__ == "__main__":
             p = ab_dir(prefix, d1, d2)
             os.makedirs(p)
             write(p, bt_2.all_moves_dice(d1, d2))
+    print("done!")

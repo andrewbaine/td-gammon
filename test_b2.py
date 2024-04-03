@@ -1,8 +1,10 @@
 import b2
 import backgammon
 import pytest
+import slow_but_right
 
 move_computer = b2.MoveComputer()
+mc_dumb = slow_but_right.MoveComputer()
 
 from collections import namedtuple
 
@@ -959,5 +961,17 @@ test_cases = [
 @pytest.mark.parametrize("t", test_cases)
 def tests(t):
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
-    moves = move_computer.compute_moves((board, (t.player == t.player_1_color), t.roll))
+    state = (board, (t.player == t.player_1_color), t.roll)
+    moves = move_computer.compute_moves(state)
+
+    moves_dumb = mc_dumb.compute_moves(state)
+
+    for x in moves_dumb:
+        x.sort()
+        x.reverse()
+    moves_dumb = [tuple(x) for x in moves_dumb]
+    moves_dumb.sort()
+    moves_dumb.reverse()
+
     assert moves == t.expected_moves, t.comment
+    assert moves_dumb == t.expected_moves, "DUMB: " + t.comment

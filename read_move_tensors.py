@@ -1,6 +1,6 @@
 import torch
 
-from write_move_tensors import singles_dir, doubles_dir, ab_dir
+from write_move_tensors import singles_dir, doubles_dir, ab_dir, noop_dir
 import os
 
 
@@ -39,11 +39,14 @@ class MoveTensors:
         self.ab = []
 
         with torch.device(device):
+            self.noop = read(noop_dir(dir))
             for d1 in range(1, 7):
                 self.singles.append(read(singles_dir(dir, d1)))
-                self.doubles.append(
-                    [read(doubles_dir(dir, d1, name)) for name in ["1", "2", "3", "4"]]
-                )
+                dubsies = [
+                    read(doubles_dir(dir, d1, name)) for name in ["4", "3", "2", "1"]
+                ]
+                dubsies.append(self.noop)
+                self.doubles.append(dubsies)
                 for d2 in range(1, d1):
                     self.ab.append(read(ab_dir(dir, d1, d2)))
 
@@ -51,56 +54,27 @@ class MoveTensors:
         (board, player_1, (d1, d2)) = state
         assert player_1
         if d1 == d2:
-            [dubs_1, dubs_2, dubs_3, dubs_4] = self.doubles[d1 - 1]
-            (moves, lower, upper, vector) = dubs_4
-            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            ms = moves[indices]
-            if ms.size()[0] == 0:
-                (moves, lower, upper, vector) = dubs_3
+            dubsies = self.doubles[d1 - 1]
+            for moves, lower, upper, vector in dubsies:
                 indices = torch.all(lower <= board, dim=1) & torch.all(
                     upper > board, dim=1
                 )
                 ms = moves[indices]
-                if ms.size()[0] == 0:
-                    (moves, lower, upper, vector) = dubs_2
-                    indices = torch.all(lower <= board, dim=1) & torch.all(
-                        upper > board, dim=1
-                    )
-                    ms = moves[indices]
-                    if ms.size()[0] == 0:
-                        (moves, lower, upper, vector) = dubs_1
-                        indices = torch.all(lower <= board, dim=1) & torch.all(
-                            upper > board, dim=1
-                        )
-                        ms = moves[indices]
-                        return ms
-                    else:
-                        return ms
-
-                else:
+                if ms.size()[0] > 0:
                     return ms
-            else:
-                return ms
         else:
             i = find_index(d1, d2)
-            (moves, lower, upper, vector) = self.ab[i]
-            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            ms = moves[indices]
-            if ms.size()[0] == 0:
-                big, small = (d1, d2) if d1 > d2 else (d2, d1)
-                (moves, lower, upper, vector) = self.singles[big - 1]
+            big, small = (d1, d2) if d1 > d2 else (d2, d1)
+            for moves, lower, upper, vector in [
+                self.ab[i],
+                self.singles[big - 1],
+                self.singles[small - 1],
+                self.noop,
+            ]:
                 indices = torch.all(lower <= board, dim=1) & torch.all(
                     upper > board, dim=1
                 )
                 ms = moves[indices]
-                if ms.size()[0] == 0:
-                    (moves, lower, upper, vector) = self.singles[small - 1]
-                    indices = torch.all(lower <= board, dim=1) & torch.all(
-                        upper > board, dim=1
-                    )
-                    ms = moves[indices]
-                else:
+                if ms.size()[0] > 0:
                     return ms
-
-            else:
-                return ms
+        assert False
