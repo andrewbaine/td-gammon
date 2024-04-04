@@ -7,9 +7,19 @@ import os
 def transform():
     rows = []
     for i in range(26):
-        col = [0 if ((25 - j) == i) else -1 for j in range(26)]
+        col = [-1 if ((25 - j) == i) else 0 for j in range(26)]
         rows.append(col)
-    return rows
+    return torch.tensor(rows, dtype=torch.int8)
+
+
+def for_p2(x):
+    (moves, low, high, vector) = x
+    t = transform()
+    one = torch.tensor([1 for _ in range(26)], dtype=torch.int8)
+    v = torch.matmul(vector, t)
+    h = torch.matmul(low, t).add(one)
+    l = torch.matmul(high, t).add(one)
+    return (moves, l, h, v)
 
 
 def read(path):
@@ -43,7 +53,7 @@ def find_index(a, b):
 
 class MoveTensors:
     def __init__(self, dir, device="cpu"):
-        self.ab = []
+        self.player_1_vectors = []
 
         with torch.device(device):
             noop = read(noop_dir(dir))
@@ -63,13 +73,13 @@ class MoveTensors:
                         xs.append(singles[d1 - 1])
                         xs.append(singles[d2 - 1])
                         xs.append(noop)
-                        self.ab.append(xs)
+                        self.player_1_vectors.append(xs)
+        self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
 
     def compute_moves(self, state):
         (board, player_1, (d1, d2)) = state
-        assert player_1
         i = find_index(d1, d2)
-        tensors = self.ab[i]
+        tensors = (self.player_1_vectors if player_1 else self.player_2_vectors)[i]
         for moves, lower, upper, vector in tensors:
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
             ms = moves[indices]

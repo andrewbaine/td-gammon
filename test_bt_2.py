@@ -12,9 +12,7 @@ move_tensors = read_move_tensors.MoveTensors("move_tensors/2024-04-03T21:18:55.0
 def tests(t):
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
     player_1 = t.player == t.player_1_color
-    if not player_1:
-        backgammon.invert(board)
-    state = (tensor(board), True, t.roll)
+    state = (tensor(board), player_1, t.roll)
     moves = move_tensors.compute_moves(state)
     assert moves is not None
     moves = moves.tolist()
