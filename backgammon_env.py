@@ -5,31 +5,36 @@ import backgammon
 
 
 class Backgammon:
-    def __init__(self):
+    def __init__(self, roll=lambda: random.randint(1, 6)):
         self.mc = b2.MoveComputer()
         self.board = backgammon.make_board()
-        self.player_1 = True
+        self.roll = roll
 
-    def s0(self, player_1=None):
-        if player_1 is None:
-            player_1 = random.random() < 0.5
-        return (tuple(self.board), player_1)
+    def s0(self):
+        dice = None
+        while True:
+            dice = (self.roll(), self.roll())
+            (d1, d2) = dice
+            if d1 != d2:
+                break
+        player_1 = d1 > d2
+        return (tuple(self.board), player_1, dice)
 
-    def available_moves(self, state, roll):
-        (board, player_1) = state
-        return self.mc.compute_moves((board, player_1, roll))
+    def available_moves(self, state):
+        return self.mc.compute_moves(state)
 
     def next(self, state, action):
-        (board, player_1) = state
+        (board, player_1, dice) = state
+        dice = (self.roll(), self.roll())
         if action:
             scratch = [x for x in board]
             backgammon.unchecked_move(scratch, action, player_1=player_1)
-            return (tuple(scratch), not player_1)
+            return (tuple(scratch), not player_1, dice)
         else:
-            return (board, not player_1)
+            return (board, not player_1, dice)
 
     def done(self, state):
-        (board, player_1) = state
+        (board, player_1, dice) = state
         my_checker_count = 0
         if player_1:
             for x in board:

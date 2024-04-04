@@ -45,7 +45,10 @@ def test_1_ply():
 
     rolls = []
     selections = []
-    s = bck.s0(player_1=True)
+    s = bck.s0()
+    (board, player_1_ignoree, dice_ignored) = s
+    player_1 = True
+    s = (board, player_1, dice)
     i = 0
     while True:
         i += 1
@@ -53,7 +56,6 @@ def test_1_ply():
             break
         else:
             rolls.append(dice)
-            (board, player_1) = s
             moves = [p.choose_action((board, player_1, dice)) for p in policies]
             if moves[0] != moves[1]:
                 print(backgammon.to_str(board))
@@ -62,8 +64,9 @@ def test_1_ply():
                 print(moves[1])
             selections.append(moves)
             move = moves[-1]
-            s = bck.next(s, move)
+            (board, player_1, dice_ignored) = bck.next(s, move)
             dice = tuple(torch.randint(1, 7, (2,)).tolist())
+            s = (board, player_1, dice)
 
     assert selections == [
         [((13, 7), (8, 7)), ((13, 7), (8, 7))],

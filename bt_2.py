@@ -199,17 +199,21 @@ def combine_move_with_die_and_start(move, die, start):
             hit_vs.append(t)
             move_vs.append(t)
         elif i == end:
-            is_hit_destination = low == -1 and high == 0
-            is_move_destination = low == 0 and high == 16
-            if is_hit_destination:
-                move_vs.append((low, high, v + 1))
-                hit_vs.append(impossible_t)
-            elif is_move_destination:
-                move_vs.append((low, high, v + 1))
-                hit_vs.append(impossible_t)
+            if i == 0:
+                move_vs.append((low, high, v))
+                hit_vs.append((low, high, v - 1))  # put a piece on their bar
             else:
-                move_vs.append(move_dest)
-                hit_vs.append(hit_dest)
+                is_hit_destination = low == -1 and high == 0
+                is_move_destination = low == 0 and high == 16
+                if is_hit_destination:
+                    move_vs.append((low, high, v + 1))
+                    hit_vs.append(impossible_t)
+                elif is_move_destination:
+                    move_vs.append((low, high, v + 1))
+                    hit_vs.append(impossible_t)
+                else:
+                    move_vs.append(move_dest)
+                    hit_vs.append(hit_dest)
         elif i > 0:
             assert i < end
             move_vs.append((low, high, v))
@@ -217,7 +221,7 @@ def combine_move_with_die_and_start(move, die, start):
         else:
             assert i == 0
             move_vs.append((low, high, v))
-            hit_vs.append((low, high, v + 1))  # put a piece on their bar
+            hit_vs.append((low, high, v - 1))  # put a piece on their bar
 
     a, b, c = split_out(move_vs)
     d, e, f = split_out(hit_vs)
@@ -251,14 +255,22 @@ def all_moves_dice(d1, d2):
     return filtered
 
 
-def tensorize(moves):
+def tensorize(x):
     moves_tensor = []
     lower_bounds = []
     upper_bounds = []
     vectors_tensor = []
     moves_dict = set()
-    for moves, low, high, vector in moves:
-
+    for moves, low, high, vector in x:
+        hit_count = 0
+        bearoff_count = 0
+        for _, end, is_hit in zip(moves[0::3], moves[1::3], moves[2::3]):
+            if is_hit:
+                hit_count += 1
+            if end <= 0:
+                bearoff_count += 1
+        assert vector[0] == -1 * hit_count
+        assert sum(vector) == -1 * bearoff_count
         moves_key = tuple(moves)
         assert moves_key not in moves_dict
         moves_dict.add(moves_key)

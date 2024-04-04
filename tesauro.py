@@ -5,7 +5,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def observe(state):
     tensor = [0 for _ in range(198)]
-    (board, player_1) = state
+    (board, player_1, dice) = state
 
     checker_count_1 = 15.0
     checker_count_2 = 15.0

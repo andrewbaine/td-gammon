@@ -4,8 +4,9 @@ import tesauro
 
 def test_tesauro():
     bck = backgammon_env.Backgammon()
-    state = bck.s0(player_1=True)
-    tensor = tesauro.observe(state)
+    state = bck.s0()
+    (board, p1, dice) = state
+    tensor = tesauro.observe((board, True, dice))
     assert tensor.tolist() == [
         0,  # 1
         0,

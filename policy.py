@@ -4,15 +4,15 @@ import numpy
 
 def evaluate_action_1_ply(bck, observe, nn, state, action):
     (board, player_1, _) = state
-    s = bck.next((board, player_1), action)
+    s = bck.next(state, action)
     t = observe(s)
     return nn(t).item()
 
 
 def choose_action_1_ply(bck, observe, nn, state):
     (board, player_1, dice) = state
-    assert bck.done((board, player_1)) is None  # remove in production
-    moves = bck.available_moves((board, player_1), dice)
+    assert bck.done(state) is None  # remove in production
+    moves = bck.available_moves(state)
 
     best = None
     best_move = None
@@ -26,16 +26,16 @@ def choose_action_1_ply(bck, observe, nn, state):
 
 
 def evaluate_action_2_ply(bck, observe, nn, state, action):
-    (board, player_1, _) = state
-    assert bck.done((board, player_1)) is None  # remove in production
-    s = bck.next((board, player_1), action)
+    (board, player_1, dice) = state
+    assert bck.done((board, player_1, dice)) is None  # remove in production
+    s = bck.next((board, player_1, dice), action)
     if bck.done(s):
         t = observe(s)
         return nn(t).item()
 
     equity = 0
     count = 0
-    (board, player_1) = s
+    (board, player_1, dice) = s
     for d1 in range(1, 7):
         for d2 in range(d1, 7):
             factor = 1 if d1 == d2 else 2
@@ -105,7 +105,7 @@ class Policy_2_ply_selective(Policy_2_ply_exhaustive):
 
     def choose_action(self, state):
         (board, player_1, dice) = state
-        moves = self._bck.available_moves((board, player_1), dice)
+        moves = self._bck.available_moves((board, player_1, dice))
         if not moves:
             return None
 

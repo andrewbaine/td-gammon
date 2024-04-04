@@ -1,24 +1,14 @@
 import backgammon
 import b2
 
-import random
-
-
-def roll():
-    return random.randint(1, 6)
-
-
 board = backgammon.make_board()
 
 player_1 = True
 mc = b2.MoveComputer()
 
-d1 = roll()
-d2 = roll()
-while d2 == d1:
-    d2 = roll()
-
 color = backgammon.Color.Dark
+
+(d1, d2) = backgammon.first_roll()
 while True:
     print(backgammon.to_str(board, player_1_color=color))
     ## did the other guy just win?!
@@ -47,8 +37,7 @@ while True:
         else:
             print("no legal moves")
     backgammon.invert(board)
-    d1 = roll()
-    d2 = roll()
+    (d1, d2) = backgammon.roll()
     color = (
         backgammon.Color.Dark
         if color == backgammon.Color.Light

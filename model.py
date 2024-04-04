@@ -33,14 +33,12 @@ class Trainer:
                 e.add_(w.grad)
                 w.add_(torch.mul(e, αδ))
 
-    def best(self, state, dice):
-        (board, player_1) = state
-        return self._policy.choose_action((board, player_1, dice))
+    def best(self, state):
+        return self._policy.choose_action(state)
 
     def td_episode(self, i):
         # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
-        state = self._bck.s0(player_1=(i % 2 == 0))
-        dice = first_roll()
+        state = self._bck.s0()
 
         t = 0
         while True:
@@ -50,22 +48,10 @@ class Trainer:
                 return (t, done)
             else:
                 with torch.no_grad():
-                    best_move = self.best(state, dice)
+                    best_move = self.best(state)
                 next_state = self._bck.next(state, best_move)
                 tensor = self.observe(next_state)
                 v_next = self.nn(tensor).item()
                 self.train(v_next, state)
-                dice = roll()
                 state = next_state
             t += 1
-
-
-def roll():
-    return tuple(torch.randint(1, 7, (2,)).tolist())
-
-
-def first_roll():
-    while True:
-        (d1, d2) = roll()
-        if d1 != d2:
-            return (d1, d2)
