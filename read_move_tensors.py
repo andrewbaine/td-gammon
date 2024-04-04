@@ -68,7 +68,6 @@ class MoveTensors:
     def compute_moves(self, state):
         (board, player_1, (d1, d2)) = state
         assert player_1
-        tensors = None
         i = find_index(d1, d2)
         tensors = self.ab[i]
         for moves, lower, upper, vector in tensors:
