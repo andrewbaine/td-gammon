@@ -14,5 +14,6 @@ RUN make install
 
 FROM base
 COPY --from=0 /usr/local/bin/gnubg /bin/gnubg
-CMD ["/bin/gnubg"]
 
+ENTRYPOINT ["/bin/gnubg"]
+CMD []

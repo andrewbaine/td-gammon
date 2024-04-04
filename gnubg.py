@@ -2,8 +2,16 @@ import base64
 from collections import namedtuple
 
 
+def pad(s):
+    i = len(s) % 4
+    while i > 0:
+        i -= 1
+        s = s + "="
+    return s
+
+
 def decode_position(position_id):
-    bs = base64.b64decode(position_id, validate=False)
+    bs = base64.b64decode(pad(position_id))
     assert len(bs) == 10
     arr = []
     board = [0 for x in range(26)]
@@ -73,7 +81,7 @@ def n(bs, start, end):
 
 
 def decode_match(match_id):
-    bs = base64.b64decode(match_id, validate=False)
+    bs = base64.b64decode(pad(match_id), validate=False)
     exp = n(bs, 0, 4)
     cube = 2**exp
     cube_owner_mask = n(bs, 4, 6)
@@ -187,7 +195,7 @@ def encode_position(board):
             mask = 0
             i += 1
     s = str(base64.b64encode(bytes(bs)))
-    return s[: s.rfind("=")]
+    return s[: s.find("=")]
 
 
 if __name__ == "__main__":
