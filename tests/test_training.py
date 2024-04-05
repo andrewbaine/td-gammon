@@ -3,7 +3,7 @@ import torch
 import backgammon_env
 import model
 import network
-import tesauro
+import tes
 
 
 def roll():
@@ -21,7 +21,7 @@ def test_predictability_of_network():
 
     b = backgammon_env.Backgammon(roll=roll)
     s0 = b.s0()
-    tensor = tesauro.observe(s0)
+    tensor = tes.observe(s0)
     v = nn(tensor).tolist()
     expected = [
         0.3743259906768799,
@@ -45,7 +45,7 @@ def test_predictability_of_network_after_train():
     s = b.s0()
     m = ((8, 5), (6, 5))
     s1 = b.next(s, m)
-    observe = tesauro.observe
+    observe = tes.observe
     trainer = model.Trainer(b, nn, observe)
 
     v = nn(observe(s))
@@ -88,7 +88,7 @@ def test_evaluations_of_single_game_play():
     torch.manual_seed(random_seed)
     nn = network.layered(198, 20, 4)
     bck = backgammon_env.Backgammon(roll=roll)
-    trainer = model.Trainer(bck, nn, tesauro.observe)
+    trainer = model.Trainer(bck, nn, tes.observe)
 
     for i in range(5):
         trainer.td_episode(i)

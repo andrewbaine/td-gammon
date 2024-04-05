@@ -1,5 +1,5 @@
 import backgammon_env
-import tesauro
+import tes as tesauro
 
 
 def test_tesauro():

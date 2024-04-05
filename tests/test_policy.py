@@ -4,7 +4,7 @@ import backgammon
 import backgammon_env
 import network
 import policy
-import tesauro
+import tes as tesauro
 
 
 def test_1_ply():
