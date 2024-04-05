@@ -67,7 +67,7 @@ class MoveTensors:
                             for name in ["4", "3", "2", "1"]
                         ]
                         dubsies.append(noop)
-                        self.ab.append(dubsies)
+                        self.player_1_vectors.append(dubsies)
                     else:
                         xs = [read(ab_dir(dir, d1, d2))]
                         xs.append(singles[d1 - 1])
@@ -82,7 +82,7 @@ class MoveTensors:
         tensors = (self.player_1_vectors if player_1 else self.player_2_vectors)[i]
         for moves, lower, upper, vector in tensors:
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            ms = moves[indices]
-            if ms.size()[0] > 0:
-                return ms
+            print(indices)
+            if torch.numel(vector[indices]) > 0:
+                return moves[indices]
         assert False
