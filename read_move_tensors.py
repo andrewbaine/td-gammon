@@ -82,7 +82,16 @@ class MoveTensors:
         tensors = (self.player_1_vectors if player_1 else self.player_2_vectors)[i]
         for moves, lower, upper, vector in tensors:
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            print(indices)
             if torch.numel(vector[indices]) > 0:
                 return moves[indices]
+        assert False
+
+    def compute_move_vectors(self, state):
+        (board, player_1, (d1, d2)) = state
+        i = find_index(d1, d2)
+        tensors = (self.player_1_vectors if player_1 else self.player_2_vectors)[i]
+        for moves, lower, upper, vector in tensors:
+            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
+            if torch.numel(vector[indices]) > 0:
+                return vector[indices]
         assert False
