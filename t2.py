@@ -60,11 +60,3 @@ class Encoder:
         x = torch.add(x, torch.matmul(torch.minimum(board, self.zero_board), self.v3))
 
         return x
-
-
-import backgammon
-
-enc = Encoder(device="cpu")
-board = torch.tensor(backgammon.make_board(), dtype=torch.float)
-x = enc.encode(board, False)
-print(x.tolist())
