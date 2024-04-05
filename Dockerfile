@@ -9,6 +9,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
-COPY src .
+COPY src src
 
-ENTRYPOINT ["python3", "src/main.py"]
+ENTRYPOINT ["python3", "/app/src/main.py"]
