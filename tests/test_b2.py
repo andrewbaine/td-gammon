@@ -955,6 +955,52 @@ test_cases = [
         player_1_color=Dark,
         player=Dark,
     ),
+    Case(
+        board="""___________________________________________
+|                  |   |                  |
+|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
+|       ○  ●       |   | ●           ●  ● |
+|                  |   | ●              ● |
+|                  |   | ●              ● |
+|                  |   | ●                |
+|                  |   |                  |
+|                  |BAR|                  |
+|                  |   |             ○  ○ |
+|                  |   |             ○  ○ |
+|                  |   |             6  8 |
+|          ●       |   |             ○  ○ |
+| ●        ●  ●    |   | ●     ●     ○  ○ |
+|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
+|__________________|___|__________________|
+""",
+        roll=(6, 6),
+        expected_moves=[],
+        player_1_color=Light,
+        player=Light,
+    ),
+    Case(
+        board="""___________________________________________
+|                  |   |                  |
+|13 14 15 16 17 18 |   |19 20 21 22 23 24 |
+| ○        ○  ○    |   | ○     ○     ●  ● |
+|          ○       |   |             ●  ● |
+|                  |   |             6  8 |
+|                  |   |             ●  ● |
+|                  |   |             ●  ● |
+|                  |BAR|                  |
+|                  |   |                  |
+|                  |   | ○                |
+|                  |   | ○              ○ |
+|                  |   | ○              ○ |
+|       ●  ○       |   | ○           ○  ○ |
+|12 11 10  9  8  7 |   | 6  5  4  3  2  1 |
+|__________________|___|__________________|
+""",
+        roll=(6, 6),
+        expected_moves=[],
+        player_1_color=Light,
+        player=Dark,
+    ),
 ]
 
 
@@ -973,5 +1019,6 @@ def tests(t):
     moves_dumb.sort()
     moves_dumb.reverse()
 
-    assert moves == t.expected_moves, t.comment
     assert moves_dumb == t.expected_moves, "DUMB: " + t.comment
+
+    assert moves == t.expected_moves, t.comment

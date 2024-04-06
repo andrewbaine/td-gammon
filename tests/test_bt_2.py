@@ -5,7 +5,7 @@ import backgammon
 import test_b2
 import read_move_tensors
 
-move_tensors = read_move_tensors.MoveTensors("move_tensors/2024-04-03T21:18:55.019738")
+move_tensors = read_move_tensors.MoveTensors("move_tensors/current")
 
 
 @pytest.mark.parametrize("t", test_b2.test_cases)

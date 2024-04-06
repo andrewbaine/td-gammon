@@ -149,7 +149,7 @@ def combine_move_with_die_and_start(move, die, start):
                 else:
                     move_vs.append(impossible_t)
             elif v == 0:
-                move_vs.append(empty_t)
+                move_vs.append((low, min(high, 1), v))
             elif v < 0:
                 move_vs.append((-v, 1 - v, v))
             else:
