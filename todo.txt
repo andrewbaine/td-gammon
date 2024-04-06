@@ -1,0 +1,51 @@
+
+=== backgammon correctness
+- implement 3 classes:
+     - my original move calculator, plus unchecked-move
+     - slow_dumb_but_correct, plus a checked-move implementation
+     - tensor bases
+- then, implement a tester that playes a game
+     - for each position,
+         for each class,
+	   check they all agree on the game state?
+	   check they all say the same moves are available?
+	 choose a random move and make it x3
+
+=== once and forall, write a script that tests a bot efficiently
+    for win rate vs gnubg
+
+=== performance
+run profiler on a tournament
+
+=== plies;
+- implement 3-ply look-ahead
+- use selective 2-ply look-ahead;
+- do some experimentation: how often does 2-ply change vs 1-ply?
+
+=== neural network performance
+- dynamically update learning rate
+- learning rate schedule
+- set lambda closer to 1
+
+=== entire training loop on gpu
+- implement available moves as a tensor operation
+- implement next state as a tensor operation
+
+=== evaluation
+- make it simple to chart a learning model's progress
+
+=== testing
+- are you really sure the available moves computation is right?
+    - write a dumber test function that looks at _all_ possible moves
+    and just filters the ones that are illegal
+    - compare it to my smart function
+
+
+
+DONE
+x use softmax;
+
+REJECTED
+x deterministically play 21 * 36  * 2 games before updating the gradients?
+  or maybe shuffle those 800 games and play them; then lather rinse and repeat.
+  this is probably not important. (a) 
