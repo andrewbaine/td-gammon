@@ -30,10 +30,11 @@ import random
 
 
 def test_game_play():
-    seed = random.randint(0, 0xFFFFFFFFFFFFFFFF)
+    default_seed = None
+    seed = int(os.environ.get("SEED", default=default_seed))
     print("seed for reuse", seed)
     torch.random.manual_seed(seed)
-    bck = backgammon_env.Backgammon(lambda: random.randint(1, 6))
+    bck = backgammon_env.Backgammon(lambda: torch.randint(1, 7, (1,)).item())
     dir = os.environ.get("MOVES_TENSORS", default="move_tensors/current")
     n = int(os.environ.get("N_GAMES", default="10"))
     move_tensors = read_move_tensors.MoveTensors(dir=dir)
