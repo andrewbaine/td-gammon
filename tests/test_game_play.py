@@ -5,6 +5,8 @@ import read_move_tensors
 
 import backgammon_env
 
+import done_check
+
 
 def translate(xs):
     ys = list(
@@ -20,14 +22,23 @@ def translate(xs):
     return ys
 
 
+def normalize(moves):
+    return list(reversed(sorted(tuple(reversed(sorted(x))) for x in moves)))
+
+
+import random
+
+
 def test_game_play():
-    torch.random.manual_seed(1)
-    bck = backgammon_env.Backgammon(lambda: torch.randint(1, 7, (1,)).item())
+    seed = random.randint(0, 0xFFFFFFFFFFFFFFFF)
+    print("seed for reuse", seed)
+    torch.random.manual_seed(seed)
+    bck = backgammon_env.Backgammon(lambda: random.randint(1, 6))
     dir = os.environ.get("MOVES_TENSORS", default="move_tensors/current")
-    n = int(os.environ.get("N_GAMES", default="10000"))
+    n = int(os.environ.get("N_GAMES", default="10"))
     move_tensors = read_move_tensors.MoveTensors(dir=dir)
 
-    for i in range(3):
+    for i in range(n):
         state = bck.s0()
         (board, player_1, dice) = state
         tensor_board = torch.tensor(board, dtype=torch.float)
@@ -38,10 +49,12 @@ def test_game_play():
             assert tuple(tensor_board.tolist()) == board
 
             done = bck.done(state)
+
             if done:
                 break
             else:
                 moves = bck.available_moves(state)
+                moves = normalize(moves)
                 mm = move_tensors.compute_moves((tensor_board, player_1, dice))
                 v = move_tensors.compute_move_vectors((tensor_board, player_1, dice))
 

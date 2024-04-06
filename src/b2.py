@@ -20,7 +20,7 @@ def _m2(board, result, d1, d2, best=0):
                 elif dest1 < 25:
                     board[dest1] += 1
 
-                if d1 > best:
+                if d1 >= best:
                     best = d1
                     result.add((best, ((25 - i, 25 - i - d1),)))
                 for j in range(i, 26):

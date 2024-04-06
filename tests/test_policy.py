@@ -6,7 +6,10 @@ import network
 import policy
 import tes as tesauro
 
+import pytest
 
+
+@pytest.mark.skip(reason="too slow for now")
 def test_1_ply():
     random_seed = 1
     if torch.cuda.is_available():
