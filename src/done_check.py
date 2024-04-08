@@ -66,9 +66,6 @@ class Donecheck:
         self.is_flag(a_backgammoned)
 
         b_backgammon_point = b_gammon_point * a_backgammoned
-        print("a_backgammoned", a_backgammoned)
-        print("b_gammon_point", b_gammon_point)
-        print("b_backgammon_point", b_backgammon_point)
 
         assert self.n0.equal(b_backgammon_point) or self.n1_neg.equal(b_gammon_point)
         assert self.n0.equal(b_gammon_point) or self.n1_neg.equal(b_win_point)

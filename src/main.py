@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     parser_train = sp.add_parser("train")
     train.init_parser(parser_train)
-    parser_train.set_defaults(func=train)
+    parser_train.set_defaults(func=train.train)
 
     parser_play = sp.add_parser("play")
     parser_play.set_defaults(func=play)
