@@ -1,4 +1,9 @@
 
+1. create a feedback loop whre I can
+   - train a model
+   - evaluate a model
+   - iterate
+
 === backgammon correctness
 - implement 3 classes:
      - my original move calculator, plus unchecked-move
