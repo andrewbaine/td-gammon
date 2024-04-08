@@ -63,12 +63,15 @@ class Donecheck:
         assert self.n1_neg.equal(b_gammon_point) or self.n0.equal(b_gammon_point)
 
         a_backgammoned = torch.minimum(torch.matmul(a, self.a_backgammoned), self.n1)
-        self.is_flag(a_backgammon_point)
+        self.is_flag(a_backgammoned)
 
         b_backgammon_point = b_gammon_point * a_backgammoned
-        assert self.n1_neg.equal(b_backgammon_point) or self.n0.equal(b_gammon_point)
+        print("a_backgammoned", a_backgammoned)
+        print("b_gammon_point", b_gammon_point)
+        print("b_backgammon_point", b_backgammon_point)
 
-        assert self.n0.equal(b_gammon_point) or self.n1.neg().equal(b_win_point)
+        assert self.n0.equal(b_backgammon_point) or self.n1_neg.equal(b_gammon_point)
+        assert self.n0.equal(b_gammon_point) or self.n1_neg.equal(b_win_point)
         assert b_backgammon_point == 0 or b_gammon_point == -1
 
         assert a_win_point == 0 or b_win_point == 0
