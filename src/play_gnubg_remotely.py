@@ -1,69 +1,37 @@
-import socket
-import sys
-import subprocess
-import threading
+import asyncio
 
 
-def gnubg(player, port):
-    input = "".join(
-        [
-            x + "\n"
-            for x in [
-                "set player {player} external localhost:{port}".format(
-                    player=player, port=port
-                ),
-                "new session 1",
-            ]
-        ]
-    )
-    subprocess.run(["gnubg", "-q", "-t"], input=input, text=True)
-
-
-def lines(connection):
-    reader = connection.makefile(mode="rb")
+async def readlines(reader, chunk_size=1024):
     chunks = []
+    sep = b"\0"
     while True:
-        chunk = reader.read(1)
-        if chunk:
-            if chunk[0] != 0:
-                chunks.append(chunk)
-            else:
-                word = b"".join(chunks).decode().strip()
-                chunks.clear()
-                yield word
-        else:
+        data = await reader.read(chunk_size)
+        print("data", data)
+        if not data:
             return
+        i = 0
+        while i < len(data):
+            end = data.find(sep)
+            if end < 0:
+                chunks.append(data)
+                break
+            else:
+                c = data[i:end]
+                chunks.append(c)
+                yield b"".join(chunks)
+                chunks = []
+                i = end + 1
 
 
-def listen(server):
-    (connection, x) = server.accept()
-    print("x", x)
-    for line in lines(connection):
-        #        print(line)
-        response = sys.stdin.readline()
-        connection.send(response.encode())
+async def main(host, port, f):
+    async def handler(reader, writer):
+        async for data in readlines(reader):
+            response = f(data.decode())
+            if response:
+                writer.write(response.encode())
+                await writer.drain()
+        writer.close()
 
-
-def main(player):
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    server_address = ("localhost", 0)
-    server.bind(server_address)
-    server.listen(1)
-
-    s = server.getsockname()
-    port = s[1]
-    print(input)
-    t1 = threading.Thread(target=gnubg, args=(player, port))
-    t2 = threading.Thread(target=listen, args=(server,))
-    t1.start()
-    t2.start()
-    t1.join()
-    sys.exit(0)
-
-
-#    server.close()
-
-
-if __name__ == "__main__":
-    main("andrewbaine")
+    server = await asyncio.start_server(handler, host, port)
+    async with server:
+        await server.serve_forever()

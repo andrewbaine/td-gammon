@@ -30,7 +30,7 @@ import random
 
 
 def test_game_play():
-    default_seed = None
+    default_seed = random.randint(0, 0xFFFFFFFFFFFFFFFF)
     seed = int(os.environ.get("SEED", default=default_seed))
     print("seed for reuse", seed)
     torch.random.manual_seed(seed)

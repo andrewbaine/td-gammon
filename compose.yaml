@@ -1,0 +1,19 @@
+version: "3"
+services:
+  gnubg:
+    build: ./gnubg
+    entrypoint: "chmod a+x /var/main.sh && /var/main.sh"
+    volumes:
+      - ./gnubg/var:/var
+    depends_on:
+      - player
+  player:
+    build: .
+    command: "play_gnubg"
+    ports:
+      - "8080:8080"
+    tty: true
+  phobos:
+    container_name: phobos
+    image: busybox
+    command: sleep infinity
