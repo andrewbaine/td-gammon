@@ -30,7 +30,7 @@ class TD:
         self.eligibility_trace = [
             (w, torch.zeros_like(w, requires_grad=False)) for w in nn.parameters()
         ]
-        self.nn = network.with_utility(nn)
+        self.nn = network.with_backgammon_utility(nn)
 
     def train(self, v_next, state):
         (board, player_1, _) = state
@@ -55,11 +55,9 @@ class TD:
         state = self.s0()
         for i in count():
             (board, player_1, _) = state
-            print(backgammon.to_str(board.tolist()))
             done = self.move_checker.check(board)
             if done:
                 self.train(done, state)
-                print(done)
                 return (i, done)
             with torch.no_grad():
                 move_vectors = self.move_tensors.compute_move_vectors(state)

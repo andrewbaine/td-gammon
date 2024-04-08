@@ -47,3 +47,7 @@ def backgammon_utility():
     u = nn.Linear(6, 1, bias=False, dtype=float)
     u.weight = nn.Parameter(backgammon_utility_tensor())
     return u
+
+
+def with_backgammon_utility(network):
+    return nn.Sequential(network, backgammon_utility())
