@@ -28,7 +28,7 @@ def utility_tensor():
 
 
 def utility():
-    u = nn.Linear(4, 1, bias=False)
+    u = nn.Linear(4, 1, bias=False, dtype=torch.float)
     u.weight = nn.Parameter(
         utility_tensor(),
     )
@@ -37,3 +37,13 @@ def utility():
 
 def with_utility(network):
     return nn.Sequential(OrderedDict([("network", network), ("utility", utility())]))
+
+
+def backgammon_utility_tensor():
+    return torch.tensor([-3, -2, -1, 1, 2, 3], dtype=torch.float)
+
+
+def backgammon_utility():
+    u = nn.Linear(6, 1, bias=False, dtype=float)
+    u.weight = nn.Parameter(backgammon_utility_tensor())
+    return u

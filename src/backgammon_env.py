@@ -36,15 +36,20 @@ class Backgammon:
     def done(self, state):
         (board, player_1, dice) = state
         my_checker_count = 0
+        backgammoned = 0
         if player_1:
-            for x in board:
+            for i, x in enumerate(board):
                 if x < 0:  # i didnt lose
-                    return None
+                    return 0
+                if i > 18:
+                    backgammoned += x
                 my_checker_count += x
-            return -1 if my_checker_count < 15 else -2
+            return -1 if my_checker_count < 15 else (-3 if backgammoned else -2)
         else:
-            for x in board:
+            for i, x in enumerate(board):
                 if x > 0:  # i didnt lose
-                    return None
+                    return 0
+                if i < 7:
+                    backgammoned -= x
                 my_checker_count -= x
-            return 1 if my_checker_count < 15 else 2
+            return 1 if my_checker_count < 15 else (3 if backgammoned else 2)

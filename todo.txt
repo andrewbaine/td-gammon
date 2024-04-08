@@ -5,6 +5,9 @@
    - iterate
 
 === backgammon correctness
+THIS IS DONE IN src/test_game_play.py
+- this is very important, can I refactor it to be a bit cleaner?
+
 - implement 3 classes:
      - my original move calculator, plus unchecked-move
      - slow_dumb_but_correct, plus a checked-move implementation

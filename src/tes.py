@@ -1,10 +1,8 @@
 import torch
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 def observe(state):
-    tensor = [0 for _ in range(198)]
+    tensor = [0.0 for _ in range(198)]
     (board, player_1, dice) = state
 
     checker_count_1 = 15.0
@@ -18,22 +16,22 @@ def observe(state):
         elif i < 25:
             if pc > 0:
                 checker_count_1 -= pc
-                tensor[t] = 1
+                tensor[t] = 1.0
                 if pc > 1:
-                    tensor[t + 1] = 1
+                    tensor[t + 1] = 1.0
                     if pc > 2:
-                        tensor[t + 2] = 1
+                        tensor[t + 2] = 1.0
                         if pc > 3:
-                            tensor[t + 3] = (pc - 3) / 2
+                            tensor[t + 3] = (pc - 3.0) / 2.0
             elif pc < 0:
                 checker_count_2 += pc
-                tensor[t + 4] = 1
+                tensor[t + 4] = 1.0
                 if pc < -1:
-                    tensor[t + 5] = 1
+                    tensor[t + 5] = 1.0
                     if pc < -2:
-                        tensor[t + 6] = 1
+                        tensor[t + 6] = 1.0
                         if pc < -3:
-                            tensor[t + 7] = (-3 - pc) / 2
+                            tensor[t + 7] = (-3 - pc) / 2.0
             t += 8
         elif i == 25:
             assert pc >= 0
@@ -46,8 +44,4 @@ def observe(state):
     tensor[195] = checker_count_2 / 15.0
     tensor[196] = 1 if player_1 else 0
     tensor[197] = 0 if player_1 else 1
-    return torch.tensor(tensor, device=device)
-
-
-def tensor():
-    return torch.tensor([0 for _ in range(198)], dtype=torch.float)
+    return torch.tensor(tensor)

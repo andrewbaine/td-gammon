@@ -27,6 +27,7 @@ def normalize(moves):
 
 
 import random
+import slow_but_right
 
 
 def test_game_play():
@@ -35,6 +36,10 @@ def test_game_play():
     print("seed for reuse", seed)
     torch.random.manual_seed(seed)
     bck = backgammon_env.Backgammon(lambda: torch.randint(1, 7, (1,)).item())
+
+    sbr = slow_but_right.MoveComputer()
+    dc = done_check.Donecheck()
+
     dir = os.environ.get("MOVES_TENSORS", default="move_tensors/current")
     n = int(os.environ.get("N_GAMES", default="10"))
     move_tensors = read_move_tensors.MoveTensors(dir=dir)
@@ -50,7 +55,11 @@ def test_game_play():
             assert tuple(tensor_board.tolist()) == board
 
             done = bck.done(state)
+            done_slow_but_right = sbr.done(state)
+            dc_done = dc.check(tensor_board)
 
+            assert done_slow_but_right == done, "done_slow_but_right done should agree"
+            assert dc_done == done, "done_check done should agree"
             if done:
                 break
             else:
@@ -67,9 +76,6 @@ def test_game_play():
                 assert simplified_moves == moves or (
                     simplified_moves == [()] and moves == []
                 )
-                print(mm)
-                print(translate(mm))
-                print(moves)
 
                 if moves:
                     i = torch.randint(0, len(moves), (1,)).item()

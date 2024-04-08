@@ -52,28 +52,27 @@ def find_index(a, b):
 
 
 class MoveTensors:
-    def __init__(self, dir, device="cpu"):
+    def __init__(self, dir):
         self.player_1_vectors = []
 
-        with torch.device(device):
-            noop = read(noop_dir(dir))
-            singles = [read(singles_dir(dir, d1)) for d1 in range(1, 7)]
+        noop = read(noop_dir(dir))
+        singles = [read(singles_dir(dir, d1)) for d1 in range(1, 7)]
 
-            for d1 in range(1, 7):
-                for d2 in range(1, d1 + 1):
-                    if d1 == d2:
-                        dubsies = [
-                            read(doubles_dir(dir, d1, name))
-                            for name in ["4", "3", "2", "1"]
-                        ]
-                        dubsies.append(noop)
-                        self.player_1_vectors.append(dubsies)
-                    else:
-                        xs = [read(ab_dir(dir, d1, d2))]
-                        xs.append(singles[d1 - 1])
-                        xs.append(singles[d2 - 1])
-                        xs.append(noop)
-                        self.player_1_vectors.append(xs)
+        for d1 in range(1, 7):
+            for d2 in range(1, d1 + 1):
+                if d1 == d2:
+                    dubsies = [
+                        read(doubles_dir(dir, d1, name))
+                        for name in ["4", "3", "2", "1"]
+                    ]
+                    dubsies.append(noop)
+                    self.player_1_vectors.append(dubsies)
+                else:
+                    xs = [read(ab_dir(dir, d1, d2))]
+                    xs.append(singles[d1 - 1])
+                    xs.append(singles[d2 - 1])
+                    xs.append(noop)
+                    self.player_1_vectors.append(xs)
         self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
 
     def compute_moves(self, state):

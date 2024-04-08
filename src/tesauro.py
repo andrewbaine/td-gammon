@@ -2,9 +2,7 @@ import torch
 
 
 class Encoder:
-    def __init__(self, device):
-        self.device = device
-
+    def __init__(self):
         v = []
         v2 = []
         v3 = []
@@ -47,7 +45,7 @@ class Encoder:
         self.zero_board = self.t([0 for _ in range(26)])
 
     def t(self, data):
-        return torch.tensor(data, dtype=torch.float, device=self.device)
+        return torch.tensor(data, dtype=torch.float)
 
     def encode(self, board, player_1):
         x = torch.matmul(board, self.v)

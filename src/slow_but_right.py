@@ -2,6 +2,53 @@ class MoveComputer:
     def __init__(self):
         self.scratch = [0 for _ in range(26)]
 
+    def done(self, state):
+        """
+        At the end of the game, if the losing player has borne off at least one checker,
+        he loses only the value showing on the doubling cube (one point, if there have
+        been no doubles). However, if the loser has not borne off any of his checkers,
+        he is gammoned and loses twice the value of the doubling cube. Or, worse, if the
+        loser has not borne off any of his checkers and still has a checker on the bar
+        or in the winner's home board, he is backgammoned and loses three times the
+        value of the doubling cube.
+        """
+        (board, player_1, (d1, d2)) = state
+        # did player_1 lose?
+        player_1_in_back = 0
+        player_2_in_back = 0
+        player_1_count = 0
+        player_2_count = 0
+        for i, n in enumerate(board):
+            if n < 0:
+                if i < 7:
+                    player_2_in_back -= n
+                player_2_count -= n
+            else:
+                if i > 18:
+                    player_1_in_back += n
+                player_1_count += n
+
+        assert 0 <= player_1_count < 16
+        assert 0 <= player_2_count < 16
+        assert 0 <= player_1_in_back <= player_1_count
+        assert 0 <= player_2_in_back <= player_2_count
+
+        if player_2_count == 0:
+            assert player_1_count != 0
+            if player_1_count == 15:
+                if player_1_in_back > 0:
+                    return -3
+                return -2
+            return -1
+        if player_1_count == 0:
+            assert player_2_count != 0
+            if player_2_count == 15:
+                if player_2_in_back > 0:
+                    return 3
+                return 2
+            return 1
+        return 0
+
     def play_move(self, start, end):
         board = self.scratch
         assert start > end
