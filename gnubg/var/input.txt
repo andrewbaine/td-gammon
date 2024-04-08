@@ -1,0 +1,5 @@
+show version
+new session 1
+show version
+set player root external player:8080
+show version
