@@ -15,3 +15,4 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 COPY src src
 
 ENTRYPOINT ["python3", "/app/src/main.py"]
+CMD ["--help"]
