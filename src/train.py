@@ -21,14 +21,21 @@ def init_parser(parser):
 
 
 def train(args):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.basicConfig(filename="example.log", encoding="utf-8", level=logging.INFO)
     layers = [198, args.hidden, 6]
-    nn = network.layered(*layers, softmax=True)
-    board = torch.tensor(backgammon.make_board(), dtype=torch.float)
-    move_checker = done_check.Donecheck()
-    move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
-    encoder = tesauro.Encoder()
-    temporal_difference = td.TD(board, move_checker, move_tensors, nn, encoder)
+    nn: torch.nn.Sequential = network.layered(*layers, softmax=True, device=device)
+    nn.to(device)
+
+    board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
+    board.to(device)
+
+    move_checker = done_check.Donecheck(device=device)
+    move_tensors = read_move_tensors.MoveTensors(args.move_tensors, device=device)
+    encoder = tesauro.Encoder(device=device)
+    temporal_difference = td.TD(
+        board, move_checker, move_tensors, nn, encoder, device=device
+    )
 
     os.makedirs(args.save_dir, exist_ok=True)
     for i in range(args.iterations):
@@ -42,8 +49,4 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     init_parser(parser)
     args = parser.parse_args()
-    if torch.cuda.is_available():
-        with torch.device("cuda"):
-            train(args)
-    else:
-        train(args)
+    train(args)

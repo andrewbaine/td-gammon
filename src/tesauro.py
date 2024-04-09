@@ -1,8 +1,10 @@
 import torch
 
+from torch import matmul, maximum, add, minimum
+
 
 class Encoder:
-    def __init__(self):
+    def __init__(self, device=torch.device("cuda")):
         v = []
         v2 = []
         v3 = []
@@ -35,26 +37,27 @@ class Encoder:
             assert len(w_1) == 198
         w_2 = [x if i < 196 else (1 - x) for i, x in enumerate(w_1)]
 
-        self.v = self.t(v)
-        self.v2 = self.t(v2)
-        self.v3 = self.t(v3)
-        self.w_1 = self.t(w_1)
-        self.w_2 = self.t(w_2)
+        self.v = torch.tensor(v, dtype=torch.float, device=device)
+        self.v2 = torch.tensor(v2, dtype=torch.float, device=device)
+        self.v3 = torch.tensor(v3, dtype=torch.float, device=device)
+        self.w_1 = torch.tensor(w_1, dtype=torch.float, device=device)
+        self.w_2 = torch.tensor(w_2, dtype=torch.float, device=device)
 
-        self.zero = self.t([0 for _ in range(198)])
-        self.zero_board = self.t([0 for _ in range(26)])
-
-    def t(self, data):
-        return torch.tensor(data, dtype=torch.float)
+        self.zero = torch.tensor(
+            [0 for _ in range(198)], dtype=torch.float, device=device
+        )
+        self.zero_board = torch.tensor(
+            [0 for _ in range(26)], dtype=torch.float, device=device
+        )
 
     def encode(self, board, player_1):
-        x = torch.matmul(board, self.v)
-        x = torch.maximum(x, self.zero)
+        x = matmul(board, self.v)
+        x = maximum(x, self.zero)
 
-        x = torch.add(x, self.w_1 if player_1 else self.w_2)
-        x = torch.maximum(x, self.zero)
+        x = add(x, self.w_1 if player_1 else self.w_2)
+        x = maximum(x, self.zero)
 
-        x = torch.add(x, torch.matmul(torch.maximum(board, self.zero_board), self.v2))
-        x = torch.add(x, torch.matmul(torch.minimum(board, self.zero_board), self.v3))
+        x = add(x, matmul(maximum(board, self.zero_board), self.v2))
+        x = add(x, matmul(minimum(board, self.zero_board), self.v3))
 
         return x

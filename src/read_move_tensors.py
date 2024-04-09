@@ -4,18 +4,18 @@ from write_move_tensors import singles_dir, doubles_dir, ab_dir, noop_dir
 import os
 
 
-def transform():
+def transform(device):
     rows = []
     for i in range(26):
         col = [-1 if ((25 - j) == i) else 0 for j in range(26)]
         rows.append(col)
-    return torch.tensor(rows, dtype=torch.int8)
+    return torch.tensor(rows, dtype=torch.int8, device=device)
 
 
-def for_p2(x):
+def for_p2(x, device):
     (moves, low, high, vector) = x
-    t = transform()
-    one = torch.tensor([1 for _ in range(26)], dtype=torch.int8)
+    t = transform(device)
+    one = torch.tensor([1 for _ in range(26)], dtype=torch.int8, device=device)
     v = torch.matmul(vector, t)
     h = torch.matmul(low, t).add(one)
     l = torch.matmul(high, t).add(one)
@@ -52,7 +52,7 @@ def find_index(a, b):
 
 
 class MoveTensors:
-    def __init__(self, dir):
+    def __init__(self, dir, device=torch.device("cuda")):
         self.player_1_vectors = []
 
         noop = read(noop_dir(dir))
@@ -73,13 +73,16 @@ class MoveTensors:
                     xs.append(singles[d2 - 1])
                     xs.append(noop)
                     self.player_1_vectors.append(xs)
-        self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
+        self.player_2_vectors = [
+            [for_p2(y, device) for y in x] for x in self.player_1_vectors
+        ]
 
     def compute_moves(self, state):
         (board, player_1, (d1, d2)) = state
         i = find_index(d1, d2)
-        tensors = (self.player_1_vectors if player_1 else self.player_2_vectors)[i]
-        for moves, lower, upper, vector in tensors:
+        for moves, lower, upper, vector in (
+            self.player_1_vectors if player_1 else self.player_2_vectors
+        )[i]:
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
             if torch.numel(vector[indices]) > 0:
                 return moves[indices]
@@ -88,8 +91,9 @@ class MoveTensors:
     def compute_move_vectors(self, state):
         (board, player_1, (d1, d2)) = state
         i = find_index(d1, d2)
-        tensors = (self.player_1_vectors if player_1 else self.player_2_vectors)[i]
-        for moves, lower, upper, vector in tensors:
+        for moves, lower, upper, vector in (
+            self.player_1_vectors if player_1 else self.player_2_vectors
+        )[i]:
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
             if torch.numel(vector[indices]) > 0:
                 return vector[indices]

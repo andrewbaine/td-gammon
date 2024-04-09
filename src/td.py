@@ -1,12 +1,11 @@
-import backgammon
 from itertools import count
 import torch
 import network
 
 
 def roll():
-    d1 = torch.randint(1, 7, (1,)).item()
-    d2 = torch.randint(1, 7, (1,)).item()
+    d1 = torch.randint(1, 7, (1,), requires_grad=False, device="cpu").item()
+    d2 = torch.randint(1, 7, (1,), requires_grad=False, device="cpu").item()
     return (d1, d2)
 
 
@@ -19,7 +18,17 @@ def first_roll():
 
 class TD:
 
-    def __init__(self, board, move_checker, move_tensors, nn, encoder, α=0.10, λ=0.7):
+    def __init__(
+        self,
+        board,
+        move_checker,
+        move_tensors,
+        nn,
+        encoder,
+        α=0.10,
+        λ=0.7,
+        device=torch.device("cuda"),
+    ):
         self.board = board
         self.move_checker = move_checker
         self.move_tensors = move_tensors
@@ -28,9 +37,10 @@ class TD:
         self.λ = λ
         self.eval = eval
         self.eligibility_trace = [
-            (w, torch.zeros_like(w, requires_grad=False)) for w in nn.parameters()
+            (w, torch.zeros_like(w, requires_grad=False, device=device))
+            for w in nn.parameters()
         ]
-        self.nn = network.with_backgammon_utility(nn)
+        self.nn = network.with_backgammon_utility(nn, device=device)
 
     def train(self, v_next, state):
         (board, player_1, _) = state
