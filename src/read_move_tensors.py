@@ -24,7 +24,7 @@ def for_p2(x, device):
 
 def read(path, device):
     return tuple(
-        torch.load(os.path.join(path, x)).to(device)
+        torch.load(os.path.join(path, x)).to(device=device, dtype=torch.float)
         for x in ["moves.pt", "low.pt", "high.pt", "vector.pt"]
     )
 
