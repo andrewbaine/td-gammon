@@ -29,10 +29,7 @@ def write(path, x):
         torch.save(tensor, os.path.join(path, name))
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--prefix")
-    args = parser.parse_args()
+def main(args):
     prefix = args.prefix
     if not prefix:
         current_date = datetime.now()
@@ -58,3 +55,14 @@ if __name__ == "__main__":
             os.makedirs(p)
             write(p, bt_2.all_moves_dice(d1, d2))
     print("done!")
+
+
+def init_parser(parser):
+    parser.add_argument("--prefix")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    init_parser(parser)
+    args = parser.parse_args()
+    main(args)
