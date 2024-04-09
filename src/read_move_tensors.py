@@ -9,13 +9,13 @@ def transform(device):
     for i in range(26):
         col = [-1 if ((25 - j) == i) else 0 for j in range(26)]
         rows.append(col)
-    return torch.tensor(rows, dtype=torch.int8, device=device)
+    return torch.tensor(rows, dtype=torch.float, device=device)
 
 
 def for_p2(x, device):
     (moves, low, high, vector) = x
     t = transform(device)
-    one = torch.tensor([1 for _ in range(26)], dtype=torch.int8, device=device)
+    one = torch.tensor([1 for _ in range(26)], dtype=torch.float, device=device)
     v = torch.matmul(vector, t)
     h = torch.matmul(low, t).add(one)
     l = torch.matmul(high, t).add(one)
