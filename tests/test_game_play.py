@@ -78,6 +78,9 @@ def test_game_play():
                     simplified_moves == [()] and moves == []
                 )
 
+                mmm = normalize(sbr.compute_moves(state))
+                assert mmm == moves
+
                 if moves:
                     i = torch.randint(0, len(moves), (1,)).item()
                     move = moves[i]

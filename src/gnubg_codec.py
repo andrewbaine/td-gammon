@@ -14,7 +14,7 @@ def decode_position(position_id):
     bs = base64.b64decode(pad(position_id))
     assert len(bs) == 10
     arr = []
-    board = [0 for x in range(26)]
+    board = [0 for _ in range(26)]
     index = 1
     player = 1
     for b in bs:
@@ -40,7 +40,7 @@ Match = namedtuple(
         "crawford",
         "gamestate",
         "turn",
-        "double",
+        "double_being_offered",
         "resign_flag",
         "dice",
         "match_length",
@@ -117,7 +117,7 @@ def decode_match(match_id):
     # bit 12
     turn = bit(bs, 11)
     # bit 13
-    double = bit(bs, 12)
+    double_being_offered = bool(bit(bs, 12))
 
     # Bit 14-15 indicates whether an resignation was offered.
     #   00 for no resignation,
@@ -157,7 +157,7 @@ def decode_match(match_id):
         crawford=crawford,
         gamestate=gamestate,
         turn=turn,
-        double=double,
+        double_being_offered=double_being_offered,
         resign_flag=resign_flag,
         dice=dice,
         match_length=match_length,

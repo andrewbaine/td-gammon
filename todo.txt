@@ -1,8 +1,16 @@
 
 1. create a feedback loop whre I can
-   - train a model
+   x train a model
    - evaluate a model
    - iterate
+
+=== once and forall, write a script that tests a bot efficiently
+    for win rate vs gnubg
+
+o cuda:
+  - instead of passing device around, use with torch.cuda.device(device("cuda")):
+       when we create all the tensors
+
 
 === backgammon correctness
 THIS IS DONE IN src/test_game_play.py
@@ -18,9 +26,6 @@ THIS IS DONE IN src/test_game_play.py
 	   check they all agree on the game state?
 	   check they all say the same moves are available?
 	 choose a random move and make it x3
-
-=== once and forall, write a script that tests a bot efficiently
-    for win rate vs gnubg
 
 === performance
 run profiler on a tournament
