@@ -22,17 +22,15 @@ class TD:
         self,
         board,
         move_checker,
-        move_tensors,
+        agent,
         nn,
-        encoder,
         α=0.10,
         λ=0.7,
         device=torch.device("cuda"),
     ):
         self.board = board
         self.move_checker = move_checker
-        self.move_tensors = move_tensors
-        self.encoder = encoder
+        self.agent = agent
         self.α = α
         self.λ = λ
         self.eval = eval
@@ -40,12 +38,9 @@ class TD:
             (w, torch.zeros_like(w, requires_grad=False, device=device))
             for w in nn.parameters()
         ]
-        self.nn = network.with_backgammon_utility(nn, device=device)
 
     def train(self, v_next, state):
-        (board, player_1, _) = state
-        te = self.encoder.encode(board, player_1)
-        v = self.nn(te)
+        v = self.agent.evaluate(state)
         v.backward()
         with torch.no_grad():
             δ = v_next - v  # td error
@@ -70,12 +65,6 @@ class TD:
                 self.train(done, state)
                 return (i, done)
             with torch.no_grad():
-                move_vectors = self.move_tensors.compute_move_vectors(state)
-                next_states = torch.add(move_vectors, board)
-                tesauro_encoded = self.encoder.encode(next_states, not player_1)
-                vs = self.nn(tesauro_encoded)
-                index = (torch.argmax if player_1 else torch.argmin)(vs)
-                v_next = vs[index]
-                board_next = next_states[index]
+                (v_next, board_next) = self.agent.next(state)
             self.train(v_next, state)
             state = (board_next, not player_1, roll())

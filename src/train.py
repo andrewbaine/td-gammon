@@ -1,3 +1,4 @@
+import agent
 import argparse
 import backgammon
 import done_check
@@ -35,9 +36,8 @@ def train(args):
     move_checker = done_check.Donecheck(device=device)
     move_tensors = read_move_tensors.MoveTensors(args.move_tensors, device=device)
     encoder = tesauro.Encoder(device=device)
-    temporal_difference = td.TD(
-        board, move_checker, move_tensors, nn, encoder, device=device
-    )
+    a = agent.OnePlyAgent(nn, move_tensors, encoder, device=device)
+    temporal_difference = td.TD(board, move_checker, a, nn, device=device)
 
     os.makedirs(args.save_dir, exist_ok=True)
     for i in range(args.iterations):
