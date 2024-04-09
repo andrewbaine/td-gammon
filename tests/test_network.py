@@ -1,9 +1,10 @@
 import torch
 import network
 import pytest
-import model
 
-net = network.utility()
+net = network.utility(
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+)
 
 
 cases = [

@@ -5,7 +5,12 @@ import backgammon
 import test_b2
 import read_move_tensors
 
-move_tensors = read_move_tensors.MoveTensors("move_tensors/current")
+import torch
+
+move_tensors = read_move_tensors.MoveTensors(
+    "move_tensors/current",
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+)
 
 
 @pytest.mark.parametrize("t", test_b2.test_cases)

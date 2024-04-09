@@ -31,6 +31,7 @@ import slow_but_right
 
 
 def test_game_play():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     default_seed = random.randint(0, 0xFFFFFFFFFFFFFFFF)
     seed = int(os.environ.get("SEED", default=default_seed))
     print("seed for reuse", seed)
@@ -38,11 +39,11 @@ def test_game_play():
     bck = backgammon_env.Backgammon(lambda: torch.randint(1, 7, (1,)).item())
 
     sbr = slow_but_right.MoveComputer()
-    dc = done_check.Donecheck()
+    dc = done_check.Donecheck(device=device)
 
     dir = os.environ.get("MOVES_TENSORS", default="move_tensors/current")
     n = int(os.environ.get("N_GAMES", default="10"))
-    move_tensors = read_move_tensors.MoveTensors(dir=dir)
+    move_tensors = read_move_tensors.MoveTensors(dir=dir, device=device)
 
     for i in range(n):
         state = bck.s0()

@@ -68,7 +68,9 @@ cases = [
 bck = backgammon_env.Backgammon(lambda: random.randint(1, 6))
 
 sbr = slow_but_right.MoveComputer()
-dc = done_check.Donecheck()
+dc = done_check.Donecheck(
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+)
 
 
 @pytest.mark.parametrize("t", cases)

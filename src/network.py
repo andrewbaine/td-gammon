@@ -31,7 +31,7 @@ def utility_tensor(device=torch.device("cuda")):
 
 def utility(device=torch.device("cuda")):
     u = nn.Linear(4, 1, bias=False, dtype=torch.float, device=device)
-    u.weight = nn.Parameter(utility_tensor(), requires_grad=False)
+    u.weight = nn.Parameter(utility_tensor(device), requires_grad=False)
     u.to(device=device)
     return u
 
