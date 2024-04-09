@@ -22,9 +22,9 @@ def for_p2(x, device):
     return (moves, l, h, v)
 
 
-def read(path):
+def read(path, device):
     return tuple(
-        torch.load(os.path.join(path, x))
+        torch.load(os.path.join(path, x)).to(device)
         for x in ["moves.pt", "low.pt", "high.pt", "vector.pt"]
     )
 
@@ -55,20 +55,20 @@ class MoveTensors:
     def __init__(self, dir, device=torch.device("cuda")):
         self.player_1_vectors = []
 
-        noop = read(noop_dir(dir))
-        singles = [read(singles_dir(dir, d1)) for d1 in range(1, 7)]
+        noop = read(noop_dir(dir), device=device)
+        singles = [read(singles_dir(dir, d1), device=device) for d1 in range(1, 7)]
 
         for d1 in range(1, 7):
             for d2 in range(1, d1 + 1):
                 if d1 == d2:
                     dubsies = [
-                        read(doubles_dir(dir, d1, name))
+                        read(doubles_dir(dir, d1, name), device=device)
                         for name in ["4", "3", "2", "1"]
                     ]
                     dubsies.append(noop)
                     self.player_1_vectors.append(dubsies)
                 else:
-                    xs = [read(ab_dir(dir, d1, d2))]
+                    xs = [read(ab_dir(dir, d1, d2), device=device)]
                     xs.append(singles[d1 - 1])
                     xs.append(singles[d2 - 1])
                     xs.append(noop)
