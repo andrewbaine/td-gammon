@@ -27,7 +27,9 @@ def train(args):
     nn: torch.nn.Sequential = network.layered(*layers, softmax=True, device=device)
     nn.to(device)
 
-    board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
+    board: torch.Tensor = torch.tensor(
+        backgammon.make_board(), dtype=torch.float, device=device
+    )
     board.to(device)
 
     move_checker = done_check.Donecheck(device=device)
