@@ -66,8 +66,9 @@ def test_game_play():
             else:
                 moves = bck.available_moves(state)
                 moves = normalize(moves)
-                mm = move_tensors.compute_moves((tensor_board, player_1, dice))
+                (mm, vv) = move_tensors.compute_moves((tensor_board, player_1, dice))
                 v = move_tensors.compute_move_vectors((tensor_board, player_1, dice))
+                assert v == vv
 
                 translated_moves = translate(mm)
                 d = {}

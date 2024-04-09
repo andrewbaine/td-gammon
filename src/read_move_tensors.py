@@ -85,7 +85,7 @@ class MoveTensors:
         )[i]:
             indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
             if torch.numel(vector[indices]) > 0:
-                return moves[indices]
+                return (moves[indices], vector[indices])
         assert False
 
     def compute_move_vectors(self, state):

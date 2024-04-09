@@ -12,7 +12,7 @@ position_regex = regex.compile(r"^\s*GNU Backgammon  Position ID: (\S*)\s*$")
 match_regex = regex.compile(r"^\s*Match ID   : (\S*)\s*$")
 
 
-def response(position_id, match_id, policy):
+def response(position_id, match_id, agent):
     position = gnubg_codec.decode_position(position_id)
     m = gnubg_codec.decode_match(match_id)
     logger.info(position)
@@ -36,7 +36,7 @@ def response(position_id, match_id, policy):
         # its always player 2?
         player_1 = False
         state = (position, player_1, m.dice)
-        decision = policy(state)
+        decision = agent.decide_action(state)
         if decision:
             tokens = ["move"]
             for s, e in decision:
@@ -55,17 +55,12 @@ def response(position_id, match_id, policy):
 import backgammon_env
 import random
 
+import agent
+
 if __name__ == "__main__":
     print("new session 1", flush=True)
 
-    bck = backgammon_env.Backgammon()
-
-    def policy(state):
-        ms = bck.available_moves(state)
-        if not ms:
-            return None
-        i = random.randint(0, len(ms) - 1)
-        return ms[i]
+    a = agent.RandomAgent()
 
     state = (None, None)
     next_position = None
@@ -82,7 +77,7 @@ if __name__ == "__main__":
             next_match = m.group(1)
             if state != (next_position, next_match):
                 state = (next_position, next_match)
-                r = response(*state, policy)
+                r = response(*state, a)
                 for line in r:
                     print(line)
 
