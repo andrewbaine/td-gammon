@@ -1,6 +1,5 @@
 import random
 
-import sys
 import torch
 
 import backgammon_env
@@ -24,35 +23,42 @@ class RandomAgent(Agent):
 
 
 class OnePlyAgent(Agent):
-    def __init__(self, nn, move_tensors, encoder, device=torch.device("cuda"), out=4):
+    def __init__(self, nn, move_tensors, encoder, device, out):
         self.device = device
+        self.nn = nn
         match out:
             case 4:
-                self.nn = network.with_utility(nn)
+                self.utility = network.utility_tensor()
             case 6:
-                self.nn = network.with_backgammon_utility(nn)
+                self.utility = network.backgammon_utility_tensor()
             case _:
                 assert False
-        self.nn.to(device)
+        self.utility.to(device)
         self.encoder = encoder
         self.move_tensors = move_tensors
 
+    def f(self, tes):
+        vs = self.nn(tes)
+        y = torch.softmax(vs, dim=1)
+        y = torch.matmul(y, self.utility)
+        return y
+
     def evaluate(self, state):
         (board, player_1, _) = state
+        board = board.expand(size=(1, -1))
         te = self.encoder.encode(board, player_1)
-        return self.nn(te)
+        return self.f(te)
 
     def next(self, state):
         (board, player_1, _) = state
         move_vectors = self.move_tensors.compute_move_vectors(state)
         next_states = torch.add(move_vectors, board)
         tesauro_encoded = self.encoder.encode(next_states, not player_1)
-        assert tesauro_encoded.size()[0] == move_vectors.size()[0]
-        vs = self.nn(tesauro_encoded)
-        index = (torch.argmax if player_1 else torch.argmin)(vs)
-        v_next = vs[index]
+        utilities = self.f(tesauro_encoded)
+        index = (torch.argmax if player_1 else torch.argmin)(utilities)
+        utility_next = utilities[index]
         board_next = next_states[index]
-        return (v_next, board_next)
+        return (utility_next, board_next)
 
     def decide_action(self, state):
         (board, player_1, dice) = state
@@ -61,10 +67,10 @@ class OnePlyAgent(Agent):
 
         (moves, move_vectors) = self.move_tensors.compute_moves(state)
         next_states = torch.add(move_vectors, board)
-        tesauro_encoded = self.encoder.encode(next_states, not player_1)
-        vs = self.nn(tesauro_encoded)
-        print("vs", vs, file=sys.stderr)
-        index = (torch.argmax if player_1 else torch.argmin)(vs)
+        te = self.encoder.encode(next_states, not player_1)
+        utilities = self.f(te)
+
+        index = (torch.argmax if player_1 else torch.argmin)(utilities)
         move = [int(x) for x in moves[index].tolist()]
         move = list(reversed(sorted(zip(move[::3], move[1::3]))))
         return move

@@ -1,30 +1,76 @@
-set -e
-set -x
+#!/bin/bash
 
-NOW=$(date -Iseconds)
 
-N=$1
+while getopts ":g:m:o:" opt; do
+    case $opt in
+        g)
+            GAMES="${OPTARG}"
+            ;;
+        m)
+            MODEL="${OPTARG}"
+            ;;
+        o)
+            OUT="${OPTARG}"
+            ;;
+        *)
+            exit 1
+    esac
+done
 
-PORT=8901
+shift "$((OPTIND-1))"
 
-PLAYER_1=andrewbaine
-GNUBG=gnubg
+if [ -z "$GAMES" ]
+then
+    exit 1
+fi
+if [ -z "$MODEL" ]
+then
+    exit 1
+fi
+if [ -z "$OUT" ]
+then
+    exit 1
+fi
 
-LOG_FILE=gnubg.${NOW}.log
 
-cat <<HERE | gnubg -q -t > ${LOG_FILE}
-new session
-set player andrewbaine external localhost:$PORT
-set jacoby off
-new session $N
-export session text session.${NOW}.txt
-HERE
+GNUBG_ERR=gnubg.err
+GNUBG_OUT=gnubg.out
+PY_ERR=py.err
+PY_OUT=py.out
 
-p1=$(< ${LOG_FILE} grep "$PLAYER_1 wins a single game" ${LOG_FILE} | wc -l | perl -wpl -e 's|\s+||g')
-p2=$(< ${LOG_FILE} grep "$PLAYER_1 wins a gammon"  ${LOG_FILE} | wc -l | perl -wpl -e 's|\s+||g')
-p3=$(< ${LOG_FILE} grep "$PLAYER_1 wins a backgammon"  ${LOG_FILE} | wc -l | perl -wpl -e 's|\s+||g')
-p4=$(< ${LOG_FILE} grep "$GNUBG wins a single game"  ${LOG_FILE} | wc -l | perl -wpl -e 's|\s+||g')
-p5=$(< ${LOG_FILE} grep "$GNUBG wins a gammon"  ${LOG_FILE} | wc -l | perl -wpl -e 's|\s+||g')
-p6=$(< ${LOG_FILE} grep "$GNUBG wins a backgammon"  ${LOG_FILE} | wc -l | perl -wpl -e 's|\s+||g')
+rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-echo "scale=4; (1 * $p1 + 2 * $p2 + 3 * $p3 - 1 * $p4 - 2 * $p5 - 3 * $p6) / $N" | bc
+touch $GNUBG_OUT $PY_OUT
+
+
+python -u src/evaluate.py --load-model "$MODEL" --games "$GAMES" --out="$OUT" \
+       2>$PY_ERR \
+       > $PY_OUT \
+       < <(tail -f $GNUBG_OUT) \
+    &
+
+
+PYTHON_JOB="$!"
+
+gnubg -q -t \
+      2>$GNUBG_ERR \
+      > $GNUBG_OUT \
+      < <(tail -f $PY_OUT) \
+     &
+
+GNUBG_JOB="$!"
+
+wait $PYTHON_JOB
+
+A=$(grep "gnubg wins a backgammon" $GNUBG_OUT | wc -l)
+B=$(grep "gnubg wins a gammon" $GNUBG_OUT | wc -l)
+C=$(grep "gnubg wins a single game" $GNUBG_OUT | wc -l)
+
+D=$(grep " wins a single game" $GNUBG_OUT | grep -v gnubg | wc -l)
+E=$(grep " wins a gammon" $GNUBG_OUT | grep -v gnubg | wc -l)
+F=$(grep " wins a backgammon" $GNUBG_OUT | grep -v gnubg | wc -l)
+
+CALCULATION="(-3 * $A - 2 * $B - $C + $D + 2 * $E + 3 * $F) / ($A + $B + $C + $D + $E + $F)"
+PPG=$(echo "scale=2; $CALCULATION" | bc)
+
+echo "$PPG $A $B $C $D $E $F"

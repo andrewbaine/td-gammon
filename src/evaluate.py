@@ -12,7 +12,8 @@ import tesauro
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     layers = [198, args.hidden, args.out]
-    nn: torch.nn.Sequential = network.layered(*layers, softmax=True)
+    nn: torch.nn.Sequential = network.layered(*layers)
+    nn.load_state_dict(torch.load(args.load_model))
     encoder = tesauro.Encoder(device=device)
     move_tensors = read_move_tensors.MoveTensors(args.move_tensors, device=device)
     a = agent.OnePlyAgent(nn, move_tensors, encoder, device=device, out=args.out)

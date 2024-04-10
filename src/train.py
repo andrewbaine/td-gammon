@@ -13,6 +13,8 @@ import logging
 
 import os
 
+import eligibility_trace
+
 
 def init_parser(parser):
     parser.add_argument("--iterations", type=int, default=1)
@@ -27,7 +29,7 @@ def train(args):
     logging.basicConfig(encoding="utf-8", level=logging.INFO)
 
     layers = [198, args.hidden, args.out]
-    nn: torch.nn.Sequential = network.layered(*layers, softmax=True)
+    nn: torch.nn.Sequential = network.layered(*layers)
     nn.to(device)
 
     board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
@@ -35,9 +37,13 @@ def train(args):
 
     move_checker = done_check.Donecheck(device=device)
     move_tensors = read_move_tensors.MoveTensors(args.move_tensors, device=device)
+
     encoder = tesauro.Encoder(device=device)
+
     a = agent.OnePlyAgent(nn, move_tensors, encoder, device=device, out=args.out)
-    temporal_difference = td.TD(board, move_checker, a, nn, device=device)
+
+    et = eligibility_trace.ElibilityTrace(nn)
+    temporal_difference = td.TD(board, move_checker, a, et)
 
     os.makedirs(args.save_dir, exist_ok=True)
     for i in range(args.iterations):

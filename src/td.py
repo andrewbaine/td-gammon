@@ -15,6 +15,9 @@ def first_roll():
             return (d1, d2)
 
 
+import eligibility_trace
+
+
 class TD:
 
     def __init__(
@@ -22,37 +25,12 @@ class TD:
         board,
         move_checker,
         agent,
-        nn,
-        α=0.10,
-        λ=0.7,
-        device=torch.device("cuda"),
+        eligibility_trace: eligibility_trace.ElibilityTrace,
     ):
-        self.nn = nn
         self.board = board
         self.move_checker = move_checker
         self.agent = agent
-        self.α = α
-        self.λ = λ
-        self.eval = eval
-        self.eligibility_trace = [
-            (w, torch.zeros_like(w, requires_grad=False, device=device))
-            for w in nn.parameters()
-        ]
-
-    def train(self, v_next, state):
-        self.nn.zero_grad()
-        v = self.agent.evaluate(state)
-        assert v_next.size() == torch.Size([])
-        assert v.size() == torch.Size([])
-        v.backward()
-        with torch.no_grad():
-            δ = v_next - v  # td error
-            αδ = self.α * δ  # learning rate * td error
-
-            for w, e in self.eligibility_trace:
-                e.mul_(self.λ)
-                e.add_(w.grad)
-                w.add_(torch.mul(e, αδ))
+        self.eligibility_trace = eligibility_trace
 
     def s0(self):
         (d1, d2) = first_roll()
@@ -63,12 +41,13 @@ class TD:
         # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
         state = self.s0()
         for i in count():
+            v = self.agent.evaluate(state)
             (board, player_1, _) = state
             done = self.move_checker.check(board)
             if done:
-                self.train(done, state)
+                self.eligibility_trace.update(v, done)
                 return (i, done)
             with torch.no_grad():
                 (v_next, board_next) = self.agent.next(state)
-            self.train(v_next, state)
+            self.eligibility_trace.update(v, v_next)
             state = (board_next, not player_1, roll())
