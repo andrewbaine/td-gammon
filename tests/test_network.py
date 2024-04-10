@@ -2,9 +2,11 @@ import torch
 import network
 import pytest
 
-net = network.utility(
-    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-)
+import torch
+import network
+
+net = torch.nn.Linear(4, 1, bias=False)
+net.weight = torch.nn.Parameter(network.utility_tensor())
 
 
 cases = [

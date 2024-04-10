@@ -55,12 +55,10 @@ def test_game_play():
         tensor_board = torch.tensor(board, dtype=torch.float)
         while True:
             (board, player_1, dice) = state
-            print(backgammon.to_str(board))
-            print("player", 1 if player_1 else 2, dice)
             assert [int(x) for x in tensor_board.tolist()] == board
 
             t = encoder.encode(tensor_board, player_1).tolist()
-            t2 = slow_but_right.tesauro_encode(board, player_1)
+            t2 = slow_but_right.tesauro_encode(state)
             assert len(t) == len(t2)
             for i in range(len(t)):
                 if t2[i] != t[i]:
