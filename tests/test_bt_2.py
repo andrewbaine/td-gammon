@@ -18,7 +18,7 @@ def tests(t):
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
     player_1 = t.player == t.player_1_color
     state = (tensor(board), player_1, t.roll)
-    moves = move_tensors.compute_moves(state)
+    (moves, _) = move_tensors.compute_moves(state)
     assert moves is not None
     moves = moves.tolist()
     moves = [[(a, b) for (a, b) in zip(x[::3], x[1::3])] for x in moves]
@@ -28,6 +28,4 @@ def tests(t):
     moves = [tuple(x) for x in moves]
     moves.sort()
     moves.reverse()
-    if moves == [()]:
-        moves = []
     assert moves == t.expected_moves, t.comment

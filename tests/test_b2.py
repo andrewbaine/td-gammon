@@ -1,9 +1,9 @@
-import b2
 import backgammon
 import pytest
 import slow_but_right
+import backgammon_env
 
-move_computer = b2.MoveComputer()
+move_computer = backgammon_env.MoveComputer()
 mc_dumb = slow_but_right.MoveComputer()
 
 from collections import namedtuple
@@ -596,7 +596,7 @@ test_cases = [
 |__________________|___|__________________|
 """,
         roll=(5, 5),
-        expected_moves=[],
+        expected_moves=[()],
         player_1_color=Dark,
         player=Dark,
         comment="cant move",
@@ -974,7 +974,7 @@ test_cases = [
 |__________________|___|__________________|
 """,
         roll=(6, 6),
-        expected_moves=[],
+        expected_moves=[()],
         player_1_color=Light,
         player=Light,
     ),
@@ -1012,10 +1012,7 @@ def tests(t):
 
     moves_dumb = mc_dumb.compute_moves(state)
 
-    for x in moves_dumb:
-        x.sort()
-        x.reverse()
-    moves_dumb = [tuple(x) for x in moves_dumb]
+    moves_dumb = [tuple(reversed(sorted(list(x)))) for x in moves_dumb]
     moves_dumb.sort()
     moves_dumb.reverse()
 

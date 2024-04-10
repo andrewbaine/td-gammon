@@ -1,17 +1,18 @@
 import heapq
 import numpy
+import torch
 
 
 def evaluate_action_1_ply(bck, observe, nn, state, action):
     (board, player_1, _) = state
     s = bck.next(state, action)
-    t = observe(s)
+    t = torch.tensor(observe(s))
     return nn(t).item()
 
 
 def choose_action_1_ply(bck, observe, nn, state):
     (board, player_1, dice) = state
-    assert bck.done(state) is None  # remove in production
+    assert bck.done(state) == 0  # remove in production
     moves = bck.available_moves(state)
 
     best = None

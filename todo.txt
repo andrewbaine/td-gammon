@@ -1,4 +1,8 @@
 
+===
+- does my old trainer suffer the same defects?
+
+
 1. create a feedback loop whre I can
    x train a model
    - evaluate a model

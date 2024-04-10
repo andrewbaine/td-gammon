@@ -1,6 +1,38 @@
 #!/bin/bash
 
 
+while getopts ":g:m:o:" opt; do
+    case $opt in
+        g)
+            GAMES="${OPTARG}"
+            ;;
+        m)
+            MODEL="${OPTARG}"
+            ;;
+        o)
+            OUT="${OPTARG}"
+            ;;
+        *)
+            exit 1
+    esac
+done
+
+shift "$((OPTIND-1))"
+
+if [ -z "$GAMES" ]
+then
+    exit 1
+fi
+if [ -z "$MODEL" ]
+then
+    exit 1
+fi
+if [ -z "$OUT" ]
+then
+    exit 1
+fi
+
+
 GNUBG_ERR=gnubg.err
 GNUBG_OUT=gnubg.out
 PY_ERR=py.err
@@ -11,7 +43,7 @@ rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_OUT $PY_OUT
 
 
-python -u src/evaluate.py --load-model tmp/model.00001000.pt --games 100 \
+python -u src/evaluate.py --load-model "$MODEL" --games "$GAMES" --out="$OUT" \
        2>$PY_ERR \
        > $PY_OUT \
        < <(tail -f $GNUBG_OUT) \

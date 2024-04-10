@@ -121,7 +121,7 @@ class MoveComputer:
                     moves.append([(start, end)])
             if moves:
                 return moves
-        return []
+        return [()]
 
     def doubles(self, state):
         (board, player_1, (d1, d2)) = state
@@ -156,7 +156,7 @@ class MoveComputer:
         for m in moves:
             if m:
                 return m
-        return []
+        return [()]
 
     def compute_moves(self, state):
         (board, player_1, (d1, d2)) = state
@@ -167,3 +167,35 @@ class MoveComputer:
             return self.a(state)
         else:
             return self.doubles(state)
+
+
+def tesauro_encode(state):
+    (board, player_1, _) = state
+    xs = [0.0 for _ in range(198)]
+    xs[0] = board[0] / -2.0
+    for i, x in enumerate(board[1:25]):
+        j = 1 + 8 * i
+        if x == 1:
+            xs[j] = 1.0
+        elif x == -1:
+            xs[j + 1] = 1.0
+        elif x == 2:
+            xs[j + 2] = 1.0
+        elif x == -2:
+            xs[j + 3] = 1.0
+        elif x == 3:
+            xs[j + 4] = 1.0
+        elif x == -3:
+            xs[j + 5] = 1.0
+        elif x > 3:
+            xs[j + 6] = (x - 3) / 2.0
+        elif x < -3:
+            xs[j + 7] = (x + 3) / -2.0
+        else:
+            assert x == 0
+    xs[1 + 8 * 24] = board[25] / 2.0
+    xs[2 + 8 * 24] = sum(x for x in board if x > 0) / 15.0
+    xs[3 + 8 * 24] = sum(x for x in board if x < 0) / -15.0
+    xs[4 + 8 * 24] = 1.0 if player_1 else 0
+    xs[5 + 8 * 24] = 0 if player_1 else 1
+    return xs

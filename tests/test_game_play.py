@@ -1,7 +1,9 @@
+import pytest
 import os
 import backgammon
 import torch
 import read_move_tensors
+import tesauro
 
 import backgammon_env
 
@@ -32,6 +34,8 @@ import slow_but_right
 
 def test_game_play():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    encoder = tesauro.Encoder(device=device)
+
     default_seed = random.randint(0, 0xFFFFFFFFFFFFFFFF)
     seed = int(os.environ.get("SEED", default=default_seed))
     print("seed for reuse", seed)
@@ -53,8 +57,16 @@ def test_game_play():
             (board, player_1, dice) = state
             print(backgammon.to_str(board))
             print("player", 1 if player_1 else 2, dice)
-            assert tuple(tensor_board.tolist()) == board
+            assert [int(x) for x in tensor_board.tolist()] == board
 
+            t = encoder.encode(tensor_board, player_1).tolist()
+            t2 = slow_but_right.tesauro_encode(board, player_1)
+            assert len(t) == len(t2)
+            for i in range(len(t)):
+                if t2[i] != t[i]:
+                    print(t)
+                    print(t2)
+                assert t2[i] == pytest.approx(t[i])
             done = bck.done(state)
             done_slow_but_right = sbr.done(state)
             dc_done = dc.check(tensor_board)
@@ -68,7 +80,7 @@ def test_game_play():
                 moves = normalize(moves)
                 (mm, vv) = move_tensors.compute_moves((tensor_board, player_1, dice))
                 v = move_tensors.compute_move_vectors((tensor_board, player_1, dice))
-                assert v == vv
+                assert (v == vv).all()
 
                 translated_moves = translate(mm)
                 d = {}

@@ -1,6 +1,5 @@
 from itertools import count
 import torch
-import network
 
 
 def roll():
@@ -28,6 +27,7 @@ class TD:
         λ=0.7,
         device=torch.device("cuda"),
     ):
+        self.nn = nn
         self.board = board
         self.move_checker = move_checker
         self.agent = agent
@@ -40,11 +40,15 @@ class TD:
         ]
 
     def train(self, v_next, state):
+        self.nn.zero_grad()
         v = self.agent.evaluate(state)
+        assert v_next.size() == torch.Size([])
+        assert v.size() == torch.Size([])
         v.backward()
         with torch.no_grad():
             δ = v_next - v  # td error
-            αδ = (self.α * δ).squeeze()  # learning rate * td error
+            αδ = self.α * δ  # learning rate * td error
+
             for w, e in self.eligibility_trace:
                 e.mul_(self.λ)
                 e.add_(w.grad)

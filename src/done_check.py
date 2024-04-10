@@ -63,4 +63,4 @@ class Donecheck:
             + b_win_point
             + b_gammon_point
             + b_backgammon_point
-        )
+        ).squeeze()

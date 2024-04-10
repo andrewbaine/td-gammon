@@ -1,5 +1,6 @@
 import random
 
+import sys
 import torch
 
 import backgammon_env
@@ -23,9 +24,16 @@ class RandomAgent(Agent):
 
 
 class OnePlyAgent(Agent):
-    def __init__(self, nn, move_tensors, encoder, device=torch.device("cuda")):
+    def __init__(self, nn, move_tensors, encoder, device=torch.device("cuda"), out=4):
         self.device = device
-        self.nn = network.with_backgammon_utility(nn, device=device)
+        match out:
+            case 4:
+                self.nn = network.with_utility(nn)
+            case 6:
+                self.nn = network.with_backgammon_utility(nn)
+            case _:
+                assert False
+        self.nn.to(device)
         self.encoder = encoder
         self.move_tensors = move_tensors
 
@@ -39,6 +47,7 @@ class OnePlyAgent(Agent):
         move_vectors = self.move_tensors.compute_move_vectors(state)
         next_states = torch.add(move_vectors, board)
         tesauro_encoded = self.encoder.encode(next_states, not player_1)
+        assert tesauro_encoded.size()[0] == move_vectors.size()[0]
         vs = self.nn(tesauro_encoded)
         index = (torch.argmax if player_1 else torch.argmin)(vs)
         v_next = vs[index]
@@ -54,6 +63,7 @@ class OnePlyAgent(Agent):
         next_states = torch.add(move_vectors, board)
         tesauro_encoded = self.encoder.encode(next_states, not player_1)
         vs = self.nn(tesauro_encoded)
+        print("vs", vs, file=sys.stderr)
         index = (torch.argmax if player_1 else torch.argmin)(vs)
         move = [int(x) for x in moves[index].tolist()]
         move = list(reversed(sorted(zip(move[::3], move[1::3]))))

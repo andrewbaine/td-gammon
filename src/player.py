@@ -52,15 +52,8 @@ def response(position_id, match_id, agent):
         return []
 
 
-import backgammon_env
-import random
-
-import agent
-
-if __name__ == "__main__":
-    print("new session 1", flush=True)
-
-    a = agent.RandomAgent()
+def play(agent, n):
+    print("new session {n}".format(n=n))
 
     state = (None, None)
     next_position = None
@@ -77,9 +70,6 @@ if __name__ == "__main__":
             next_match = m.group(1)
             if state != (next_position, next_match):
                 state = (next_position, next_match)
-                r = response(*state, a)
+                r = response(*state, agent)
                 for line in r:
                     print(line)
-
-        #                for line in r:
-        #                    print(r)

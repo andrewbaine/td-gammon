@@ -19,24 +19,24 @@ def init_parser(parser):
     parser.add_argument("--hidden", type=int, default=40)
     parser.add_argument("--move-tensors", type=str, default="move_tensors/current")
     parser.add_argument("--save-dir", type=str, required=True)
+    parser.add_argument("--out", type=int, required=True)
 
 
 def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.basicConfig(filename="example.log", encoding="utf-8", level=logging.INFO)
-    layers = [198, args.hidden, 6]
-    nn: torch.nn.Sequential = network.layered(*layers, softmax=True, device=device)
+    logging.basicConfig(encoding="utf-8", level=logging.INFO)
+
+    layers = [198, args.hidden, args.out]
+    nn: torch.nn.Sequential = network.layered(*layers, softmax=True)
     nn.to(device)
 
-    board: torch.Tensor = torch.tensor(
-        backgammon.make_board(), dtype=torch.float, device=device
-    )
+    board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
     board.to(device)
 
     move_checker = done_check.Donecheck(device=device)
     move_tensors = read_move_tensors.MoveTensors(args.move_tensors, device=device)
     encoder = tesauro.Encoder(device=device)
-    a = agent.OnePlyAgent(nn, move_tensors, encoder, device=device)
+    a = agent.OnePlyAgent(nn, move_tensors, encoder, device=device, out=args.out)
     temporal_difference = td.TD(board, move_checker, a, nn, device=device)
 
     os.makedirs(args.save_dir, exist_ok=True)
