@@ -166,7 +166,7 @@ class Encoder:
         )
 
     def encode(self, board, player_1):
-
+        print("in encode", board.device, self.matrix.device)
         y = matmul(board, self.matrix) + self.addition
 
         condition = torch.logical_and(self.floor <= y, y < self.ceil)

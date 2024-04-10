@@ -45,7 +45,9 @@ class OnePlyAgent(Agent):
 
     def evaluate(self, state):
         (board, player_1, _) = state
+        print("board before expane", board.device)
         board = board.expand(size=(1, -1))
+        print("board after expand", board.device)
         te = self.encoder.encode(board, player_1)
         return self.f(te)
 

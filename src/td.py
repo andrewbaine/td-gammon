@@ -41,8 +41,9 @@ class TD:
         # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
         state = self.s0()
         for i in count():
-            v = self.agent.evaluate(state)
             (board, player_1, _) = state
+            print("board.device in episode", board.state)
+            v = self.agent.evaluate(state)
             done = self.move_checker.check(board)
             if done:
                 self.eligibility_trace.update(v, done)

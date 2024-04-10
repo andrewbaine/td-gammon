@@ -2,7 +2,7 @@
 * Performance
 
 ** TODO stop passing device around during initiation
-Add a "to" method instead 
+Add a "to" method instead
 
 ** TODO run profiler on a tournament
 
@@ -18,7 +18,7 @@ Add a "to" method instead
 put player_1 as part of the board, so it's [0, ..... {1, -1}]
 
 
-** 
+**
 
 * Feedback Loop
 
@@ -62,4 +62,3 @@ There should be 3 classes
 * Documentation
 
 on README, show how to build and run docker
-
