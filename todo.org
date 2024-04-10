@@ -1,0 +1,65 @@
+
+* Performance
+
+** TODO stop passing device around during initiation
+Add a "to" method instead 
+
+** TODO run profiler on a tournament
+
+** DONE implement available moves as a tensor operation
+
+** DONE implement next state as a tensor operation
+
+
+
+* Logic
+
+** TODO Stop passing player_1 around separately from board
+put player_1 as part of the board, so it's [0, ..... {1, -1}]
+
+
+** 
+
+* Feedback Loop
+
+** TODO add simple charting script
+make it simple to chart a learning model's progress
+
+** TODO dockerize evaluation
+
+
+** DONE backgammon correctness
+confirm that game logic works correctly. THIS IS DONE IN src/test_game_play.py
+
+** TODO Factor backgammon logic into
+There should be 3 classes
+- randomly allocate initial_state
+- compute all possible moves (and their corresponding next states?)
+- tesauro encode them; should be the same across all states, and correct
+
+
+* Squeezing More out of TD
+** Plies
+*** TODO implement 3-ply look-ahead
+*** TODO implement selective 2-ply look-ahead;
+*** TODO do some experimentation: how often does 2-ply change vs 1-ply?
+** Parameters
+
+*** perform a grand experiment to vary lambda, alpha, and number of hidden layers
+
+*** dynamically update learning rate
+
+*** learning rate schedule
+
+
+* Encoding
+** TODO Effective Pip Count
+** TODO unary encoding of length of barricade at each point
+
+* Neural Networks
+** TODO try different levels of hidden layers
+
+* Documentation
+
+on README, show how to build and run docker
+
