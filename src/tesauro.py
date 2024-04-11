@@ -1,6 +1,6 @@
 import torch
 
-from torch import matmul, maximum, add, minimum
+from torch import matmul, maximum, minimum
 
 # 2 * 4 * 24 == 192 to encode all the pieces
 # 193 - player 1 bar
