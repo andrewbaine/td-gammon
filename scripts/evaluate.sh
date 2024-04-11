@@ -37,7 +37,7 @@ else
     GPU_ARGS="";
 fi
 
-WD=$(PWD)
+WD=$(pwd)
 
 LOGS_DIR=${WD}/var/eval-logs
 mkdir -p ${LOGS_DIR}
