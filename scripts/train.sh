@@ -32,7 +32,7 @@ then
     exit 1
 fi
 
-if docker run --gpus all hello-world; then
+if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
     GPU_ARGS="--gpus all";
 else
     GPU_ARGS="";

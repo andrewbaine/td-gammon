@@ -1,18 +1,26 @@
 
 * Performance
 
-** TODO stop passing device around during initiation
-Add a "to" method instead
+** DONE stop passing device around during initiation
+Use a context manager instead
 
-** TODO run profiler on a tournament
+** TODO run profiler on a training session
+training is still slow on the gpu. why is this?
 
 ** DONE implement available moves as a tensor operation
 
 ** DONE implement next state as a tensor operation
 
 
-
 * Logic
+
+** TODO keep track of parameters
+When I write a model to a directory, I need to store certain
+metadata so tha tit can be loaded properly
+  - how many hidden paramters
+  - how many out parameters (4 or 6)?
+  - maybe alpha and lambda
+
 
 ** TODO Stop passing player_1 around separately from board
 put player_1 as part of the board, so it's [0, ..... {1, -1}]
@@ -25,7 +33,7 @@ put player_1 as part of the board, so it's [0, ..... {1, -1}]
 ** TODO add simple charting script
 make it simple to chart a learning model's progress
 
-** TODO dockerize evaluation
+** DONE dockerize evaluation
 
 
 ** DONE backgammon correctness
@@ -58,6 +66,7 @@ There should be 3 classes
 
 * Neural Networks
 ** TODO try different levels of hidden layers
+** TODO does 6 vs 4 outputs matter?
 
 * Documentation
 
