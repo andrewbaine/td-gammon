@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 while getopts ":g:m:o:" opt; do
     case $opt in
         g)
@@ -32,32 +31,40 @@ then
     exit 1
 fi
 
+if docker run --gpus all hello-world; then
+    GPU_ARGS="--gpus all";
+else
+    GPU_ARGS="";
+fi
 
-GNUBG_ERR=gnubg.err
-GNUBG_OUT=gnubg.out
-PY_ERR=py.err
-PY_OUT=py.out
+WD=$(PWD)
+
+LOGS_DIR=${WD}/var/eval-logs
+mkdir -p ${LOGS_DIR}
+
+GNUBG_ERR=${LOGS_DIR}/gnubg.err
+GNUBG_OUT=${LOGS_DIR}/gnubg.out
+PY_ERR=${LOGS_DIR}/py.err
+PY_OUT=${LOGS_DIR}/py.out
 
 rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
+touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-touch $GNUBG_OUT $PY_OUT
-
-
-python -u src/evaluate.py --load-model "$MODEL" --games "$GAMES" --out="$OUT" \
+COMMAND_1="evaluate --move-tensors /var/move_tensors --load-model /var/model.pt --games $GAMES --out=$OUT"
+docker run \
+       --mount type=bind,src=${WD}/${MODEL},target=/var/model.pt \
+       --mount type=bind,src=${WD}/var/move_tensors/current,target=/var/move_tensors \
+       -i td-gammon $COMMAND_1 \
+       >${PY_OUT} \
        2>$PY_ERR \
-       > $PY_OUT \
-       < <(tail -f $GNUBG_OUT) \
-    &
-
-
+       < <(tail -f ${GNUBG_OUT}) &
 PYTHON_JOB="$!"
 
-gnubg -q -t \
-      2>$GNUBG_ERR \
-      > $GNUBG_OUT \
-      < <(tail -f $PY_OUT) \
-     &
-
+docker run \
+       -i gnubg \
+       >${GNUBG_OUT} \
+       2>${GNUBG_ERR=} \
+       < <(tail -f ${PY_OUT}) &
 GNUBG_JOB="$!"
 
 wait $PYTHON_JOB
