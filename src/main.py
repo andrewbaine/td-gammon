@@ -1,18 +1,13 @@
 import argparse
-import sys
 
 import torch
 
-import player
+import evaluate
 import train
 import write_move_tensors
 
 
-def play(args):
-    player.play(sys.stdin)
-
-
-def check_cuda(args):
+def check_cuda(_):
     assert torch.cuda.is_available(), "cuda not available"
 
 
@@ -27,16 +22,13 @@ if __name__ == "__main__":
     train.init_parser(parser_train)
     parser_train.set_defaults(func=train.train)
 
-    parser_play = sp.add_parser("play")
-    parser_play.set_defaults(func=play)
+    parser_evaluate = sp.add_parser("evaluate")
+    evaluate.init_parser(parser_evaluate)
+    parser_evaluate.set_defaults(func=evaluate.main)
 
     parser_move_tensors = sp.add_parser("move-tensors")
     write_move_tensors.init_parser(parser_move_tensors)
     parser_move_tensors.set_defaults(func=write_move_tensors.main)
 
     args = parser.parse_args()
-    if torch.cuda.is_available():
-        with torch.cuda.device("cuda"):
-            args.func(args)
-    else:
-        args.func(args)
+    args.func(args)

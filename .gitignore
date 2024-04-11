@@ -1,8 +1,7 @@
 __pycache__/
 /.venv/
-/model.*.pt
-/tesauro80/
-/tesauro-2024-03-26/
-/move_tensors/
-/tesauro-2024-03-27/
+/.mypy_cache/
+/.pytest_cache/
 /tmp/
+/var/
+/__pycache__/
