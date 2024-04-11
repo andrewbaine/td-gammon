@@ -14,8 +14,8 @@ def barrier_matrix(b):
             for j in range(26):
                 row.append(
                     0
-                    if (j == 0 or j == 25)
-                    else 1 if -1 < (i - j if b else j - i) < n else 0
+                    if (i == 0 or i == 25 or j == 0 or j == 25)
+                    else 1 if (-1 < ((i - j) if b else (j - i)) < n) else 0
                 )
     return torch.tensor(m)
 
@@ -27,17 +27,27 @@ def additions():
     return torch.tensor(m)
 
 
-def f(x):
+def f(board):
     m = barrier_matrix(True)
-    y = torch.matmul(torch.where(x > 1, torch.ones_like(x), torch.zeros_like(x)), m)
-    print(y)
+    y = torch.matmul(
+        torch.where(board > 1, torch.ones_like(board), torch.zeros_like(board)), m
+    )
     z = y - additions()
-    print(z)
     p = torch.maximum(z, torch.zeros_like(z))
-    print(p)
     x = torch.tensor([[j + 2 if i == j else 0 for j in range(6)] for i in range(6)])
-    q = torch.matmul(x, p)
-    return q
+    q = torch.matmul(x, p).max(dim=0).values
+    m = barrier_matrix(False)
+    y = torch.matmul(
+        torch.where(board < -1, torch.ones_like(board), torch.zeros_like(board)), m
+    )
+    z = y - additions()
+    p = torch.maximum(z, torch.zeros_like(z))
+    x = torch.tensor([[-j - 2 if i == j else 0 for j in range(6)] for i in range(6)])
+    q2 = torch.matmul(x, p).min(dim=0).values
+    return q + q2
+
+
+#    return q + q2
 
 
 class Encoder:
