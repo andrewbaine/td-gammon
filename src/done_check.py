@@ -4,24 +4,20 @@ from torch import maximum, matmul, minimum
 
 
 class Donecheck:
-    def __init__(self, device=torch.device("cuda")):
-        self.zero = torch.tensor(
-            [0 for _ in range(26)], dtype=torch.float, device=device
-        )
-        self.one_column = torch.tensor(
-            [[1] for _ in range(26)], dtype=torch.float, device=device
-        )
+    def __init__(self):
+        self.zero = torch.tensor([0 for _ in range(26)], dtype=torch.float)
+        self.one_column = torch.tensor([[1] for _ in range(26)], dtype=torch.float)
 
         self.a_backgammoned = torch.tensor(
-            [[1 if i > 18 else 0] for i in range(26)], dtype=torch.float, device=device
+            [[1 if i > 18 else 0] for i in range(26)], dtype=torch.float
         )
         self.b_backgammoned = torch.tensor(
-            [[-1 if i < 7 else 0] for i in range(26)], dtype=torch.float, device=device
+            [[-1 if i < 7 else 0] for i in range(26)], dtype=torch.float
         )
-        self.fifteen = torch.tensor([[15]], dtype=torch.float, device=device)
-        self.fifteen_negated = torch.tensor([[-15]], dtype=torch.float, device=device)
-        self.n0 = torch.tensor([[0]], dtype=torch.float, device=device)
-        self.n1 = torch.tensor([[1]], dtype=torch.float, device=device)
+        self.fifteen = torch.tensor([[15]], dtype=torch.float)
+        self.fifteen_negated = torch.tensor([[-15]], dtype=torch.float)
+        self.n0 = torch.tensor([[0]], dtype=torch.float)
+        self.n1 = torch.tensor([[1]], dtype=torch.float)
         self.n1_neg = self.n1.neg()
 
     def check(self, board):

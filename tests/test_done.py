@@ -65,16 +65,23 @@ cases = [
 ]
 
 
-bck = backgammon_env.Backgammon(lambda: random.randint(1, 6))
+@pytest.fixture
+def bck():
+    return backgammon_env.Backgammon(lambda: random.randint(1, 6))
 
-sbr = slow_but_right.MoveComputer()
-dc = done_check.Donecheck(
-    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-)
+
+@pytest.fixture
+def sbr():
+    return slow_but_right.MoveComputer()
+
+
+@pytest.fixture
+def dc():
+    return done_check.Donecheck()
 
 
 @pytest.mark.parametrize("t", cases)
-def test(t):
+def test(bck, sbr, dc, t):
     player_1 = t.player_1_color == t.player
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
     tensor_board = torch.tensor(board, dtype=torch.float)

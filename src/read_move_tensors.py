@@ -4,27 +4,27 @@ from write_move_tensors import singles_dir, doubles_dir, ab_dir, noop_dir
 import os
 
 
-def transform(device):
+def transform():
     rows = []
     for i in range(26):
         col = [-1 if ((25 - j) == i) else 0 for j in range(26)]
         rows.append(col)
-    return torch.tensor(rows, dtype=torch.float, device=device)
+    return torch.tensor(rows, dtype=torch.float)
 
 
-def for_p2(x, device):
+def for_p2(x):
     (moves, low, high, vector) = x
-    t = transform(device)
-    one = torch.tensor([1 for _ in range(26)], dtype=torch.float, device=device)
+    t = transform()
+    one = torch.tensor([1 for _ in range(26)], dtype=torch.float)
     v = torch.matmul(vector, t)
     h = torch.matmul(low, t).add(one)
     l = torch.matmul(high, t).add(one)
     return (moves, l, h, v)
 
 
-def read(path, device):
+def read(path):
     return tuple(
-        torch.load(os.path.join(path, x)).to(device=device, dtype=torch.float)
+        torch.load(os.path.join(path, x)).to(dtype=torch.float)
         for x in ["moves.pt", "low.pt", "high.pt", "vector.pt"]
     )
 
@@ -52,30 +52,28 @@ def find_index(a, b):
 
 
 class MoveTensors:
-    def __init__(self, dir, device=torch.device("cuda")):
+    def __init__(self, dir):
         self.player_1_vectors = []
 
-        noop = read(noop_dir(dir), device=device)
-        singles = [read(singles_dir(dir, d1), device=device) for d1 in range(1, 7)]
+        noop = read(noop_dir(dir))
+        singles = [read(singles_dir(dir, d1)) for d1 in range(1, 7)]
 
         for d1 in range(1, 7):
             for d2 in range(1, d1 + 1):
                 if d1 == d2:
                     dubsies = [
-                        read(doubles_dir(dir, d1, name), device=device)
+                        read(doubles_dir(dir, d1, name))
                         for name in ["4", "3", "2", "1"]
                     ]
                     dubsies.append(noop)
                     self.player_1_vectors.append(dubsies)
                 else:
-                    xs = [read(ab_dir(dir, d1, d2), device=device)]
+                    xs = [read(ab_dir(dir, d1, d2))]
                     xs.append(singles[d1 - 1])
                     xs.append(singles[d2 - 1])
                     xs.append(noop)
                     self.player_1_vectors.append(xs)
-        self.player_2_vectors = [
-            [for_p2(y, device) for y in x] for x in self.player_1_vectors
-        ]
+        self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
 
     def compute_moves(self, state):
         (board, player_1, (d1, d2)) = state

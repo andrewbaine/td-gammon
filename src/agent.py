@@ -23,8 +23,7 @@ class RandomAgent(Agent):
 
 
 class OnePlyAgent(Agent):
-    def __init__(self, nn, move_tensors, encoder, device, out):
-        self.device = device
+    def __init__(self, nn, move_tensors, encoder, out):
         self.nn = nn
         match out:
             case 4:
@@ -33,7 +32,6 @@ class OnePlyAgent(Agent):
                 self.utility = network.backgammon_utility_tensor()
             case _:
                 assert False
-        self.utility.to(device)
         self.encoder = encoder
         self.move_tensors = move_tensors
 
@@ -45,9 +43,7 @@ class OnePlyAgent(Agent):
 
     def evaluate(self, state):
         (board, player_1, _) = state
-        print("board before expane", board.device)
         board = board.expand(size=(1, -1))
-        print("board after expand", board.device)
         te = self.encoder.encode(board, player_1)
         return self.f(te)
 
@@ -64,7 +60,11 @@ class OnePlyAgent(Agent):
 
     def decide_action(self, state):
         (board, player_1, dice) = state
-        board = torch.tensor(board, dtype=torch.float, device=self.device)
+
+        board = torch.tensor(
+            board,
+            dtype=torch.float,
+        )
         state = (board, player_1, dice)
 
         (moves, move_vectors) = self.move_tensors.compute_moves(state)

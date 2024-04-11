@@ -42,7 +42,6 @@ class TD:
         state = self.s0()
         for i in count():
             (board, player_1, _) = state
-            print("board.device in episode", board.state)
             v = self.agent.evaluate(state)
             done = self.move_checker.check(board)
             if done:

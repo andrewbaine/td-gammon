@@ -12,7 +12,7 @@ from torch import matmul, maximum, add, minimum
 
 
 class Encoder:
-    def __init__(self, device=torch.device("cuda")):
+    def __init__(self):
         matrix = []
         floor = []
         ceil = []
@@ -88,35 +88,27 @@ class Encoder:
 
         for i in range(4):
             floorish.append(15)
-        self.matrix = torch.tensor(matrix, dtype=torch.float, device=device)
-        self.floor = torch.tensor(floor, dtype=torch.float, device=device)
-        self.ceil = torch.tensor(ceil, dtype=torch.float, device=device)
-        self.floor_2 = torch.tensor(floor_2, dtype=torch.float, device=device)
-        self.ceil_2 = torch.tensor(ceil_2, dtype=torch.float, device=device)
-        self.addition = torch.tensor(addition, dtype=torch.float, device=device)
-        self.cap = torch.tensor(floorish, dtype=torch.float, device=device)
+        self.matrix = torch.tensor(matrix, dtype=torch.float)
+        self.floor = torch.tensor(floor, dtype=torch.float)
+        self.ceil = torch.tensor(ceil, dtype=torch.float)
+        self.floor_2 = torch.tensor(floor_2, dtype=torch.float)
+        self.ceil_2 = torch.tensor(ceil_2, dtype=torch.float)
+        self.addition = torch.tensor(addition, dtype=torch.float)
+        self.cap = torch.tensor(floorish, dtype=torch.float)
 
         count_white = [[1 if i == 194 else 0 for i in range(198)] for _ in range(26)]
         count_black = [[-1 if i == 195 else 0 for i in range(198)] for _ in range(26)]
-        self.count_white_pieces = torch.tensor(
-            count_white, dtype=torch.float, device=device
-        )
-        self.count_black_pieces = torch.tensor(
-            count_black, dtype=torch.float, device=device
-        )
+        self.count_white_pieces = torch.tensor(count_white, dtype=torch.float)
+        self.count_black_pieces = torch.tensor(count_black, dtype=torch.float)
 
-        self.zero_board = torch.tensor(
-            [0 for _ in range(26)], dtype=torch.float, device=device
-        )
+        self.zero_board = torch.tensor([0 for _ in range(26)], dtype=torch.float)
         self.white_turn = torch.tensor(
             [(1 if i == 196 else 0) for i in range(198)],
             dtype=torch.float,
-            device=device,
         )
         self.black_turn = torch.tensor(
             [(1 if i == 197 else 0) for i in range(198)],
             dtype=torch.float,
-            device=device,
         )
         for x in [
             self.floor,
@@ -131,7 +123,6 @@ class Encoder:
         self.zero_tensor = torch.tensor(
             [0 for _ in range(198)],
             dtype=torch.float,
-            device=device,
         )
 
         scale = []
@@ -162,11 +153,9 @@ class Encoder:
         self.scale = torch.tensor(
             scale,
             dtype=torch.float,
-            device=device,
         )
 
     def encode(self, board, player_1):
-        print("in encode", board.device, self.matrix.device)
         y = matmul(board, self.matrix) + self.addition
 
         condition = torch.logical_and(self.floor <= y, y < self.ceil)

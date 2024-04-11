@@ -14,6 +14,7 @@ import logging
 import os
 
 import eligibility_trace
+import contextlib
 
 
 def init_parser(parser):
@@ -25,22 +26,21 @@ def init_parser(parser):
 
 
 def train(args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.basicConfig(encoding="utf-8", level=logging.INFO)
+    cm = (
+        torch.cuda.device(torch.device("cuda"))
+        if torch.cuda.is_available()
+        else contextlib.nullcontext()
+    )
+    with cm:
+        layers = [198, args.hidden, args.out]
+        nn: torch.nn.Sequential = network.layered(*layers)
+        board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
+        move_checker = done_check.Donecheck()
+        move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
+        encoder = tesauro.Encoder()
 
-    layers = [198, args.hidden, args.out]
-    nn: torch.nn.Sequential = network.layered(*layers)
-    nn.to(device)
-
-    board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
-    board.to(device)
-
-    move_checker = done_check.Donecheck(device=device)
-    move_tensors = read_move_tensors.MoveTensors(args.move_tensors, device=device)
-
-    encoder = tesauro.Encoder(device=device)
-
-    a = agent.OnePlyAgent(nn, move_tensors, encoder, device=device, out=args.out)
+    a = agent.OnePlyAgent(nn, move_tensors, encoder, out=args.out)
 
     et = eligibility_trace.ElibilityTrace(nn)
     temporal_difference = td.TD(board, move_checker, a, et)

@@ -4,17 +4,24 @@ from torch import tensor
 import backgammon
 import test_b2
 import read_move_tensors
-
+import contextlib
 import torch
 
-move_tensors = read_move_tensors.MoveTensors(
-    "move_tensors/current",
-    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-)
+
+@pytest.fixture
+def move_tensors():
+    with (
+        torch.cuda.device("cuda")
+        if torch.cuda.is_available()
+        else contextlib.nullcontext()
+    ):
+        yield read_move_tensors.MoveTensors(
+            "move_tensors/current",
+        )
 
 
 @pytest.mark.parametrize("t", test_b2.test_cases)
-def tests(t):
+def tests(move_tensors, t):
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
     player_1 = t.player == t.player_1_color
     state = (tensor(board), player_1, t.roll)

@@ -1,8 +1,11 @@
-import regex
+from logging import INFO, basicConfig, getLogger
 import sys
-import gnubg_codec
 
-from logging import getLogger, INFO, basicConfig
+import regex
+import torch
+
+import gnubg_codec
+import contextlib
 
 basicConfig(format="%(message)s")
 logger = getLogger(__name__)
@@ -36,7 +39,13 @@ def response(position_id, match_id, agent):
         # its always player 2?
         player_1 = False
         state = (position, player_1, m.dice)
-        decision = agent.decide_action(state)
+
+        with (
+            torch.cuda.device("cuda")
+            if torch.cuda.is_available()
+            else contextlib.nullcontext()
+        ):
+            decision = agent.decide_action(state)
         if decision:
             tokens = ["move"]
             for s, e in decision:
