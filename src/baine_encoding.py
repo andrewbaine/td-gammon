@@ -2,13 +2,42 @@ import torch
 
 from torch import matmul, maximum, minimum
 
-# 2 * 4 * 24 == 192 to encode all the pieces
-# 193 - player 1 bar
-# 194 - player 2 bar
-# 195 - player_1 total number of piece
-# 196 - player_2 total number of pieces
-# 197 - player_ 1 turn
-# 198 - player_2 turn
+
+def barrier_matrix(b):
+    m = []
+    for n in range(2, 8):
+        x = []
+        m.append(x)
+        for i in range(26):
+            row = []
+            x.append(row)
+            for j in range(26):
+                row.append(
+                    0
+                    if (j == 0 or j == 25)
+                    else 1 if -1 < (i - j if b else j - i) < n else 0
+                )
+    return torch.tensor(m)
+
+
+def additions():
+    m = []
+    for n in range(2, 8):
+        m.append([(n - 1) for _ in range(26)])
+    return torch.tensor(m)
+
+
+def f(x):
+    m = barrier_matrix(True)
+    y = torch.matmul(torch.where(x > 1, torch.ones_like(x), torch.zeros_like(x)), m)
+    print(y)
+    z = y - additions()
+    print(z)
+    p = torch.maximum(z, torch.zeros_like(z))
+    print(p)
+    x = torch.tensor([[j + 2 if i == j else 0 for j in range(6)] for i in range(6)])
+    q = torch.matmul(x, p)
+    return q
 
 
 class Encoder:
