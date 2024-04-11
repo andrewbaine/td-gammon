@@ -16,7 +16,7 @@ def move_tensors():
         else contextlib.nullcontext()
     ):
         yield read_move_tensors.MoveTensors(
-            "move_tensors/current",
+            "var/move_tensors/current",
         )
 
 

@@ -44,7 +44,7 @@ def test_game_play():
     sbr = slow_but_right.MoveComputer()
     dc = done_check.Donecheck()
 
-    dir = os.environ.get("MOVES_TENSORS", default="move_tensors/current")
+    dir = os.environ.get("MOVES_TENSORS", default="var/move_tensors/current")
     n = int(os.environ.get("N_GAMES", default="10"))
     move_tensors = read_move_tensors.MoveTensors(dir=dir)
 
