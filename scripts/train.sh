@@ -40,8 +40,8 @@ fi
 
 docker run --rm \
        $GPU_ARGS \
-       --mount type=bind,src=$(PWD)/var/move_tensors,target=/var/move_tensors \
-       --mount type=bind,src=$(PWD)/var/models,target=/var/models \
+       --mount type=bind,src=$(pwd)/var/move_tensors,target=/var/move_tensors \
+       --mount type=bind,src=$(pwd)/var/models,target=/var/models \
        td-gammon train \
        --move-tensors /var/move_tensors/current \
        --save-dir /var/models/${MODEL} \
