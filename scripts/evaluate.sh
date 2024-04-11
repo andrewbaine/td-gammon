@@ -51,7 +51,7 @@ rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
 COMMAND_1="evaluate --move-tensors /var/move_tensors --load-model /var/model.pt --games $GAMES --out=$OUT"
-docker run --rm \
+docker run --rm ${GPU_ARGS} \
        --mount type=bind,src=${WD}/${MODEL},target=/var/model.pt \
        --mount type=bind,src=${WD}/var/move_tensors/current,target=/var/move_tensors \
        -i td-gammon $COMMAND_1 \
