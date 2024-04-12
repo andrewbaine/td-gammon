@@ -15,7 +15,6 @@ import logging
 import os
 
 import eligibility_trace
-import contextlib
 
 
 def init_parser(parser):
@@ -34,6 +33,14 @@ def train(args):
     logging.basicConfig(encoding="utf-8", level=logging.INFO)
 
     board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
+    match args.out:
+        case 4:
+            utility = network.utility_tensor()
+        case 6:
+            utility = network.backgammon_utility_tensor()
+        case _:
+            assert False
+
     match args.encoding:
         case "baine":
             encoder = baine_encoding.Encoder()
@@ -54,9 +61,10 @@ def train(args):
         move_checker.to_(device=device)
         move_tensors.to_(device=device)
         encoder.to_(device=device)
+        utility = utility.to(device=device)
 
     et = eligibility_trace.ElibilityTrace(nn)
-    a = agent.OnePlyAgent(nn, move_tensors, encoder, out=args.out)
+    a = agent.OnePlyAgent(nn, move_tensors, encoder, utility=utility)
     temporal_difference = td.TD(board, move_checker, a, et)
 
     os.makedirs(args.save_dir, exist_ok=True)

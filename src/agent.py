@@ -23,15 +23,9 @@ class RandomAgent(Agent):
 
 
 class OnePlyAgent(Agent):
-    def __init__(self, nn, move_tensors, encoder, out):
+    def __init__(self, nn, move_tensors, encoder, utility):
         self.nn = nn
-        match out:
-            case 4:
-                self.utility = network.utility_tensor()
-            case 6:
-                self.utility = network.backgammon_utility_tensor()
-            case _:
-                assert False
+        self.utility = utility
         self.encoder = encoder
         self.move_tensors = move_tensors
 
