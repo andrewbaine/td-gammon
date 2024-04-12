@@ -14,6 +14,7 @@ while getopts ":g:m:o:e:" opt; do
             ;;
         e)
             ENCODING="${OPTARG}"
+            ;;
         *)
             exit 1
     esac
