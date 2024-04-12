@@ -100,6 +100,32 @@ class Encoder:
         self.zero24 = tensor([0 for _ in range(24)])
         self.scale = tensor([1 for _ in range((max - min + 1) * 24 * 2)]).diag()
 
+    def to_(self, device):
+        self.tesauro.to_(device)
+        self.matrix = self.matrix.to(device=device)
+        self.floor = self.floor.to(device=device)
+        self.ceil = self.ceil.to(device=device)
+        self.addition = self.addition.to(device=device)
+        self.cap = self.cap.to(device=device)
+        self.zero_tensor = self.zero_tensor.to(device=device)
+        self.square = self.square.to(device=device)
+        self.square_neg = self.square_neg.to(device=device)
+        self.zeroes = self.zeroes.to(device=device)
+        self.ones = self.ones.to(device=device)
+        self.zeros_to_the_right = self.zeros_to_the_right.to(device=device)
+        self.zeros_to_the_left = self.zeros_to_the_left.to(device=device)
+        self.zero24 = self.zero24.to(device=device)
+        self.scale = self.scale.to(device=device)
+
+        self.player_1_barrier_matrix = [
+            (a.to(device=device), b.to(device=device), c.to(device=device))
+            for (a, b, c) in self.player_1_barrier_matrix
+        ]
+        self.player_2_barrier_matrix = [
+            (a.to(device=device), b.to(device=device), c.to(device=device))
+            for (a, b, c) in self.player_2_barrier_matrix
+        ]
+
     def encode(self, board, player_1):
         y = self.tesauro.encode(board, player_1)
         z = self.encode_step_2(self.encode_step_1(board))

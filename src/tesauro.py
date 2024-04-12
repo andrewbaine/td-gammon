@@ -155,6 +155,21 @@ class Encoder:
             dtype=torch.float,
         )
 
+    def to_(self, device):
+        self.matrix = self.matrix.to(device=device)
+        self.floor = self.floor.to(device=device)
+        self.ceil = self.ceil.to(device=device)
+        self.floor_2 = self.floor_2.to(device=device)
+        self.ceil_2 = self.ceil_2.to(device=device)
+        self.addition = self.addition.to(device=device)
+        self.cap = self.cap.to(device=device)
+        self.count_white_pieces = self.count_white_pieces.to(device=device)
+        self.count_black_pieces = self.count_black_pieces.to(device=device)
+        self.zero_board = self.zero_board.to(device=device)
+        self.white_turn = self.white_turn.to(device=device)
+        self.black_turn = self.black_turn.to(device=device)
+        self.scale = self.scale.to(device=device)
+
     def encode(self, board, player_1):
         y = matmul(board, self.matrix) + self.addition
 

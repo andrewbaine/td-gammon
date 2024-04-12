@@ -53,6 +53,7 @@ def train(args):
         nn = nn.to(device=device)
         move_checker.to_(device=device)
         move_tensors.to_(device=device)
+        encoder.to_(device=device)
 
     et = eligibility_trace.ElibilityTrace(nn)
     a = agent.OnePlyAgent(nn, move_tensors, encoder, out=args.out)
