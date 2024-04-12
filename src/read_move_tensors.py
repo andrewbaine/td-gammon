@@ -77,22 +77,28 @@ class MoveTensors:
 
     def to_(self, device):
         self.player_1_vectors = [
-            (
-                m.to(device=device),
-                l.to(device=device),
-                u.to(device=device),
-                v.to(device=device),
-            )
-            for (m, l, u, v) in self.player_1_vectors
+            [
+                (
+                    m.to(device=device),
+                    l.to(device=device),
+                    u.to(device=device),
+                    v.to(device=device),
+                )
+                for (m, l, u, v) in x
+            ]
+            for x in self.player_1_vectors
         ]
         self.player_2_vectors = [
-            (
-                m.to(device=device),
-                l.to(device=device),
-                u.to(device=device),
-                v.to(device=device),
-            )
-            for (m, l, u, v) in self.player_2_vectors
+            [
+                (
+                    m.to(device=device),
+                    l.to(device=device),
+                    u.to(device=device),
+                    v.to(device=device),
+                )
+                for (m, l, u, v) in x
+            ]
+            for x in self.player_2_vectors
         ]
 
     def compute_moves(self, state):
