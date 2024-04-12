@@ -17,7 +17,7 @@ class Encoder:
         floor = []
         ceil = []
 
-        floorish = []
+        cap = []
         addition = []
         floor_2 = []
         ceil_2 = []
@@ -31,7 +31,7 @@ class Encoder:
                 floor_2.append(-15)
                 ceil_2.append(0)
                 addition.append(0)
-                floorish.append(15)
+                cap.append(15)
             for j in range(1, 25):
                 for k in range(0, 3):
                     row.append(1 if i == j else 0)
@@ -49,8 +49,8 @@ class Encoder:
 
                         addition.append(0)
                         addition.append(0)
-                        floorish.append(1)
-                        floorish.append(1)
+                        cap.append(1)
+                        cap.append(1)
 
                 row.append(1 if i == j else 0)
                 row.append(-1 if i == j else 0)
@@ -67,8 +67,8 @@ class Encoder:
 
                     addition.append(-3)
                     addition.append(-3)
-                    floorish.append(15)
-                    floorish.append(15)
+                    cap.append(15)
+                    cap.append(15)
 
             row.append(1 if i == 25 else 0)  # player 1 bar
             if i == 25:
@@ -77,7 +77,7 @@ class Encoder:
                 floor_2.append(0)
                 ceil_2.append(15)
                 addition.append(0)
-                floorish.append(15)
+                cap.append(15)
 
             for _ in range(4):
                 row.append(0)
@@ -87,14 +87,14 @@ class Encoder:
                 x.append(0)
 
         for i in range(4):
-            floorish.append(15)
+            cap.append(15)
         self.matrix = torch.tensor(matrix, dtype=torch.float)
         self.floor = torch.tensor(floor, dtype=torch.float)
         self.ceil = torch.tensor(ceil, dtype=torch.float)
         self.floor_2 = torch.tensor(floor_2, dtype=torch.float)
         self.ceil_2 = torch.tensor(ceil_2, dtype=torch.float)
         self.addition = torch.tensor(addition, dtype=torch.float)
-        self.cap = torch.tensor(floorish, dtype=torch.float)
+        self.cap = torch.tensor(cap, dtype=torch.float)
 
         count_white = [[1 if i == 194 else 0 for i in range(198)] for _ in range(26)]
         count_black = [[-1 if i == 195 else 0 for i in range(198)] for _ in range(26)]
