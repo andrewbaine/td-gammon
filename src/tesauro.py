@@ -168,6 +168,7 @@ class Encoder:
         self.zero_board = self.zero_board.to(device=device)
         self.white_turn = self.white_turn.to(device=device)
         self.black_turn = self.black_turn.to(device=device)
+        self.zero_tensor = self.zero_tensor.to(device=device)
         self.scale = self.scale.to(device=device)
 
     def encode(self, board, player_1):
