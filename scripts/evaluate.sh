@@ -11,6 +11,9 @@ while getopts ":g:m:o:" opt; do
         o)
             OUT="${OPTARG}"
             ;;
+        e)
+            ENCODING="${OPTARG}"
+            ;;
         *)
             exit 1
     esac
@@ -20,14 +23,22 @@ shift "$((OPTIND-1))"
 
 if [ -z "$GAMES" ]
 then
+    echo "set GAMES variable"
     exit 1
 fi
 if [ -z "$MODEL" ]
 then
+    echo "set MODEL variable"
     exit 1
 fi
 if [ -z "$OUT" ]
 then
+    echo "set OUT variable"
+    exit 1
+fi
+if [ -z "$ENCODING" ]
+then
+    echo "set ENCODING variable"
     exit 1
 fi
 
@@ -50,7 +61,7 @@ PY_OUT=${LOGS_DIR}/py.out
 rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-COMMAND_1="evaluate --move-tensors /var/move_tensors --load-model /var/model.pt --games $GAMES --out=$OUT"
+COMMAND_1="evaluate --move-tensors /var/move_tensors --load-model /var/model.pt --games $GAMES --out=$OUT --encoding $ENCODING"
 docker run --rm ${GPU_ARGS} \
        --mount type=bind,src=${WD}/${MODEL},target=/var/model.pt \
        --mount type=bind,src=${WD}/var/move_tensors/current,target=/var/move_tensors \
