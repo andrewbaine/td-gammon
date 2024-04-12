@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -x
+
 while getopts ":g:m:o:" opt; do
     case $opt in
         g)
