@@ -19,7 +19,7 @@ def barrier_matrix(b):
                 row.append(
                     0
                     if (i == 0 or i == 25)
-                    else 1 if (-1 < ((i - j) if b else (j - i)) < n) else 0
+                    else 1 if (-1 < (((i - 1) - j) if b else (j - (i - 1))) < n) else 0
                 )
     return tensor(m)
 

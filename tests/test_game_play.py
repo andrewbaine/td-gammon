@@ -31,9 +31,12 @@ def normalize(moves):
 import random
 import slow_but_right
 
+import baine_encoding
+
 
 def test_game_play():
     encoder = tesauro.Encoder()
+    enc = baine_encoding.Encoder()
 
     default_seed = random.randint(0, 0xFFFFFFFFFFFFFFFF)
     seed = int(os.environ.get("SEED", default=default_seed))
@@ -58,6 +61,15 @@ def test_game_play():
 
             t = encoder.encode(tensor_board, player_1).tolist()
             t2 = slow_but_right.tesauro_encode(state)
+
+            baine_encoded = slow_but_right.simple_baine_encoding(board)
+            be2 = [int(x) for x in enc.encode(tensor_board, player_1).tolist()]
+            print(backgammon.to_str(board))
+            print(board[1:25])
+            print(baine_encoded)
+            print(be2)
+            assert baine_encoded == be2
+
             assert len(t) == len(t2)
             for i in range(len(t)):
                 if t2[i] != t[i]:

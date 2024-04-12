@@ -199,3 +199,34 @@ def tesauro_encode(state):
     xs[4 + 8 * 24] = 1.0 if player_1 else 0
     xs[5 + 8 * 24] = 0 if player_1 else 1
     return xs
+
+
+from typing import List
+
+
+def simple_baine_encoding(board: List[int]):
+    bs = []
+    for i in range(24):
+        x = board[i + 1]
+        # y1 is the checker count on the adjacent point to the left
+        y1 = 0 if i == 0 else board[i]
+        # y2 is the checker count on the the adjacent point to the right
+        y2 = 0 if i == 23 else board[i + 2]
+        if x > 1 and y1 <= 1:
+            c = 0
+            j = i + 1
+            while j < 25 and board[j] > 1:
+                c += 1
+                j += 1
+            bs.append(c)
+        elif x < -1 and y2 >= -1:
+            c = 0
+            j = i + 1
+            while j > 0 and board[j] < -1:
+                c -= 1
+                j -= 1
+            print("\tc", c)
+            bs.append(c)
+        else:
+            bs.append(0)
+    return bs
