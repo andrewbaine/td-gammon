@@ -38,7 +38,7 @@ def main(args):
 
     if torch.cuda.is_available() or args.force_cuda:
         device = torch.device("cuda")
-        nn = nn.to_(device)
+        nn = nn.to(device)
         move_tensors.to_(device)
         encoder.to_(device)
         utility = utility.to(device)
