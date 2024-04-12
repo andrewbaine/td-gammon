@@ -27,33 +27,35 @@ def init_parser(parser):
     parser.add_argument(
         "--encoding", type=str, required=True, choices=["baine", "tesauro"]
     )
+    parser.add_argument("--force-cuda", type=bool, default=False)
 
 
 def train(args):
     logging.basicConfig(encoding="utf-8", level=logging.INFO)
-    cm = (
-        torch.cuda.device(torch.device("cuda"))
-        if torch.cuda.is_available()
-        else contextlib.nullcontext()
-    )
-    with cm:
-        board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
-        match args.encoding:
-            case "baine":
-                encoder = baine_encoding.Encoder()
-            case "tesauro":
-                encoder = tesauro.Encoder()
-            case _:
-                assert False
-        t = encoder.encode(board, True)
-        layers = [t.numel(), args.hidden, args.out]
-        nn: torch.nn.Sequential = network.layered(*layers)
-        move_checker = done_check.Donecheck()
-        move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
 
-    a = agent.OnePlyAgent(nn, move_tensors, encoder, out=args.out)
+    board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
+    match args.encoding:
+        case "baine":
+            encoder = baine_encoding.Encoder()
+        case "tesauro":
+            encoder = tesauro.Encoder()
+        case _:
+            assert False
+    t = encoder.encode(board, True)
+    layers = [t.numel(), args.hidden, args.out]
+    nn: torch.nn.Sequential = network.layered(*layers)
+    move_checker = done_check.Donecheck()
+    move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
+
+    if torch.cuda.is_available() or args.force_cuda:
+        device = torch.device("cuda")
+        board = board.to(device=device)
+        nn = nn.to(device=device)
+        move_checker.to_(device=device)
+        move_tensors.to_(device=device)
 
     et = eligibility_trace.ElibilityTrace(nn)
+    a = agent.OnePlyAgent(nn, move_tensors, encoder, out=args.out)
     temporal_difference = td.TD(board, move_checker, a, et)
 
     os.makedirs(args.save_dir, exist_ok=True)

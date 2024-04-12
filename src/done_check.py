@@ -20,6 +20,17 @@ class Donecheck:
         self.n1 = torch.tensor([[1]], dtype=torch.float)
         self.n1_neg = self.n1.neg()
 
+    def to_(self, device):
+        self.zero = self.zero.to(device=device)
+        self.one_column = self.one_column.to(device=device)
+        self.a_backgammoned = self.a_backgammoned.to(device=device)
+        self.b_backgammoned = self.b_backgammoned.to(device=device)
+        self.fifteen = self.fifteen.to(device=device)
+        self.fifteen_negated = self.fifteen_negated.to(device=device)
+        self.n0 = self.n0.to(device=device)
+        self.n1 = self.n1.to(device=device)
+        self.n1_neg = self.n1_neg.to(device=device)
+
     def check(self, board):
         a = maximum(board, self.zero)
         a_count = matmul(a, self.one_column)

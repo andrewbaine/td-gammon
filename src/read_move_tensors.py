@@ -75,6 +75,10 @@ class MoveTensors:
                     self.player_1_vectors.append(xs)
         self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
 
+    def to_(self, device):
+        self.player_1_vectors = [t.to(device=device) for t in self.player_1_vectors]
+        self.player_2_vectors = [t.to(device=device) for t in self.player_2_vectors]
+
     def compute_moves(self, state):
         (board, player_1, (d1, d2)) = state
         i = find_index(d1, d2)
