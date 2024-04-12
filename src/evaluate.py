@@ -29,7 +29,7 @@ def main(args):
         case _:
             assert False
 
-    t = encoder.encode(torch.tensor(backgammon.make_board()), True)
+    t = encoder.encode(torch.tensor(backgammon.make_board(), dtype=torch.float), True)
 
     layers = [t.numel(), args.hidden, args.out]
     nn: torch.nn.Sequential = network.layered(*layers)
