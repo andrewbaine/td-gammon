@@ -76,8 +76,24 @@ class MoveTensors:
         self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
 
     def to_(self, device):
-        self.player_1_vectors = [t.to(device=device) for t in self.player_1_vectors]
-        self.player_2_vectors = [t.to(device=device) for t in self.player_2_vectors]
+        self.player_1_vectors = [
+            (
+                m.to(device=device),
+                l.to(device=device),
+                u.to(device=device),
+                v.to(device=device),
+            )
+            for (m, l, u, v) in self.player_1_vectors
+        ]
+        self.player_2_vectors = [
+            (
+                m.to(device=device),
+                l.to(device=device),
+                u.to(device=device),
+                v.to(device=device),
+            )
+            for (m, l, u, v) in self.player_2_vectors
+        ]
 
     def compute_moves(self, state):
         (board, player_1, (d1, d2)) = state
