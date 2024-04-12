@@ -36,6 +36,7 @@ def main(args):
     nn.load_state_dict(torch.load(args.load_model))
     move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
 
+    device = torch.device("cpu")
     if torch.cuda.is_available() or args.force_cuda:
         device = torch.device("cuda")
         nn = nn.to(device)
@@ -44,7 +45,7 @@ def main(args):
         utility = utility.to(device)
 
     a = agent.OnePlyAgent(nn, move_tensors, encoder, utility=utility)
-    player.play(a, args.games)
+    player.play(a, args.games, device=device)
 
 
 def init_parser(parser: argparse.ArgumentParser):

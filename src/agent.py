@@ -52,13 +52,10 @@ class OnePlyAgent(Agent):
         board_next = next_states[index]
         return (utility_next, board_next)
 
-    def decide_action(self, state):
+    def decide_action(self, state, device):
         (board, player_1, dice) = state
 
-        board = torch.tensor(
-            board,
-            dtype=torch.float,
-        )
+        board = torch.tensor(board, dtype=torch.float, device=device)
         state = (board, player_1, dice)
 
         (moves, move_vectors) = self.move_tensors.compute_moves(state)

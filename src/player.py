@@ -15,7 +15,7 @@ position_regex = regex.compile(r"^\s*GNU Backgammon  Position ID: (\S*)\s*$")
 match_regex = regex.compile(r"^\s*Match ID   : (\S*)\s*$")
 
 
-def response(position_id, match_id, agent):
+def response(position_id, match_id, agent, device):
     position = gnubg_codec.decode_position(position_id)
     m = gnubg_codec.decode_match(match_id)
     logger.info(position)
@@ -40,12 +40,7 @@ def response(position_id, match_id, agent):
         player_1 = False
         state = (position, player_1, m.dice)
 
-        with (
-            torch.cuda.device("cuda")
-            if torch.cuda.is_available()
-            else contextlib.nullcontext()
-        ):
-            decision = agent.decide_action(state)
+        decision = agent.decide_action(state, device)
         if decision:
             tokens = ["move"]
             for s, e in decision:
@@ -61,7 +56,7 @@ def response(position_id, match_id, agent):
         return []
 
 
-def play(agent, n):
+def play(agent, n, device):
     print("new session {n}".format(n=n))
 
     state = (None, None)
@@ -79,6 +74,6 @@ def play(agent, n):
             next_match = m.group(1)
             if state != (next_position, next_match):
                 state = (next_position, next_match)
-                r = response(*state, agent)
+                r = response(*state, agent, device)
                 for line in r:
                     print(line)
