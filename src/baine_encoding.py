@@ -37,13 +37,11 @@ class Encoder:
         self.player_1_barrier_matrix = barrier_matrix(True)
         self.player_2_barrier_matrix = barrier_matrix(False)
         self.additions = additions()
-        matrix = []
         floor = []
         ceil = []
         cap = []
         addition = []
-        floor_2 = []
-        ceil_2 = []
+        matrix = []
         for i in range(24):
             row = []
             matrix.append(row)
@@ -56,10 +54,6 @@ class Encoder:
                         ceil.append(k + 1)
                         floor.append(k)
                         ceil.append(k + 1)
-                        floor_2.append(0)
-                        ceil_2.append(1)
-                        floor_2.append(0)
-                        ceil_2.append(1)
                         addition.append(0)
                         addition.append(0)
                         cap.append(1)  # unary encoding for x = 1, 2, or 3
@@ -72,28 +66,20 @@ class Encoder:
                     ceil.append(16)
                     floor.append(0)
                     ceil.append(16)
-                    floor_2.append(0)
-                    ceil_2.append(16)
-                    floor_2.append(0)
-                    ceil_2.append(16)
-                    addition.append(-max)
-                    addition.append(-max)
+                    addition.append(1 - max)
+                    addition.append(1 - max)
                     cap.append(15)
                     cap.append(15)
             assert len(row) == 24 * (max - min + 1) * 2
         self.matrix = torch.tensor(matrix, dtype=torch.float)
         self.floor = torch.tensor(floor, dtype=torch.float)
         self.ceil = torch.tensor(ceil, dtype=torch.float)
-        self.floor_2 = torch.tensor(floor_2, dtype=torch.float)
-        self.ceil_2 = torch.tensor(ceil_2, dtype=torch.float)
         self.addition = torch.tensor(addition, dtype=torch.float)
         self.cap = torch.tensor(cap, dtype=torch.float)
 
         for x in [
             self.floor,
             self.ceil,
-            self.floor_2,
-            self.ceil_2,
             self.addition,
         ]:
             assert len(x) == 24 * (max - min + 1) * 2
@@ -116,6 +102,7 @@ class Encoder:
             ]
         )
         self.zero24 = tensor([0 for _ in range(24)])
+        self.scale = tensor([1 for _ in range((max - min + 1) * 24 * 2)]).diag()
 
     def encode(self, board, player_1):
         m = self.player_1_barrier_matrix
@@ -144,6 +131,7 @@ class Encoder:
         y = where(condition, y, self.zero_tensor)
         y = minimum(y, self.cap)
         y = matmul(y, self.scale)
+        return y
 
 
 e = Encoder()

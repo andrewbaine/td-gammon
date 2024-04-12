@@ -204,6 +204,19 @@ def tesauro_encode(state):
 from typing import List
 
 
+def simple_baine_encoding_step_2(board: List[int], min, max):
+    assert len(board) == 24
+    xs = []
+    for x in board:
+        for y in range(min, max):
+            xs.append(1 if x == y else 0)
+            xs.append(1 if x == -y else 0)
+        xs.append((x - (max - 1)) if x >= max else 0)
+        xs.append((-x - (max - 1)) if x <= -max else 0)
+    assert len(xs) == (max - min + 1) * 24 * 2
+    return xs
+
+
 def simple_baine_encoding(board: List[int]):
     bs = []
     for i in range(24):

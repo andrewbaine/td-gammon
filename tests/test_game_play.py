@@ -64,12 +64,21 @@ def test_game_play():
 
             baine_encoded = slow_but_right.simple_baine_encoding(board)
             be2 = [int(x) for x in enc.encode(tensor_board, player_1).tolist()]
-            print(backgammon.to_str(board))
-            print(board[1:25])
-            print(baine_encoded)
-            print(be2)
+
+            #            print(backgammon.to_str(board))
             assert baine_encoded == be2
 
+            be3 = [
+                int(x)
+                for x in enc.encode_step_2(
+                    enc.encode(tensor_board, player_1), player_1
+                ).tolist()
+            ]
+            be3_slow = slow_but_right.simple_baine_encoding_step_2(
+                baine_encoded, min=1, max=4
+            )
+
+            assert be3 == be3_slow
             assert len(t) == len(t2)
             for i in range(len(t)):
                 if t2[i] != t[i]:
