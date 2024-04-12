@@ -11,6 +11,20 @@ training is still slow on the gpu. why is this?
 
 ** DONE implement next state as a tensor operation
 
+* TODO Beat Jenny [1/3]
+Here are the tasks to do
+- [X] implement baine encoding [1/1]
+  - [X] implement barrier count
+- [ ] implement EPC
+- [ ] run with 160 hidden
+
+** TODO Implement Baine Encoding
+This should working
+- use squeeze and unsqueeze to do matrix multiplication instead of my for loop
+
+*** TODO Implement barrier count
+*** TODO Implement EPC
+*** TODO Run with 160 hidden
 
 * Logic
 
