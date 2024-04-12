@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -e
-set -x
 
-while getopts ":g:m:o:" opt; do
+while getopts ":g:m:o:e:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
@@ -18,6 +16,7 @@ while getopts ":g:m:o:" opt; do
             ENCODING="${OPTARG}"
             ;;
         *)
+            echo "bad command"
             exit 1
     esac
 done
