@@ -1,5 +1,7 @@
 import torch
 
+import tesauro
+
 from torch import matmul, maximum, minimum, logical_and, float, where
 
 
@@ -8,10 +10,9 @@ def tensor(data):
 
 
 def barrier_matrix(b):
-    m = []
+    ms = []
     for n in range(1, 8):
         x = []
-        m.append(x)
         for i in range(26):
             row = []
             x.append(row)
@@ -21,22 +22,18 @@ def barrier_matrix(b):
                     if (i == 0 or i == 25)
                     else 1 if (-1 < (((i - 1) - j) if b else (j - (i - 1))) < n) else 0
                 )
-    return tensor(m)
-
-
-def additions():
-    m = []
-    for n in range(1, 8):
-        m.append([(n - 1) for _ in range(24)])
-    return tensor(m)
+        additions = tensor([n - 1 for _ in range(24)])
+        scale = tensor([(n if b else -n) for _ in range(24)]).diag()
+        ms.append((tensor(x), additions, scale))
+    return ms
 
 
 class Encoder:
     def __init__(self, min=1, max=4):
         assert max >= min
+        self.tesauro = tesauro.Encoder()
         self.player_1_barrier_matrix = barrier_matrix(True)
         self.player_2_barrier_matrix = barrier_matrix(False)
-        self.additions = additions()
         floor = []
         ceil = []
         cap = []
@@ -88,7 +85,6 @@ class Encoder:
         self.square_neg = torch.neg(self.square)
         self.zeroes = tensor([0 for _ in range(26)])
         self.ones = tensor([1 for _ in range(26)])
-        self.many_zeroes = torch.matmul(self.zeroes, self.player_1_barrier_matrix)
         self.zeros_to_the_right = tensor(
             [
                 [1 if i == j else -1 if j == i - 1 else 0 for j in range(24)]
@@ -105,27 +101,36 @@ class Encoder:
         self.scale = tensor([1 for _ in range((max - min + 1) * 24 * 2)]).diag()
 
     def encode(self, board, player_1):
-        m = self.player_1_barrier_matrix
-        y = torch.matmul(torch.where(board > 1, self.ones, self.zeroes), m)
-        z = y - self.additions
-        p = maximum(z, self.many_zeroes)
-        q = matmul(self.square, p).max(dim=0).values
+        y = self.tesauro.encode(board, player_1)
+        z = self.encode_step_2(self.encode_step_1(board))
+
+        return torch.cat((y, z), dim=-1)
+
+    def encode_step_1(self, board):
+        points_made = torch.where(board > 1, self.ones, self.zeroes)
+        q = self.zero24
+        for m, additions, scale in self.player_1_barrier_matrix:
+            a = torch.matmul(points_made, m)
+            b = a - additions
+            c = maximum(b, self.zero24)
+            d = torch.matmul(c, scale)
+            q = torch.maximum(q, d)
         r = matmul(q, self.zeros_to_the_left)
         s = where(r == q, r, self.zero24)
 
-        m2 = self.player_2_barrier_matrix
-        y2 = matmul(torch.where(board < -1, self.ones, self.zeroes), m2)
-        z2 = y2 - self.additions
-        p2 = maximum(z2, self.many_zeroes)
-        q2 = matmul(self.square_neg, p2).min(dim=0).values
-        r2 = matmul(
-            q2,
-            self.zeros_to_the_right,
-        )
-        s2 = where(r2 == q2, r2, self.zero24)
+        points_made = torch.where(board < -1, self.ones, self.zeroes)
+        q = self.zero24
+        for m, additions, scale in self.player_2_barrier_matrix:
+            a = torch.matmul(points_made, m)
+            b = a - additions
+            c = maximum(b, self.zero24)
+            d = torch.matmul(c, scale)
+            q = torch.minimum(q, d)
+        r = matmul(q, self.zeros_to_the_right)
+        s2 = where(r == q, r, self.zero24)
         return s + s2
 
-    def encode_step_2(self, board, player_1):
+    def encode_step_2(self, board):
         y = matmul(board, self.matrix) + self.addition
         condition = logical_and(self.floor <= y, y < self.ceil)
         y = where(condition, y, self.zero_tensor)
@@ -134,36 +139,43 @@ class Encoder:
         return y
 
 
-e = Encoder()
-board = tensor(
-    [
-        5,
-        -2,
-        -2,
-        -2,
-        -1,
-        2,
-        2,
-        0,
-        0,
-        1,
-        2,
-        -2,
-        2,
-        2,
-        -2,
-        -2,
-        -3,
-        -1,
-        -2,
-        3,
-        3,
-        3,
-        0,
-        0,
-        0,
-        0,
-    ]
-)
-print(board)
-print(e.encode(board, False))
+if __name__ == "__main__":
+    e = Encoder()
+    board = tensor(
+        [
+            5,
+            -2,
+            -2,
+            -2,
+            -1,
+            2,
+            2,
+            0,
+            0,
+            1,
+            2,
+            -2,
+            2,
+            2,
+            -2,
+            -2,
+            -3,
+            -1,
+            -2,
+            3,
+            3,
+            3,
+            0,
+            0,
+            0,
+            0,
+        ]
+    )
+    y = e.encode(board, False)
+
+#    print(board)
+#    print("y.size()", y.size())
+
+#    xs = torch.tensor([make_board(), make_board()])
+#    ys = e.encode_step_1(xs)
+#    print("ys.size()", ys.size())

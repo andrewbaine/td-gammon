@@ -1,3 +1,4 @@
+import baine_encoding
 import agent
 import argparse
 import backgammon
@@ -20,9 +21,12 @@ import contextlib
 def init_parser(parser):
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument("--hidden", type=int, default=40)
-    parser.add_argument("--move-tensors", type=str, default="move_tensors/current")
+    parser.add_argument("--move-tensors", type=str, default="var/move_tensors/current")
     parser.add_argument("--save-dir", type=str, required=True)
     parser.add_argument("--out", type=int, required=True)
+    parser.add_argument(
+        "--encoding", type=str, required=True, choices=["baine", "tesauro"]
+    )
 
 
 def train(args):
@@ -33,12 +37,19 @@ def train(args):
         else contextlib.nullcontext()
     )
     with cm:
-        layers = [198, args.hidden, args.out]
-        nn: torch.nn.Sequential = network.layered(*layers)
         board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
+        match args.encoding:
+            case "baine":
+                encoder = baine_encoding.Encoder()
+            case "tesauro":
+                encoder = tesauro.Encoder()
+            case _:
+                assert False
+        t = encoder.encode(board, True)
+        layers = [t.numel(), args.hidden, args.out]
+        nn: torch.nn.Sequential = network.layered(*layers)
         move_checker = done_check.Donecheck()
         move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
-        encoder = tesauro.Encoder()
 
     a = agent.OnePlyAgent(nn, move_tensors, encoder, out=args.out)
 
@@ -47,6 +58,8 @@ def train(args):
 
     os.makedirs(args.save_dir, exist_ok=True)
     for i in range(args.iterations):
+        if i % 100 == 0:
+            print(i)
         if i % 1000 == 0:
             filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
             torch.save(nn.state_dict(), f=filename)

@@ -62,17 +62,15 @@ def test_game_play():
             t = encoder.encode(tensor_board, player_1).tolist()
             t2 = slow_but_right.tesauro_encode(state)
 
-            baine_encoded = slow_but_right.simple_baine_encoding(board)
-            be2 = [int(x) for x in enc.encode(tensor_board, player_1).tolist()]
+            baine_encoded = slow_but_right.simple_baine_encoding_step_1(board)
+            be2 = [int(x) for x in enc.encode_step_1(tensor_board).tolist()]
 
             #            print(backgammon.to_str(board))
             assert baine_encoded == be2
 
             be3 = [
                 int(x)
-                for x in enc.encode_step_2(
-                    enc.encode(tensor_board, player_1), player_1
-                ).tolist()
+                for x in enc.encode_step_2(enc.encode_step_1(tensor_board)).tolist()
             ]
             be3_slow = slow_but_right.simple_baine_encoding_step_2(
                 baine_encoded, min=1, max=4

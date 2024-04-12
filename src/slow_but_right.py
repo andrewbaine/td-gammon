@@ -217,7 +217,7 @@ def simple_baine_encoding_step_2(board: List[int], min, max):
     return xs
 
 
-def simple_baine_encoding(board: List[int]):
+def simple_baine_encoding_step_1(board: List[int]):
     bs = []
     for i in range(24):
         x = board[i + 1]
