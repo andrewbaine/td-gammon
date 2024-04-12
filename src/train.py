@@ -69,12 +69,12 @@ def train(args):
 
     os.makedirs(args.save_dir, exist_ok=True)
     for i in range(args.iterations):
-        if i % 100 == 0:
-            print(i)
         if i % 1000 == 0:
             filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
             torch.save(nn.state_dict(), f=filename)
         temporal_difference.episode()
+    filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
+    torch.save(nn.state_dict(), f=filename)
 
 
 if __name__ == "__main__":

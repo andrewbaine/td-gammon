@@ -1,13 +1,13 @@
 set -e
 set -x
 
-while getopts ":g:m:o:e:" opt; do
+while getopts ":g:h:o:e:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
             ;;
-        m)
-            MODEL="${OPTARG}"
+        h)
+            HIDDEN="${OPTARG}"
             ;;
         o)
             OUT="${OPTARG}"
@@ -27,9 +27,9 @@ then
     echo "set GAMES variable"
     exit 1
 fi
-if [ -z "$MODEL" ]
+if [ -z "$HIDDEN" ]
 then
-    echo "set MODEL variable"
+    echo "set HIDDEN variable"
     exit 1
 fi
 if [ -z "$OUT" ]
@@ -49,6 +49,9 @@ else
     GPU_ARGS="";
 fi
 
+D=$(date +%s)
+MODEL="$ENCODING-$HIDDEN-$OUT-$GAMES-$D"
+
 docker run --rm \
        $GPU_ARGS \
        --mount type=bind,src=$(pwd)/var/move_tensors,target=/var/move_tensors \
@@ -58,5 +61,6 @@ docker run --rm \
        --save-dir /var/models/${MODEL} \
        --out $OUT \
        --encoding $ENCODING \
+       --hidden $HIDDEN
        --iterations $GAMES
 

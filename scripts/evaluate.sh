@@ -6,6 +6,9 @@ while getopts ":g:m:o:e:" opt; do
         g)
             GAMES="${OPTARG}"
             ;;
+        h)
+            HIDDEN="${OPTARG}"
+            ;;
         m)
             MODEL="${OPTARG}"
             ;;
@@ -26,6 +29,11 @@ shift "$((OPTIND-1))"
 if [ -z "$GAMES" ]
 then
     echo "set GAMES variable"
+    exit 1
+fi
+if [ -z "$HIDDEN" ]
+then
+    echo "set HIDDEN variable"
     exit 1
 fi
 if [ -z "$MODEL" ]
@@ -63,7 +71,7 @@ PY_OUT=${LOGS_DIR}/py.out
 rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-COMMAND_1="evaluate --move-tensors /var/move_tensors --load-model /var/model.pt --games $GAMES --out=$OUT --encoding $ENCODING"
+COMMAND_1="evaluate --move-tensors /var/move_tensors --load-model /var/model.pt --games $GAMES --out=$OUT --encoding $ENCODING --hidden $HIDDEN"
 docker run --rm ${GPU_ARGS} \
        --mount type=bind,src=${WD}/${MODEL},target=/var/model.pt \
        --mount type=bind,src=${WD}/var/move_tensors/current,target=/var/move_tensors \
