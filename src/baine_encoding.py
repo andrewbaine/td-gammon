@@ -1,6 +1,6 @@
 import torch
 
-from torch import matmul, maximum, minimum, float
+from torch import matmul, maximum, minimum, float, where
 
 
 def tensor(data):
@@ -15,10 +15,10 @@ def barrier_matrix(b):
         for i in range(26):
             row = []
             x.append(row)
-            for j in range(26):
+            for j in range(24):
                 row.append(
                     0
-                    if (i == 0 or i == 25 or j == 0 or j == 25)
+                    if (i == 0 or i == 25)
                     else 1 if (-1 < ((i - j) if b else (j - i)) < n) else 0
                 )
     return tensor(m)
@@ -27,7 +27,7 @@ def barrier_matrix(b):
 def additions():
     m = []
     for n in range(1, 8):
-        m.append([(n - 1) for _ in range(26)])
+        m.append([(n - 1) for _ in range(24)])
     return tensor(m)
 
 
@@ -174,6 +174,19 @@ class Encoder:
         self.zeroes = tensor([0 for _ in range(26)])
         self.ones = tensor([1 for _ in range(26)])
         self.many_zeroes = torch.matmul(self.zeroes, self.player_1_barrier_matrix)
+        self.zeros_to_the_right = tensor(
+            [
+                [1 if i == j else -1 if j == i - 1 else 0 for j in range(24)]
+                for i in range(24)
+            ]
+        )
+        self.zeros_to_the_left = tensor(
+            [
+                [1 if i == j else -1 if j == i + 1 else 0 for j in range(24)]
+                for i in range(24)
+            ]
+        )
+        self.zero24 = tensor([0 for _ in range(24)])
 
     def encode(self, board, player_1):
         m = self.player_1_barrier_matrix
@@ -181,9 +194,52 @@ class Encoder:
         z = y - self.additions
         p = torch.maximum(z, self.many_zeroes)
         q = torch.matmul(self.square, p).max(dim=0).values
+        r = torch.matmul(q, self.zeros_to_the_left)
+        s = where(r == q, r, self.zero24)
+
         m2 = self.player_2_barrier_matrix
         y2 = torch.matmul(torch.where(board < -1, self.ones, self.zeroes), m2)
         z2 = y2 - self.additions
         p2 = torch.maximum(z2, self.many_zeroes)
         q2 = torch.matmul(self.square_neg, p2).min(dim=0).values
-        return q + q2
+        r2 = torch.matmul(
+            q2,
+            self.zeros_to_the_right,
+        )
+        s2 = where(r2 == q2, r2, self.zero24)
+        return s + s2
+
+
+e = Encoder()
+board = tensor(
+    [
+        5,
+        -2,
+        -2,
+        -2,
+        -1,
+        2,
+        2,
+        0,
+        0,
+        1,
+        2,
+        -2,
+        2,
+        2,
+        -2,
+        -2,
+        -3,
+        -1,
+        -2,
+        3,
+        3,
+        3,
+        0,
+        0,
+        0,
+        0,
+    ]
+)
+print(board)
+print(e.encode(board, False))
