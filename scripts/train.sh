@@ -1,7 +1,7 @@
 set -e
 set -x
 
-while getopts ":g:m:o:" opt; do
+while getopts ":g:m:o:e:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
@@ -12,6 +12,8 @@ while getopts ":g:m:o:" opt; do
         o)
             OUT="${OPTARG}"
             ;;
+        e)
+            ENCODING="${OPTARG}"
         *)
             exit 1
     esac
@@ -21,14 +23,22 @@ shift "$((OPTIND-1))"
 
 if [ -z "$GAMES" ]
 then
+    echo "set GAMES variable"
     exit 1
 fi
 if [ -z "$MODEL" ]
 then
+    echo "set MODEL variable"
     exit 1
 fi
 if [ -z "$OUT" ]
 then
+    echo "set OUT variable"
+    exit 1
+fi
+if [ -z "$ENCODING" ]
+then
+    echo "set ENCODING variable"
     exit 1
 fi
 
@@ -46,5 +56,6 @@ docker run --rm \
        --move-tensors /var/move_tensors/current \
        --save-dir /var/models/${MODEL} \
        --out $OUT \
+       --encoding $ENCODING \
        --iterations $GAMES
 
