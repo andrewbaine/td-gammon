@@ -61,6 +61,6 @@ docker run --rm \
        --save-dir /var/models/${MODEL} \
        --out $OUT \
        --encoding $ENCODING \
-       --hidden $HIDDEN
+       --hidden $HIDDEN \
        --iterations $GAMES
 
