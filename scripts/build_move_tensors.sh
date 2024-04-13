@@ -4,14 +4,17 @@ set -x
 
 D=$(date +%s)
 
-mkdir -p var/move_tensors
+DIR=var/move_tensors
+mkdir -p $DIR
+F=tensors-${D}
 
 docker run \
-       --mount type=bind,src=$(pwd)/var/move_tensors,target=/var/move_tensors \
-       td-gammon move-tensors --prefix /var/move_tensors/tensors-${D}
+       --mount type=bind,src=$(pwd)/${DIR},target=/${DIR} \
+       td-gammon move-tensors \
+       --dir /${DIR}/${F}
 
-pushd var/move_tensors
+pushd ${DIR}
 pwd
 rm -f current
-ln -sf tensors-${D} current
+ln -sf ${F} current
 popd

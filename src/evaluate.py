@@ -10,10 +10,34 @@ import read_move_tensors
 import tesauro
 import baine_encoding
 
+import os.path
+from pathlib import Path
+
 
 def main(args):
 
-    match args.out:
+    model_path = args.load_model
+    config_path = os.path.join(Path(model_path).parent.absolute(), "config.txt")
+    with open(config_path, "r") as input:
+        for line in input:
+            tokens = [x.strip() for x in line.split("=")]
+            assert len(tokens) == 2
+            [key, value] = tokens
+            match key:
+                case "encoding":
+                    encoding = value
+                case "hidden":
+                    hidden = int(value)
+                case "out":
+                    out = int(value)
+                case "move-tensors":
+                    move_tensors = value
+                case "alpha" | "lambda" | "iterations":
+                    pass
+                case _:
+                    raise Exception("unknown key " + key)
+
+    match out:
         case 4:
             utility = network.utility_tensor()
         case 6:
@@ -21,7 +45,7 @@ def main(args):
         case _:
             assert False
 
-    match args.encoding:
+    match encoding:
         case "baine":
             encoder = baine_encoding.Encoder()
         case "tesauro":
@@ -31,10 +55,10 @@ def main(args):
 
     t = encoder.encode(torch.tensor(backgammon.make_board(), dtype=torch.float), True)
 
-    layers = [t.numel(), args.hidden, args.out]
+    layers = [t.numel(), hidden, out]
     nn: torch.nn.Sequential = network.layered(*layers)
-    nn.load_state_dict(torch.load(args.load_model))
-    move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
+    nn.load_state_dict(torch.load(model_path))
+    move_tensors = read_move_tensors.MoveTensors(move_tensors)
 
     device = torch.device("cpu")
     if torch.cuda.is_available() or args.force_cuda:
@@ -50,14 +74,9 @@ def main(args):
 
 def init_parser(parser: argparse.ArgumentParser):
     parser.add_argument("--games", type=int, default=1)
-    parser.add_argument("--hidden", type=int, default=40)
-    parser.add_argument("--move-tensors", type=str, default="move_tensors/current")
+    parser.add_argument("--move-tensors", type=str, default="/var/move_tensors/current")
     parser.add_argument("--load-model", type=str, required=True)
-    parser.add_argument("--out", type=int, default=4)
     parser.add_argument("--force-cuda", type=bool, default=False)
-    parser.add_argument(
-        "--encoding", type=str, required=True, choices=["baine", "tesauro"]
-    )
 
 
 if __name__ == "__main__":

@@ -6,17 +6,8 @@ while getopts ":g:h:m:o:e:" opt; do
         g)
             GAMES="${OPTARG}"
             ;;
-        h)
-            HIDDEN="${OPTARG}"
-            ;;
         m)
             MODEL="${OPTARG}"
-            ;;
-        o)
-            OUT="${OPTARG}"
-            ;;
-        e)
-            ENCODING="${OPTARG}"
             ;;
         *)
             echo "bad command"
@@ -31,27 +22,11 @@ then
     echo "set GAMES variable"
     exit 1
 fi
-if [ -z "$HIDDEN" ]
-then
-    echo "set HIDDEN variable"
-    exit 1
-fi
 if [ -z "$MODEL" ]
 then
     echo "set MODEL variable"
     exit 1
 fi
-if [ -z "$OUT" ]
-then
-    echo "set OUT variable"
-    exit 1
-fi
-if [ -z "$ENCODING" ]
-then
-    echo "set ENCODING variable"
-    exit 1
-fi
-
 if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
     GPU_ARGS="--gpus all";
 else
@@ -71,10 +46,10 @@ PY_OUT=${LOGS_DIR}/py.out
 rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-COMMAND_1="evaluate --move-tensors /var/move_tensors --load-model /var/model.pt --games $GAMES --out=$OUT --encoding $ENCODING --hidden $HIDDEN"
+COMMAND_1="evaluate --load-model /${MODEL} --games $GAMES"
 docker run --rm ${GPU_ARGS} \
-       --mount type=bind,src=${WD}/${MODEL},target=/var/model.pt \
-       --mount type=bind,src=${WD}/var/move_tensors/current,target=/var/move_tensors \
+       --mount type=bind,src=${WD}/var/models,target=/var/models \
+       --mount type=bind,src=${WD}/var/move_tensors,target=/var/move_tensors \
        -i td-gammon $COMMAND_1 \
        >${PY_OUT} \
        2>$PY_ERR \

@@ -2,7 +2,7 @@ import torch
 
 
 class ElibilityTrace:
-    def __init__(self, nn, α=0.10, λ=0.7):
+    def __init__(self, nn, α, λ):
         self.α = α
         self.λ = λ
         self.nn = nn

@@ -1,4 +1,6 @@
 import baine_encoding
+
+import os.path
 import agent
 import argparse
 import backgammon
@@ -27,6 +29,8 @@ def init_parser(parser):
         "--encoding", type=str, required=True, choices=["baine", "tesauro"]
     )
     parser.add_argument("--force-cuda", type=bool, default=False)
+    parser.add_argument("--alpha", type=float, default=0.1, dest="α")
+    parser.add_argument("--lambda", type=float, default=0.7, dest="λ")
 
 
 def train(args):
@@ -52,7 +56,8 @@ def train(args):
     layers = [t.numel(), args.hidden, args.out]
     nn: torch.nn.Sequential = network.layered(*layers)
     move_checker = done_check.Donecheck()
-    move_tensors = read_move_tensors.MoveTensors(args.move_tensors)
+    move_tensors_path = os.path.realpath(args.move_tensors)
+    move_tensors = read_move_tensors.MoveTensors(move_tensors_path)
 
     if torch.cuda.is_available() or args.force_cuda:
         device = torch.device("cuda")
@@ -63,11 +68,23 @@ def train(args):
         encoder.to_(device=device)
         utility = utility.to(device=device)
 
-    et = eligibility_trace.ElibilityTrace(nn)
+    et = eligibility_trace.ElibilityTrace(nn, α=args.α, λ=args.λ)
     a = agent.OnePlyAgent(nn, move_tensors, encoder, utility=utility)
     temporal_difference = td.TD(board, move_checker, a, et)
 
-    os.makedirs(args.save_dir, exist_ok=True)
+    os.makedirs(args.save_dir, exist_ok=False)
+    with open(os.path.join(args.save_dir, "config.txt"), "w") as out:
+        for line in [
+            "iterations={n}".format(n=args.iterations),
+            "encoding={e}".format(e=args.encoding),
+            "hidden={n}".format(n=args.hidden),
+            "out={n}".format(n=args.out),
+            "alpha={x:.8f}".format(x=args.α),
+            "lambda={x:.8f}".format(x=args.λ),
+            "move-tensors={m}".format(m=move_tensors_path),
+        ]:
+            out.write(line + "\n")
+
     for i in range(args.iterations):
         if i % 1000 == 0:
             filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)

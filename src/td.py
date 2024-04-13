@@ -15,18 +15,9 @@ def first_roll():
             return (d1, d2)
 
 
-import eligibility_trace
-
-
 class TD:
 
-    def __init__(
-        self,
-        board,
-        move_checker,
-        agent,
-        eligibility_trace: eligibility_trace.ElibilityTrace,
-    ):
+    def __init__(self, board, move_checker, agent, eligibility_trace):
         self.board = board
         self.move_checker = move_checker
         self.agent = agent
