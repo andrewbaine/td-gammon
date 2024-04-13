@@ -37,6 +37,9 @@ def main(args):
                 case _:
                     raise Exception("unknown key " + key)
 
+    if args.move_tensors:
+        move_tensors = args.move_tensors
+
     match out:
         case 4:
             utility = network.utility_tensor()
@@ -74,7 +77,7 @@ def main(args):
 
 def init_parser(parser: argparse.ArgumentParser):
     parser.add_argument("--games", type=int, default=1)
-    parser.add_argument("--move-tensors", type=str, default="/var/move_tensors/current")
+    parser.add_argument("--move-tensors")
     parser.add_argument("--load-model", type=str, required=True)
     parser.add_argument("--force-cuda", type=bool, default=False)
 

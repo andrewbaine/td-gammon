@@ -1,13 +1,16 @@
 #!/bin/bash
 
 
-while getopts ":g:h:m:o:e:" opt; do
+while getopts ":g:m:t:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
             ;;
         m)
             MODEL="${OPTARG}"
+            ;;
+        t)
+            MOVE_TENSORS_ARGS=" --move-tensors /${OPTARG} "
             ;;
         *)
             echo "bad command"
@@ -46,7 +49,7 @@ PY_OUT=${LOGS_DIR}/py.out
 rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-COMMAND_1="evaluate --load-model /${MODEL} --games $GAMES"
+COMMAND_1="evaluate --load-model /${MODEL} --games $GAMES ${MOVE_TENSORS_ARGS}"
 docker run --rm ${GPU_ARGS} \
        --mount type=bind,src=${WD}/var/models,target=/var/models \
        --mount type=bind,src=${WD}/var/move_tensors,target=/var/move_tensors \
