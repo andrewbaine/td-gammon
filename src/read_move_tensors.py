@@ -118,7 +118,8 @@ class MoveTensors:
         for moves, lower, upper, vector in (
             self.player_1_vectors if player_1 else self.player_2_vectors
         )[i]:
-            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            if torch.numel(vector[indices]) > 0:
-                return vector[indices]
+            indices = torch.all(torch.logical_and(lower <= board, upper > board), dim=1)
+            vi = vector[indices]
+            if torch.numel(vi) > 0:
+                return vi
         assert False
