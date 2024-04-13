@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-while getopts ":g:m:o:e:" opt; do
+while getopts ":g:h:m:o:e:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
