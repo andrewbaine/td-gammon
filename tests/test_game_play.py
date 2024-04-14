@@ -78,11 +78,7 @@ def test_game_play():
 
             assert be3 == be3_slow
             assert len(t) == len(t2)
-            for i in range(len(t)):
-                if t2[i] != t[i]:
-                    print(t)
-                    print(t2)
-                assert t2[i] == pytest.approx(t[i])
+            assert t2 == pytest.approx(t)
             done = bck.done(state)
             done_slow_but_right = sbr.done(state)
             dc_done = dc.check(tensor_board)
@@ -96,7 +92,14 @@ def test_game_play():
                 moves = normalize(moves)
                 (mm, vv) = move_tensors.compute_moves((tensor_board, player_1, dice))
                 v = move_tensors.compute_move_vectors((tensor_board, player_1, dice))
-                assert (v.unique(dim=0) == vv.unique(dim=0)).all()
+                assert (v.unique(dim=0) == vv.unique(dim=0)).all(), "\n".join(
+                    [
+                        "",
+                        backgammon.to_str(board),
+                        str(dice),
+                        str(player_1),
+                    ]
+                )
 
                 translated_moves = translate(mm)
                 d = {}

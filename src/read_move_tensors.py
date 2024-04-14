@@ -76,6 +76,7 @@ class MoveTensors:
         self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
         self.singles_player_1 = singles
         self.singles_player_2 = [for_p2(x) for x in singles]
+        self.noop = noop
 
     def to_(self, device):
         self.player_1_vectors = [
@@ -144,51 +145,60 @@ class MoveTensors:
                 return vi
         assert False
 
-    def dubsies(self, board, player_1, d):
-        raise Exception("were not there yet")
-        pass
+    def movesies(self, board, xs, short_circuit=True):
+        (_, _, _, move_vectors) = self.noop
+        board = board.unsqueeze(dim=0)
+        for moves, lower, upper, vector in xs:
+            m = vector.size()[0]
+            assert board.size() == move_vectors.size()
+            n = move_vectors.size()[0]
+            mv = move_vectors.unsqueeze(0).expand(m, -1, -1)
+            b = board.unsqueeze(0).expand(m, -1, -1)
+            (lower, upper, vector) = (
+                lower.unsqueeze(1).expand(-1, n, -1),
+                upper.unsqueeze(1).expand(-1, n, -1),
+                vector.unsqueeze(1).expand(-1, n, -1),
+            )
+            indices = torch.logical_and(lower <= board, upper > board)
+            assert indices.size() == (m, n, 26)
+            indices = torch.all(indices, dim=-1)
+            assert indices.size() == (m, n)
+            v = vector[indices]
+            if v.numel() == 0 and short_circuit:
+                return move_vectors
+            board = b[indices] + v
+            move_vectors = mv[indices] + v
+        return move_vectors
 
-    def compute_move_vectors_2(self, state):
+    def dubsies(self, board, player_1, d):
+        x = (self.singles_player_1 if player_1 else self.singles_player_2)[d - 1]
+        return self.movesies(board, [x, x, x, x], short_circuit=True)
+
+    def compute_move_vectors_v2(self, state):
         (board, player_1, (d1, d2)) = state
         if d1 == d2:
             return self.dubsies(board, player_1, d1)
 
         v = self.singles_player_1 if player_1 else self.singles_player_2
+        (x1, x2) = (v[d1 - 1], v[d2 - 1]) if d1 > d2 else (v[d2 - 1], v[d1 - 1])
 
-        singletons = []
-        doubletons = []
-        for d1, d2 in [(d1, d2), (d2, d1)] if d1 > d2 else [(d2, d1), (d1, d2)]:
-            (moves, lower, upper, vector) = v[d1 - 1]
-            indices = torch.all(torch.logical_and(lower <= board, upper > board), dim=1)
-
-            vector_moves = vector[indices]
-            board_after_d1 = vector[indices] + board  # n x 26
-            n = board_after_d1.size()
-            assert n[1] == 26
-            n = n[0]
-            (moves, lower, upper, vector) = v[d2 - 1]  # m x 26
-            m = vector.size()
-            assert m[1] == 26
-            m = m[0]
-
-            board_after_d1 = board_after_d1.unsqueeze(0).expand(m, -1, -1)
-            vector_moves = vector_moves.unsqueeze(0).expand(m, -1, -1)
-
-            (moves, lower, upper, vector) = (
-                moves.unsqueeze(1).expand(-1, n, -1),
-                lower.unsqueeze(1).expand(-1, n, -1),
-                upper.unsqueeze(1).expand(-1, n, -1),
-                vector.unsqueeze(1).expand(-1, n, -1),
-            )
-            assert lower.size() == board_after_d1.size()
-            indices = torch.logical_and(lower <= board_after_d1, upper > board_after_d1)
-            indices = torch.all(indices, dim=-1)
-            y = vector_moves[indices] + vector[indices]
-            doubletons.append(y)
-        catted = torch.cat((doubletons[0], doubletons[1]))
-        unique = torch.unique(catted, dim=0)
-
-        return unique
+        a = self.movesies(board, [x1, x2], short_circuit=False)
+        b = self.movesies(board, [x2, x1], short_circuit=False)
+        if a.numel() > 0 or b.numel() > 0:
+            catted = torch.cat((a, b))
+            unique = torch.unique(catted, dim=0)
+            return unique
+        c = self.movesies(board, [x1], short_circuit=False)
+        if c.numel() > 0:
+            return c
+        d = self.movesies(board, [x2], short_circuit=False)
+        if d.numel() > 0:
+            return d
+        (_, _, _, move_vectors) = self.noop
+        return move_vectors
 
     def compute_move_vectors(self, state):
-        return self.compute_move_vectors_2(state)
+        if os.getenv("USE_OLD_COMPUTE_MOVE_VECTORS"):
+            return self.compute_move_vectors_v1(state)
+        else:
+            return self.compute_move_vectors_v2(state)

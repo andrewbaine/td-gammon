@@ -238,7 +238,6 @@ def simple_baine_encoding_step_1(board: List[int]):
             while j > 0 and board[j] < -1:
                 c -= 1
                 j -= 1
-            print("\tc", c)
             bs.append(c)
         else:
             bs.append(0)

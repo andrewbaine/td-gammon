@@ -29,5 +29,8 @@ pytest
 
 Performance Testing checklist
 
-- maybe do with torch.no_grad()?
-- do performatnce profiling?
+Profiling
+```
+python -m cProfile -o y.prof src/train.py --encoding baine --hidden 160 --out 4 --save-dir tmp --iterations 10
+```
+
