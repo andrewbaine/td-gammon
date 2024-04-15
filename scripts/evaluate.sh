@@ -4,7 +4,7 @@ set -e
 set -x
 
 GAMES="100"
-while getopts ":g:m:t:" opt; do
+while getopts ":g:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
@@ -40,12 +40,11 @@ WD=$(pwd)
 LOGS_DIR=${WD}/var/eval-logs
 mkdir -p ${LOGS_DIR}
 
-GNUBG_ERR=${LOGS_DIR}/gnubg.err
-GNUBG_OUT=${LOGS_DIR}/gnubg.out
-PY_ERR=${LOGS_DIR}/py.err
-PY_OUT=${LOGS_DIR}/py.out
+GNUBG_ERR=$(mktemp ${LOGS_DIR}/gnubg.err.XXXXXX)
+GNUBG_OUT=$(mktemp ${LOGS_DIR}/gnubg.out.XXXXXX)
+PY_ERR=$(mktemp ${LOGS_DIR}/py.err.XXXXXX)
+PY_OUT=$(mktemp ${LOGS_DIR}/py.out.XXXXXX)
 
-rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
 COMMAND_1="evaluate --load-model /var/model/$(basename ${MODEL}) --games $GAMES"

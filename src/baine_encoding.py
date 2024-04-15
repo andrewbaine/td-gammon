@@ -1,5 +1,5 @@
 import torch
-from torch import float, logical_and, matmul, maximum, minimum, where
+from torch import float, logical_and, matmul, maximum, minimum, sub, tensor, where
 
 import tesauro
 
@@ -10,29 +10,45 @@ def tensor(data):
 
 def barrier_matrix(b):
     ms = []
+
+    scales = [
+        tensor([(n if b else -n) for _ in range(24)]).diag().tolist()
+        for n in range(1, 8)
+    ]
+
+    additions = [[n - 1 for _ in range(24)] for n in range(1, 8)]
+
     for n in range(1, 8):
-        x = []
+        row = []
+        ms.append(row)
         for i in range(26):
-            row = []
-            x.append(row)
+            x = []
+            row.append(x)
             for j in range(24):
-                row.append(
+                x.append(
                     0
                     if (i == 0 or i == 25)
                     else 1 if (-1 < (((i - 1) - j) if b else (j - (i - 1))) < n) else 0
                 )
-        additions = tensor([n - 1 for _ in range(24)])
-        scale = tensor([(n if b else -n) for _ in range(24)]).diag()
-        ms.append((tensor(x), additions, scale))
-    return ms
+    return (
+        torch.tensor(ms, dtype=float),
+        torch.tensor(additions, dtype=float),
+        torch.tensor(scales, dtype=float),
+    )
 
 
 class Encoder:
     def __init__(self, min=1, max=4):
         assert max >= min
         self.tesauro = tesauro.Encoder()
-        self.player_1_barrier_matrix = barrier_matrix(True)
-        self.player_2_barrier_matrix = barrier_matrix(False)
+        (
+            self.player_1_barrier_matrix,
+            self.barrier_additions,
+            self.barrier_scales_player_1,
+        ) = barrier_matrix(True)
+        self.player_2_barrier_matrix, _, self.barrier_scales_player_2 = barrier_matrix(
+            False
+        )
         floor = []
         ceil = []
         cap = []
@@ -116,43 +132,64 @@ class Encoder:
         self.zero24 = self.zero24.to(device=device)
         self.scale = self.scale.to(device=device)
 
-        self.player_1_barrier_matrix = [
-            (a.to(device=device), b.to(device=device), c.to(device=device))
-            for (a, b, c) in self.player_1_barrier_matrix
-        ]
-        self.player_2_barrier_matrix = [
-            (a.to(device=device), b.to(device=device), c.to(device=device))
-            for (a, b, c) in self.player_2_barrier_matrix
-        ]
+        self.player_1_barrier_matrix = self.player_1_barrier_matrix.to(device=device)
+        self.player_2_barrier_matrix = self.player_1_barrier_matrix.to(device=device)
+        self.barrier_additions = self.barrier_additions.to(device=device)
+        self.barrier_scales_player_1 = self.barrier_scales_player_1.to(device=device)
+        self.barrier_scales_player_2 = self.barrier_scales_player_2.to(device=device)
 
     def encode(self, board, player_1):
         y = self.tesauro.encode(board, player_1)
         z = self.encode_step_2(self.encode_step_1(board))
-
         return torch.cat((y, z), dim=-1)
 
     def encode_step_1(self, board):
+        if board.shape == (26,):
+            board = board.unsqueeze(0)
+        (n, _) = board.shape
+        assert board.shape == (n, 26)
+
+        additions = self.barrier_additions
+        scale = self.barrier_scales_player_1
+        assert additions.size() == (7, 24)
+        additions = additions.unsqueeze(1).expand(-1, n, -1)
+        assert additions.shape == (7, n, 24)
+        assert scale.size() == (7, 24, 24)
+
         points_made = torch.where(board > 1, self.ones, self.zeroes)
-        q = self.zero24
-        for m, additions, scale in self.player_1_barrier_matrix:
-            a = torch.matmul(points_made, m)
-            b = a - additions
-            c = maximum(b, self.zero24)
-            d = torch.matmul(c, scale)
-            q = torch.maximum(q, d)
+        assert points_made.shape == (n, 26), points_made.size()
+
+        m = self.player_1_barrier_matrix
+        assert m.size() == (7, 26, 24), m.size()
+        a = torch.matmul(points_made, m)
+        assert a.size() == (7, n, 24), a.size()
+        assert additions.shape == (7, n, 24)
+        b = sub(a, additions)
+        assert b.size() == (7, n, 24), b.size()
+        zero24 = self.zero24.unsqueeze(0).expand(n, -1).unsqueeze(0).expand(7, -1, -1)
+        assert zero24.shape == (7, n, 24), zero24.shape
+        c = maximum(b, zero24)
+        assert c.size() == (7, n, 24), c.size()
+        assert scale.size() == (7, 24, 24), scale.size()
+        d = torch.matmul(c, scale)
+        assert d.size() == (7, n, 24), d.size()
+        q = torch.max(d, dim=0).values
+        assert q.shape == (n, 24), q.shape
         r = matmul(q, self.zeros_to_the_left)
         s = where(r == q, r, self.zero24)
+        assert s.size() == (n, 24), s.size()
 
         points_made = torch.where(board < -1, self.ones, self.zeroes)
-        q = self.zero24
-        for m, additions, scale in self.player_2_barrier_matrix:
-            a = torch.matmul(points_made, m)
-            b = a - additions
-            c = maximum(b, self.zero24)
-            d = torch.matmul(c, scale)
-            q = torch.minimum(q, d)
+        m = self.player_2_barrier_matrix
+        a = torch.matmul(points_made, m)
+        b = sub(a, additions)
+        c = maximum(b, zero24)
+        scale = self.barrier_scales_player_2
+        d = torch.matmul(c, scale)
+        q = torch.min(d, dim=0).values
         r = matmul(q, self.zeros_to_the_right)
         s2 = where(r == q, r, self.zero24)
+        assert s2.size() == (n, 24), s2.size()
         return s + s2
 
     def encode_step_2(self, board):

@@ -146,7 +146,6 @@ class Encoder:
                     elif i == 8 * 24 + 4 or i == 8 * 24 + 5:
                         row.append(1.0)
                     else:
-                        print(i)
                         assert False
                 else:
                     row.append(0)
@@ -172,6 +171,9 @@ class Encoder:
         self.scale = self.scale.to(device=device)
 
     def encode(self, board, player_1):
+        if board.size() == (26,):
+            board = board.unsqueeze(0)
+        (n, _) = board.shape
         y = matmul(board, self.matrix) + self.addition
 
         condition = torch.logical_and(self.floor <= y, y < self.ceil)
@@ -182,4 +184,5 @@ class Encoder:
         y = y + matmul(minimum(board, self.zero_board), self.count_black_pieces)
         y = y + (self.white_turn if player_1 else self.black_turn)
         y = matmul(y, self.scale)
+        assert y.size() == (n, 198)
         return y

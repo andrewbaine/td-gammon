@@ -1,3 +1,4 @@
+from itertools import zip_longest
 import pytest
 import os
 import backgammon
@@ -6,6 +7,8 @@ import read_move_tensors
 import tesauro
 
 import backgammon_env
+
+from pytest import approx
 
 import done_check
 
@@ -58,18 +61,20 @@ def test_game_play():
             (board, player_1, dice) = state
             assert [int(x) for x in tensor_board.tolist()] == board
 
-            t = encoder.encode(tensor_board, player_1).tolist()
+            t = encoder.encode(tensor_board, player_1).tolist()[0]
             t2 = slow_but_right.tesauro_encode(state)
 
             baine_encoded = slow_but_right.simple_baine_encoding_step_1(board)
-            be2 = [int(x) for x in enc.encode_step_1(tensor_board).tolist()]
+            be2 = [int(x) for x in enc.encode_step_1(tensor_board).squeeze().tolist()]
 
             #            print(backgammon.to_str(board))
             assert baine_encoded == be2
 
             be3 = [
                 int(x)
-                for x in enc.encode_step_2(enc.encode_step_1(tensor_board)).tolist()
+                for x in enc.encode_step_2(enc.encode_step_1(tensor_board))
+                .squeeze()
+                .tolist()
             ]
             be3_slow = slow_but_right.simple_baine_encoding_step_2(
                 baine_encoded, min=1, max=4
@@ -77,7 +82,7 @@ def test_game_play():
 
             assert be3 == be3_slow
             assert len(t) == len(t2)
-            assert t2 == pytest.approx(t)
+            assert t2 == approx(t)
             done = bck.done(state)
             done_slow_but_right = sbr.done(state)
             dc_done = dc.check(tensor_board)
@@ -91,6 +96,21 @@ def test_game_play():
                 vectors = move_tensors.compute_move_vectors(
                     (tensor_board, player_1, dice)
                 )
+                next_states = vectors + tensor_board
+                encoded_next_states = enc.encode(next_states, not player_1).tolist()
+                other_way = [
+                    enc.encode(torch.tensor(x), not player_1).tolist()[0]
+                    for x in next_states.tolist()
+                ]
+                one_final_way = [
+                    slow_but_right.simple_baine_encoding((x, not player_1, (0, 0)))
+                    for x in next_states.tolist()
+                ]
+                for x, y, z in zip_longest(
+                    encoded_next_states, other_way, one_final_way
+                ):
+                    assert x == approx(y)
+                    assert x == approx(z)
 
                 ### the states we can end up using vectors
                 s = set()

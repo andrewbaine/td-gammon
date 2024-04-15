@@ -4,7 +4,6 @@ import torch
 
 import evaluate
 import train
-import write_move_tensors
 
 
 def check_cuda(_):
@@ -25,10 +24,6 @@ if __name__ == "__main__":
     parser_evaluate = sp.add_parser("evaluate")
     evaluate.init_parser(parser_evaluate)
     parser_evaluate.set_defaults(func=evaluate.main)
-
-    parser_move_tensors = sp.add_parser("move-tensors")
-    write_move_tensors.init_parser(parser_move_tensors)
-    parser_move_tensors.set_defaults(func=write_move_tensors.main)
 
     args = parser.parse_args()
     args.func(args)

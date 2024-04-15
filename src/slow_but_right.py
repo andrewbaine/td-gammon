@@ -242,3 +242,12 @@ def simple_baine_encoding_step_1(board: List[int]):
         else:
             bs.append(0)
     return bs
+
+
+def simple_baine_encoding(state):
+    (board, _, _) = state
+    t = simple_baine_encoding_step_2(simple_baine_encoding_step_1(board), min=1, max=4)
+    w = tesauro_encode(state)
+    assert len(t) == 192, len(t)
+    assert len(w) == 198, len(t)
+    return w + t

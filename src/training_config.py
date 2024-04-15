@@ -1,10 +1,9 @@
 from collections import namedtuple
-import os.path
 
 Config = namedtuple(
     "Config",
-    ["encoding", "hidden", "out", "move_tensors", "α", "λ", "iterations"],
-    defaults=["baine", 40, 4, "/var/move_tensors/current", 0.05, 0.99, 1],
+    ["encoding", "hidden", "out", "α", "λ", "iterations"],
+    defaults=["baine", 40, 4, 0.05, 0.99, 1],
 )
 
 
@@ -16,7 +15,6 @@ def from_args(args):
         out=args.out,
         α=args.α,
         λ=args.λ,
-        move_tensors=os.path.realpath(args.move_tensors),
     )
 
 
@@ -56,6 +54,5 @@ def store(config, path):
             "out={n}".format(n=config.out),
             "alpha={x:.8f}".format(x=config.α),
             "lambda={x:.8f}".format(x=config.λ),
-            "move-tensors={m}".format(m=config.move_tensors),
         ]:
             out.write(line + "\n")
