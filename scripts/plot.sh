@@ -1,6 +1,6 @@
 #!/bin/bash
 
-while getopts ":g:m:t:" opt; do
+while getopts ":g:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
@@ -27,8 +27,11 @@ then
    exit 1
 fi
 
+PLOT_FILE=${DIR}/plot-${GAMES}.txt
+touch ${PLOT_FILE}
+
 for x in $DIR/model.*.pt
 do
     data=$(./scripts/evaluate.sh -g $GAMES $x)
-    printf "%s\t%s\n" "$(basename ${x})" "${data}" | tee -a ${DIR}/plot-${GAMES}.txt
+    printf "%s\t%s\n" "$(basename ${x})" "${data}" | tee -a $PLOT_FILE
 done
