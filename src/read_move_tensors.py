@@ -2,6 +2,33 @@ import bt_2
 import torch
 
 
+def m_step_1(vector):
+    return vector.size()[0]
+
+
+def m_step_2(move_vectors):
+    return move_vectors.size()[0]
+
+
+def m_step_3(lower, board, upper, n):
+    return torch.logical_and(
+        lower.unsqueeze(1).expand(-1, n, -1) <= board,
+        upper.unsqueeze(1).expand(-1, n, -1) > board,
+    ).all(dim=-1)
+
+
+def m_step_4(vector, indices, n):
+    return (vector.unsqueeze(1).expand(-1, n, -1))[indices]
+
+
+def m_step_5(board, m, indices, v):
+    return (board.unsqueeze(0).expand(m, -1, -1))[indices] + v
+
+
+def m_step_6(move_vectors, m, indices, v):
+    return (move_vectors.unsqueeze(0).expand(m, -1, -1))[indices] + v
+
+
 def transform():
     rows = []
     for i in range(26):
@@ -81,22 +108,14 @@ class MoveTensors:
         (_, _, _, move_vectors) = self.noop
         board = board.unsqueeze(dim=0)
         for _, lower, upper, vector in xs:
-            m = vector.size()[0]
-            n = move_vectors.size()[0]
-            mv = move_vectors.unsqueeze(0).expand(m, -1, -1)
-            b = board.unsqueeze(0).expand(m, -1, -1)
-            (lower, upper, vector) = (
-                lower.unsqueeze(1).expand(-1, n, -1),
-                upper.unsqueeze(1).expand(-1, n, -1),
-                vector.unsqueeze(1).expand(-1, n, -1),
-            )
-            indices = torch.logical_and(lower <= board, upper > board)
-            indices = torch.all(indices, dim=-1)
-            v = vector[indices]
+            m = m_step_1(vector)
+            n = m_step_2(move_vectors)
+            indices = m_step_3(lower, board, upper, n)
+            v = m_step_4(vector, indices, n)
             if v.numel() == 0 and short_circuit:
                 return move_vectors
-            board = b[indices] + v
-            move_vectors = mv[indices] + v
+            board = m_step_5(board, m, indices, v)
+            move_vectors = m_step_6(move_vectors, m, indices, v)
         return move_vectors
 
     def dubsies(self, board, player_1, d):
