@@ -42,7 +42,6 @@ def find_index(a, b):
 
 class MoveTensors:
     def __init__(self):
-        self.player_1_vectors = []
 
         noop = bt_2.tensorize(bt_2.noop())
         singles = [bt_2.tensorize(bt_2.all_moves_die(d)) for d in range(1, 7)]
@@ -70,6 +69,13 @@ class MoveTensors:
             )
             for (m, l, u, v) in self.singles_player_2
         ]
+        (m, l, u, v) = self.noop
+        self.noop = (
+            m.to(device=device),
+            l.to(device=device),
+            u.to(device=device),
+            v.to(device=device),
+        )
 
     def movesies(self, board, xs, short_circuit=True):
         (_, _, _, move_vectors) = self.noop
