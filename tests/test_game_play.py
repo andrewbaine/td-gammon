@@ -47,9 +47,8 @@ def test_game_play():
     sbr = slow_but_right.MoveComputer()
     dc = done_check.Donecheck()
 
-    dir = os.environ.get("MOVES_TENSORS", default="var/move_tensors/current")
     n = int(os.environ.get("N_GAMES", default="10"))
-    move_tensors = read_move_tensors.MoveTensors(dir=dir)
+    move_tensors = read_move_tensors.MoveTensors()
 
     for i in range(n):
         state = bck.s0()
@@ -89,26 +88,28 @@ def test_game_play():
                 break
             else:
                 moves = bck.available_moves(state)
-                moves = normalize(moves)
-                (mm, vv) = move_tensors.compute_moves((tensor_board, player_1, dice))
-                v = move_tensors.compute_move_vectors((tensor_board, player_1, dice))
-                assert (v.unique(dim=0) == vv.unique(dim=0)).all(), "\n".join(
-                    [
-                        "",
-                        backgammon.to_str(board),
-                        str(dice),
-                        str(player_1),
-                    ]
+                vectors = move_tensors.compute_move_vectors(
+                    (tensor_board, player_1, dice)
                 )
 
-                translated_moves = translate(mm)
-                d = {}
-                for move, index in translated_moves:
-                    d[move] = index
-                simplified_moves = [v for (v, _) in translated_moves]
-                assert simplified_moves == moves or (
-                    simplified_moves == [()] and moves == []
-                )
+                ### the states we can end up using vectors
+                s = set()
+                vv = dict()
+                for v in vectors:
+                    key = tuple(int(x) for x in (tensor_board + v).tolist())
+                    vv[key] = v
+                    s.add(key)
+
+                ### should be the same as
+                ### the states we can end up using moves
+                s2 = set()
+                for m in moves:
+                    (b, _, _) = bck.next((board, player_1, dice), m)
+                    key = tuple(b)
+                    assert key in s
+                    s2.add(key)
+                for x in s:
+                    assert x in s2
 
                 mmm = normalize(sbr.compute_moves(state))
                 assert mmm == moves
@@ -118,9 +119,10 @@ def test_game_play():
                     move = moves[i]
                 else:
                     move = ()
-                vector_move = vv[d[move]]
 
                 state = bck.next(state, move)
+                (x, _, _) = state
+                vector_move = vv[tuple(x)]
                 tensor_board = tensor_board + vector_move
 
 

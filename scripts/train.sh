@@ -1,7 +1,7 @@
 set -e
 set -x
 
-while getopts ":g:h:o:e:" opt; do
+while getopts ":g:h:o:e:a:l:" opt; do
     case $opt in
         g)
             GAMES="${OPTARG}"
@@ -15,6 +15,11 @@ while getopts ":g:h:o:e:" opt; do
         e)
             ENCODING="${OPTARG}"
             ;;
+        a)
+            ALPHA_ARG=" --alpha ${OPTARG} "
+            ;;
+        l)
+            LAMBDA_ARG=" --lambda ${OPTARG} "
         *)
             exit 1
     esac
@@ -54,10 +59,8 @@ MODEL="$ENCODING-$HIDDEN-$OUT-$GAMES-$D"
 
 docker run --rm \
        $GPU_ARGS \
-       --mount type=bind,src=$(pwd)/var/move_tensors,target=/var/move_tensors \
        --mount type=bind,src=$(pwd)/var/models,target=/var/models \
-       td-gammon train \
-       --move-tensors /var/move_tensors/current \
+       td-gammon train ${ALPHA_ARG} ${LAMBDA_ARG} \
        --save-dir /var/models/${MODEL} \
        --out $OUT \
        --encoding $ENCODING \

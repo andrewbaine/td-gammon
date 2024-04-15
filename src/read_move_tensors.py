@@ -1,7 +1,5 @@
+import bt_2
 import torch
-
-from write_move_tensors import singles_dir, doubles_dir, ab_dir, noop_dir
-import os
 
 
 def transform():
@@ -20,13 +18,6 @@ def for_p2(x):
     h = torch.matmul(low, t).add(one)
     l = torch.matmul(high, t).add(one)
     return (moves, l, h, v)
-
-
-def read(path):
-    return tuple(
-        torch.load(os.path.join(path, x)).to(dtype=torch.float)
-        for x in ["moves.pt", "low.pt", "high.pt", "vector.pt"]
-    )
 
 
 def find_index(a, b):
@@ -52,57 +43,17 @@ def find_index(a, b):
 
 
 class MoveTensors:
-    def __init__(self, dir):
+    def __init__(self):
         self.player_1_vectors = []
 
-        noop = read(noop_dir(dir))
-        singles = [read(singles_dir(dir, d1)) for d1 in range(1, 7)]
+        noop = bt_2.tensorize(bt_2.noop())
+        singles = [bt_2.tensorize(bt_2.all_moves_die(d)) for d in range(1, 7)]
 
-        for d1 in range(1, 7):
-            for d2 in range(1, d1 + 1):
-                if d1 == d2:
-                    dubsies = [
-                        read(doubles_dir(dir, d1, name))
-                        for name in ["4", "3", "2", "1"]
-                    ]
-                    dubsies.append(noop)
-                    self.player_1_vectors.append(dubsies)
-                else:
-                    xs = [read(ab_dir(dir, d1, d2))]
-                    xs.append(singles[d1 - 1])
-                    xs.append(singles[d2 - 1])
-                    xs.append(noop)
-                    self.player_1_vectors.append(xs)
-        self.player_2_vectors = [[for_p2(y) for y in x] for x in self.player_1_vectors]
         self.singles_player_1 = singles
         self.singles_player_2 = [for_p2(x) for x in singles]
         self.noop = noop
 
     def to_(self, device):
-        self.player_1_vectors = [
-            [
-                (
-                    m.to(device=device),
-                    l.to(device=device),
-                    u.to(device=device),
-                    v.to(device=device),
-                )
-                for (m, l, u, v) in x
-            ]
-            for x in self.player_1_vectors
-        ]
-        self.player_2_vectors = [
-            [
-                (
-                    m.to(device=device),
-                    l.to(device=device),
-                    u.to(device=device),
-                    v.to(device=device),
-                )
-                for (m, l, u, v) in x
-            ]
-            for x in self.player_2_vectors
-        ]
         self.singles_player_1 = [
             (
                 m.to(device=device),
@@ -122,33 +73,10 @@ class MoveTensors:
             for (m, l, u, v) in self.singles_player_2
         ]
 
-    def compute_moves(self, state):
-        (board, player_1, (d1, d2)) = state
-        i = find_index(d1, d2)
-        for moves, lower, upper, vector in (
-            self.player_1_vectors if player_1 else self.player_2_vectors
-        )[i]:
-            indices = torch.all(lower <= board, dim=1) & torch.all(upper > board, dim=1)
-            if torch.numel(vector[indices]) > 0:
-                return (moves[indices], vector[indices])
-        assert False
-
-    def compute_move_vectors_v1(self, state):
-        (board, player_1, (d1, d2)) = state
-        i = find_index(d1, d2)
-        for moves, lower, upper, vector in (
-            self.player_1_vectors if player_1 else self.player_2_vectors
-        )[i]:
-            indices = torch.all(torch.logical_and(lower <= board, upper > board), dim=1)
-            vi = vector[indices]
-            if torch.numel(vi) > 0:
-                return vi
-        assert False
-
     def movesies(self, board, xs, short_circuit=True):
         (_, _, _, move_vectors) = self.noop
         board = board.unsqueeze(dim=0)
-        for moves, lower, upper, vector in xs:
+        for _, lower, upper, vector in xs:
             m = vector.size()[0]
             assert board.size() == move_vectors.size()
             n = move_vectors.size()[0]
@@ -198,7 +126,4 @@ class MoveTensors:
         return move_vectors
 
     def compute_move_vectors(self, state):
-        if os.getenv("USE_OLD_COMPUTE_MOVE_VECTORS"):
-            return self.compute_move_vectors_v1(state)
-        else:
-            return self.compute_move_vectors_v2(state)
+        return self.compute_move_vectors_v2(state)

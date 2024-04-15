@@ -1,9 +1,9 @@
+import sys
 import random
 
 import torch
 
 import backgammon_env
-import network
 
 
 class Agent:
@@ -53,17 +53,24 @@ class OnePlyAgent(Agent):
         return (utility_next, board_next)
 
     def decide_action(self, state, device):
+        state_old = state
         (board, player_1, dice) = state
 
         board = torch.tensor(board, dtype=torch.float, device=device)
         state = (board, player_1, dice)
 
-        (moves, move_vectors) = self.move_tensors.compute_moves(state)
+        (move_vectors) = self.move_tensors.compute_move_vectors(state)
         next_states = torch.add(move_vectors, board)
         te = self.encoder.encode(next_states, not player_1)
         utilities = self.f(te)
 
         index = (torch.argmax if player_1 else torch.argmin)(utilities)
-        move = [int(x) for x in moves[index].tolist()]
-        move = list(reversed(sorted(zip(move[::3], move[1::3]))))
-        return move
+
+        bbb = [int(x) for x in (move_vectors[index] + board).tolist()]
+        bck = backgammon_env.Backgammon()
+        for m in bck.available_moves(state_old):
+            (board, dice, player_1) = bck.next(state_old, m)
+            print("comparing {a} {b}".format(a=board, b=bbb), file=sys.stderr)
+            if board == bbb:
+                return m
+        assert False

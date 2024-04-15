@@ -1,46 +1,27 @@
-import backgammon
-import agent
 import argparse
-import player
-
-import torch
-import network
-import agent
-import read_move_tensors
-import tesauro
-import baine_encoding
-
 import os.path
 from pathlib import Path
+
+import torch
+
+import agent
+import agent
+import backgammon
+import baine_encoding
+import network
+import player
+import read_move_tensors
+import tesauro
+import training_config
 
 
 def main(args):
 
     model_path = args.load_model
     config_path = os.path.join(Path(model_path).parent.absolute(), "config.txt")
-    with open(config_path, "r") as input:
-        for line in input:
-            tokens = [x.strip() for x in line.split("=")]
-            assert len(tokens) == 2
-            [key, value] = tokens
-            match key:
-                case "encoding":
-                    encoding = value
-                case "hidden":
-                    hidden = int(value)
-                case "out":
-                    out = int(value)
-                case "move-tensors":
-                    move_tensors = value
-                case "alpha" | "lambda" | "iterations":
-                    pass
-                case _:
-                    raise Exception("unknown key " + key)
+    config = training_config.load(config_path)
 
-    if args.move_tensors:
-        move_tensors = args.move_tensors
-
-    match out:
+    match config.out:
         case 4:
             utility = network.utility_tensor()
         case 6:
@@ -48,7 +29,7 @@ def main(args):
         case _:
             assert False
 
-    match encoding:
+    match config.encoding:
         case "baine":
             encoder = baine_encoding.Encoder()
         case "tesauro":
@@ -58,10 +39,10 @@ def main(args):
 
     t = encoder.encode(torch.tensor(backgammon.make_board(), dtype=torch.float), True)
 
-    layers = [t.numel(), hidden, out]
+    layers = [t.numel(), config.hidden, config.out]
     nn: torch.nn.Sequential = network.layered(*layers)
     nn.load_state_dict(torch.load(model_path))
-    move_tensors = read_move_tensors.MoveTensors(move_tensors)
+    move_tensors = read_move_tensors.MoveTensors()
 
     device = torch.device("cpu")
     if torch.cuda.is_available() or args.force_cuda:
@@ -77,7 +58,6 @@ def main(args):
 
 def init_parser(parser: argparse.ArgumentParser):
     parser.add_argument("--games", type=int, default=1)
-    parser.add_argument("--move-tensors")
     parser.add_argument("--load-model", type=str, required=True)
     parser.add_argument("--force-cuda", type=bool, default=False)
 

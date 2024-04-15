@@ -5,9 +5,6 @@ while getopts ":g:m:t:" opt; do
         g)
             GAMES="${OPTARG}"
             ;;
-        t)
-            MOVE_TENSORS_ARGS=" --move-tensors /${OPTARG} "
-            ;;
         *)
             echo "bad command"
             exit 1
@@ -32,6 +29,6 @@ fi
 
 for x in $DIR/model.*.pt
 do
-    data=$(./scripts/evaluate.sh -g $GAMES -m $x)
+    data=$(./scripts/evaluate.sh -g $GAMES $x)
     printf "%s\t%s\n" "$(basename ${x})" "${data}" | tee -a ${DIR}/plot-${GAMES}.txt
 done
