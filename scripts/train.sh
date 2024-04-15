@@ -20,6 +20,7 @@ while getopts ":g:h:o:e:a:l:" opt; do
             ;;
         l)
             LAMBDA_ARG=" --lambda ${OPTARG} "
+            ;;
         *)
             exit 1
     esac
