@@ -12,7 +12,6 @@ def evaluate_action_1_ply(bck, observe, nn, state, action):
 
 def choose_action_1_ply(bck, observe, nn, state):
     (board, player_1, dice) = state
-    assert bck.done(state) == 0  # remove in production
     moves = bck.available_moves(state)
 
     best = None
@@ -28,7 +27,6 @@ def choose_action_1_ply(bck, observe, nn, state):
 
 def evaluate_action_2_ply(bck, observe, nn, state, action):
     (board, player_1, dice) = state
-    assert bck.done((board, player_1, dice)) is None  # remove in production
     s = bck.next((board, player_1, dice), action)
     if bck.done(s):
         t = observe(s)
@@ -45,12 +43,10 @@ def evaluate_action_2_ply(bck, observe, nn, state, action):
             e = evaluate_action_1_ply(bck, observe, nn, state, action)
             equity += factor * e
             count += factor
-    assert count == 36
     return equity / count
 
 
 def choose_action_2_ply(bck, observe, nn, state):
-    assert bck.done(state) is None  # remove in production
     (board, player_1, dice) = state
     moves = bck.available_moves((board, player_1), dice)
 

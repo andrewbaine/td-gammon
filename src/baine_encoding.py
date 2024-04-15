@@ -147,37 +147,22 @@ class Encoder:
         if board.shape == (26,):
             board = board.unsqueeze(0)
         (n, _) = board.shape
-        assert board.shape == (n, 26)
 
         additions = self.barrier_additions
         scale = self.barrier_scales_player_1
-        assert additions.size() == (7, 24)
         additions = additions.unsqueeze(1).expand(-1, n, -1)
-        assert additions.shape == (7, n, 24)
-        assert scale.size() == (7, 24, 24)
 
         points_made = torch.where(board > 1, self.ones, self.zeroes)
-        assert points_made.shape == (n, 26), points_made.size()
 
         m = self.player_1_barrier_matrix
-        assert m.size() == (7, 26, 24), m.size()
         a = torch.matmul(points_made, m)
-        assert a.size() == (7, n, 24), a.size()
-        assert additions.shape == (7, n, 24)
         b = sub(a, additions)
-        assert b.size() == (7, n, 24), b.size()
         zero24 = self.zero24.unsqueeze(0).expand(n, -1).unsqueeze(0).expand(7, -1, -1)
-        assert zero24.shape == (7, n, 24), zero24.shape
         c = maximum(b, zero24)
-        assert c.size() == (7, n, 24), c.size()
-        assert scale.size() == (7, 24, 24), scale.size()
         d = torch.matmul(c, scale)
-        assert d.size() == (7, n, 24), d.size()
         q = torch.max(d, dim=0).values
-        assert q.shape == (n, 24), q.shape
         r = matmul(q, self.zeros_to_the_left)
         s = where(r == q, r, self.zero24)
-        assert s.size() == (n, 24), s.size()
 
         points_made = torch.where(board < -1, self.ones, self.zeroes)
         m = self.player_2_barrier_matrix
@@ -189,7 +174,6 @@ class Encoder:
         q = torch.min(d, dim=0).values
         r = matmul(q, self.zeros_to_the_right)
         s2 = where(r == q, r, self.zero24)
-        assert s2.size() == (n, 24), s2.size()
         return s + s2
 
     def encode_step_2(self, board):

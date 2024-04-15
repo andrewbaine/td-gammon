@@ -12,7 +12,6 @@ def pad(s):
 
 def decode_position(position_id):
     bs = base64.b64decode(pad(position_id))
-    assert len(bs) == 10
     arr = []
     board = [0 for _ in range(26)]
     index = 1
@@ -71,7 +70,6 @@ def bit(bs, i):
 
 
 def n(bs, start, end):
-    assert start < end
     n = 0
     b = 1
     for i in range(start, end):

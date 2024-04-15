@@ -23,10 +23,8 @@ def for_p2(x):
 def find_index(a, b):
     if a < b:
         (a, b) = (b, a)
-    assert a >= b
     match a:
         case 1:
-            assert b == 1
             return b - 1
         case 2:  # 0
             return b
@@ -78,7 +76,6 @@ class MoveTensors:
         board = board.unsqueeze(dim=0)
         for _, lower, upper, vector in xs:
             m = vector.size()[0]
-            assert board.size() == move_vectors.size()
             n = move_vectors.size()[0]
             mv = move_vectors.unsqueeze(0).expand(m, -1, -1)
             b = board.unsqueeze(0).expand(m, -1, -1)
@@ -88,9 +85,7 @@ class MoveTensors:
                 vector.unsqueeze(1).expand(-1, n, -1),
             )
             indices = torch.logical_and(lower <= board, upper > board)
-            assert indices.size() == (m, n, 26)
             indices = torch.all(indices, dim=-1)
-            assert indices.size() == (m, n)
             v = vector[indices]
             if v.numel() == 0 and short_circuit:
                 return move_vectors
