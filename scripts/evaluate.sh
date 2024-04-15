@@ -1,5 +1,6 @@
 #!/bin/bash
 
+MOVE_TENSORS=var/move_tensors/current
 
 while getopts ":g:m:t:" opt; do
     case $opt in
@@ -10,7 +11,7 @@ while getopts ":g:m:t:" opt; do
             MODEL="${OPTARG}"
             ;;
         t)
-            MOVE_TENSORS_ARGS=" --move-tensors /${OPTARG} "
+            MOVE_TENSORS="${OPTARG} "
             ;;
         *)
             echo "bad command"
@@ -49,10 +50,10 @@ PY_OUT=${LOGS_DIR}/py.out
 rm -f $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-COMMAND_1="evaluate --load-model /${MODEL} --games $GAMES ${MOVE_TENSORS_ARGS}"
+COMMAND_1="evaluate --load-model /var/model/$(basename ${MODEL}) --games $GAMES --move-tensors /var/move_tensors"
 docker run --rm ${GPU_ARGS} \
-       --mount type=bind,src=${WD}/var/models,target=/var/models \
-       --mount type=bind,src=${WD}/var/move_tensors,target=/var/move_tensors \
+       --mount type=bind,src=${WD}/$(dirname ${MODEL}),target=/var/model \
+       --mount type=bind,src=${WD}/${MOVE_TENSORS},target=/var/move_tensors \
        -i td-gammon $COMMAND_1 \
        >${PY_OUT} \
        2>$PY_ERR \
