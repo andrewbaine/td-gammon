@@ -50,7 +50,7 @@ function train_fork {
         exit 1
     fi
 
-    echo docker run --rm \
+    docker run --rm \
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
            td-gammon train \
@@ -58,7 +58,7 @@ function train_fork {
            --alpha "${alpha}" \
            --lambda "${lambda}" \
            --iterations "${games}" \
-           --save-dir "/${fork}-$(date + %s)"
+           --save-dir "/${fork}-$(date +%s)"
 }
 
 function train_continue {
