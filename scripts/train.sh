@@ -31,15 +31,14 @@ done
 
 shift "$((OPTIND-1))"
 
+declare -a gpu_args
 if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
-    gpu_args="--gpus all";
-else
-    gpu_args="";
+    read -r -a gpu_args < <(echo "--gpus all")
 fi
 
 function train_continue {
     docker run --rm \
-           "${gpu_args}" \
+           "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
            td-gammon train \
            --continue \
@@ -67,7 +66,7 @@ function train_from_start {
         echo "set encoding variable"
         exit 1
     fi
-    
+
     D=$(date +%s)
     model="$encoding-$hidden-$out-$games-$D"
 
@@ -88,4 +87,3 @@ then
 else
     train_from_start
 fi
-
