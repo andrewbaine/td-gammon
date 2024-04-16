@@ -37,7 +37,7 @@ do
     SHORT_NAME=$(basename ${x})
     grep "$SHORT_NAME" $PLOT_FILE || \
         DATA=$(./scripts/evaluate.sh -g $GAMES $x) \
-            printf "%s\t%s\n" "$SHORT_NAME" "${data}" \
+            printf "%s\t%s\n" "$SHORT_NAME" "${DATA}" \
             | tee -a $PLOT_FILE
 done
 chmod a-w ${PLOT_FILE}
