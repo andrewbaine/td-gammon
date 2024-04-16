@@ -57,7 +57,8 @@ def train(args):
 
         filename = os.path.basename(args.fork)
         os.makedirs(args.save_dir, exist_ok=False)
-        shutil.copyfile(args.fork, os.path.join(args.save_dir, filename))
+        starting_model = os.path.join(args.save_dir, filename)
+        shutil.copyfile(args.fork, starting_model)
         m = re.match(r"model.(\d+).pt", filename)
         assert m
         start = int(m.group(1))
