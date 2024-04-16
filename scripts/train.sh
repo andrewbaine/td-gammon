@@ -111,6 +111,9 @@ function train_from_start {
 if [ -n "${continue}" ]
 then
     train_continue
+elif [ -n "${fork}" ]
+then
+    train_fork
 else
-    train_from_start
+     train_from_start
 fi
