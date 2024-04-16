@@ -5,7 +5,7 @@ set -x
 while getopts ":g:" opt; do
     case $opt in
         g)
-            GAMES="${OPTARG}"
+            games="${OPTARG}"
             ;;
         *)
             echo "bad command"
@@ -15,30 +15,30 @@ done
 
 shift "$((OPTIND-1))"
 
-if [ -z "$GAMES" ]
+if [ -z "$games" ]
 then
-    echo "set GAMES variable" >&2
+    echo "-g GAMES" >&2
     exit 1
 fi
 
-DIR=$1
+dir=$1
 
-if [ -z "${DIR}" ]
+if [ -z "${dir}" ]
 then
-   echo "pass DIR" >&2
+   echo "pass dir" >&2
    exit 1
 fi
 
-PLOT_FILE=${DIR}/plot-${GAMES}.txt
-touch "${PLOT_FILE}"
-chmod a+w "${PLOT_FILE}"
-for x in "${DIR}"/model.*.pt
+plot_file=${dir}/plot-${games}.txt
+touch "${plot_file}"
+chmod a+w "${plot_file}"
+for x in "${dir}"/model.*.pt
 do
-    SHORT_NAME=$(basename "${x}")
-    grep "$SHORT_NAME" "$PLOT_FILE" || \
+    m=$(basename "${x}")
+    grep "$m" "$plot_file" || \
             (
-                DATA=$(./scripts/evaluate.sh -g "$GAMES" "${x}")
-                printf "%s\t%s\n" "$SHORT_NAME" "${DATA}" | tee -a "$PLOT_FILE"
+                data=$(./scripts/evaluate.sh -g "${games}" "${x}")
+                printf "%s\t%s\n" "$m" "${data}" | tee -a "${plot_file}"
             )
 done
-chmod a-w "${PLOT_FILE}"
+chmod a-w "${plot_file}"
