@@ -92,11 +92,12 @@ class MoveTensors:
             )
             indices = torch.logical_and(lower <= board, upper > board)
             indices = torch.all(indices, dim=-1)
-            v = vector[indices]
+            (v, b, mv) = torch.stack((vector, b, mv), -1)[indices].unbind(-1)
+
             if v.numel() == 0 and short_circuit:
                 return move_vectors
-            board = b[indices] + v
-            move_vectors = mv[indices] + v
+            board = b + v
+            move_vectors = mv + v
         return move_vectors
 
     def dubsies(self, board, player_1, d):

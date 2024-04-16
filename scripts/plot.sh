@@ -29,9 +29,13 @@ fi
 
 PLOT_FILE=${DIR}/plot-${GAMES}.txt
 touch ${PLOT_FILE}
-
+chmod a+w ${PLOT_FILE}
 for x in $DIR/model.*.pt
 do
-    data=$(./scripts/evaluate.sh -g $GAMES $x)
-    printf "%s\t%s\n" "$(basename ${x})" "${data}" | tee -a $PLOT_FILE
+    SHORT_NAME=$(basename ${x})
+    grep "$SHORT_NAME" $PLOT_FILE || \
+        DATA=$(./scripts/evaluate.sh -g $GAMES $x) \
+            printf "%s\t%s\n" "$SHORT_NAME" "${data}" \
+            | tee -a $PLOT_FILE
 done
+chmod a-w ${PLOT_FILE}
