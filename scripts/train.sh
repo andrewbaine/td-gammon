@@ -1,25 +1,28 @@
 set -e
 set -x
 
-while getopts ":g:h:o:e:a:l:" opt; do
+while getopts ":g:h:o:e:a:l:c:" opt; do
     case $opt in
+        c)
+            continue="${OPTARG}"
+            ;;
         g)
-            GAMES="${OPTARG}"
+            games="${OPTARG}"
             ;;
         h)
-            HIDDEN="${OPTARG}"
+            hidden="${OPTARG}"
             ;;
         o)
-            OUT="${OPTARG}"
+            out="${OPTARG}"
             ;;
         e)
-            ENCODING="${OPTARG}"
+            encoding="${OPTARG}"
             ;;
         a)
-            ALPHA_ARG=" --alpha ${OPTARG} "
+            alpha_arg=" --alpha ${OPTARG} "
             ;;
         l)
-            LAMBDA_ARG=" --lambda ${OPTARG} "
+            lambda_arg=" --lambda ${OPTARG} "
             ;;
         *)
             exit 1
