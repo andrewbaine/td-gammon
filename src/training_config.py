@@ -20,7 +20,7 @@ def from_args(args):
 
 
 def from_parent(config, args):
-    config = config._replace(iterations=args.iterations, α=args.α, λ=args.λ)
+    return config._replace(iterations=args.iterations, α=args.α, λ=args.λ)
 
 
 def load(path):
