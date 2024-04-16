@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+set -x
 
 while getopts ":g:" opt; do
     case $opt in
