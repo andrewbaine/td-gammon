@@ -1,8 +1,14 @@
 set -e
 set -x
 
-while getopts ":g:h:o:e:a:l:c:" opt; do
+alpha="0.05"
+lambda="1.0"
+
+while getopts ":g:h:o:e:a:l:c:f:" opt; do
     case $opt in
+        f)
+            fork="${OPTARG}"
+            ;;
         c)
             continue="${OPTARG}"
             ;;
@@ -19,10 +25,10 @@ while getopts ":g:h:o:e:a:l:c:" opt; do
             encoding="${OPTARG}"
             ;;
         a)
-            alpha_arg=" --alpha ${OPTARG} "
+            alpha="${OPTARG} "
             ;;
         l)
-            lambda_arg=" --lambda ${OPTARG} "
+            lambda="${OPTARG} "
             ;;
         *)
             exit 1
@@ -35,6 +41,25 @@ declare -a gpu_args
 if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
     read -r -a gpu_args < <(echo "--gpus all")
 fi
+
+function train_fork {
+
+    if [ -z "$games" ]
+    then
+        echo "set games variable"
+        exit 1
+    fi
+
+    echo docker run --rm \
+           "${gpu_args[@]}" \
+           --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
+           td-gammon train \
+           --fork "/${fork}" \
+           --alpha "${alpha}" \
+           --lambda "${lambda}" \
+           --iterations "${games}" \
+           --save-dir "/${fork}-$(date + %s)"
+}
 
 function train_continue {
     docker run --rm \
@@ -71,9 +96,11 @@ function train_from_start {
     model="$encoding-$hidden-$out-$games-$D"
 
     docker run --rm \
-           "${gpu_args}" \
+           "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
-           td-gammon train "${alpha_arg}" "${lambda_arg}" \
+           td-gammon train \
+           --alpha "${alpha}" \
+           --lambda "${lambda}" \
            --save-dir "/var/models/${model}" \
            --out "${out}" \
            --encoding "${encoding}" \

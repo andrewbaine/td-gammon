@@ -4,6 +4,8 @@ import logging
 import os
 import os.path
 import re
+import shutil
+
 import torch
 
 import agent
@@ -30,6 +32,7 @@ def init_parser(parser):
     parser.add_argument("--alpha", type=float, default=0.1, dest="α")
     parser.add_argument("--lambda", type=float, default=0.7, dest="λ")
     parser.add_argument("--continue", action="store_true", dest="cont")
+    parser.add_argument("--fork", type=str)
 
 
 def train(args):
@@ -50,6 +53,21 @@ def train(args):
                     x=config_path, y=starting_model
                 )
             )
+    elif args.fork:
+
+        filename = os.path.basename(args.fork)
+        os.makedirs(args.save_dir, exist_ok=False)
+        shutil.copyfile(args.fork, os.path.join(args.save_dir, filename))
+        m = re.match(r".*/model.(\d+).pt", filename)
+        assert m
+        start = int(m.group(1))
+        config = training_config.from_parent(
+            training_config.load(
+                os.path.join(os.path.dirname(args.fork), "config.txt")
+            ),
+            args,
+        )
+        training_config.store(config, config_path)
     else:
         config = training_config.from_args(args)
         os.makedirs(args.save_dir, exist_ok=False)

@@ -2,8 +2,8 @@ from collections import namedtuple
 
 Config = namedtuple(
     "Config",
-    ["encoding", "hidden", "out", "α", "λ", "iterations"],
-    defaults=["baine", 40, 4, 0.05, 0.99, 1],
+    ["encoding", "hidden", "out", "α", "λ", "iterations", "parent"],
+    defaults=["baine", 40, 4, 0.05, 0.99, 1, ""],
 )
 
 
@@ -15,7 +15,12 @@ def from_args(args):
         out=args.out,
         α=args.α,
         λ=args.λ,
+        parent=args.fork,
     )
+
+
+def from_parent(config, args):
+    config = config._replace(iterations=args.iterations, α=args.α, λ=args.λ)
 
 
 def load(path):
@@ -38,6 +43,8 @@ def load(path):
                     config = config._replace(λ=float(value))
                 case "iterations":
                     config = config._replace(iterations=int(value))
+                case "parent":
+                    config = config._replace(parent=value)
                 case "move-tensors":
                     pass
                 case _:
@@ -54,5 +61,6 @@ def store(config, path):
             "out={n}".format(n=config.out),
             "alpha={x:.8f}".format(x=config.α),
             "lambda={x:.8f}".format(x=config.λ),
+            "parent={p}".format(p=config.parent),
         ]:
             out.write(line + "\n")
