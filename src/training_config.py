@@ -20,7 +20,9 @@ def from_args(args):
 
 
 def from_parent(config, args):
-    return config._replace(iterations=args.iterations, α=args.α, λ=args.λ)
+    return config._replace(
+        parent=args.fork, iterations=args.iterations, α=args.α, λ=args.λ
+    )
 
 
 def load(path):
