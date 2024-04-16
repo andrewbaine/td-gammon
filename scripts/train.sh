@@ -31,43 +31,61 @@ done
 
 shift "$((OPTIND-1))"
 
-if [ -z "$GAMES" ]
-then
-    echo "set GAMES variable"
-    exit 1
-fi
-if [ -z "$HIDDEN" ]
-then
-    echo "set HIDDEN variable"
-    exit 1
-fi
-if [ -z "$OUT" ]
-then
-    echo "set OUT variable"
-    exit 1
-fi
-if [ -z "$ENCODING" ]
-then
-    echo "set ENCODING variable"
-    exit 1
-fi
-
 if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
-    GPU_ARGS="--gpus all";
+    gpu_args="--gpus all";
 else
-    GPU_ARGS="";
+    gpu_args="";
 fi
 
-D=$(date +%s)
-MODEL="$ENCODING-$HIDDEN-$OUT-$GAMES-$D"
+function train_continue {
+    docker run --rm \
+           "${gpu_args}" \
+           --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
+           td-gammon train \
+           --continue \
+           --save-dir "/${continue}"
+}
 
-docker run --rm \
-       $GPU_ARGS \
-       --mount type=bind,src=$(pwd)/var/models,target=/var/models \
-       td-gammon train ${ALPHA_ARG} ${LAMBDA_ARG} \
-       --save-dir /var/models/${MODEL} \
-       --out $OUT \
-       --encoding $ENCODING \
-       --hidden $HIDDEN \
-       --iterations $GAMES
+function train_from_start {
+    if [ -z "$games" ]
+    then
+        echo "set games variable"
+        exit 1
+    fi
+    if [ -z "$hidden" ]
+    then
+        echo "set hidden variable"
+        exit 1
+    fi
+    if [ -z "$out" ]
+    then
+        echo "set out variable"
+        exit 1
+    fi
+    if [ -z "$encoding" ]
+    then
+        echo "set encoding variable"
+        exit 1
+    fi
+    
+    D=$(date +%s)
+    model="$encoding-$hidden-$out-$games-$D"
+
+    docker run --rm \
+           "${gpu_args}" \
+           --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
+           td-gammon train "${alpha_arg}" "${lambda_arg}" \
+           --save-dir "/var/models/${model}" \
+           --out "${out}" \
+           --encoding "${encoding}" \
+           --hidden "${hidden}" \
+           --iterations "${games}"
+}
+
+if [ -n "${continue}" ]
+then
+    train_continue
+else
+    train_from_start
+fi
 
