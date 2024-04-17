@@ -1,8 +1,9 @@
 set -e
-set -x
 
-alpha="0.05"
-lambda="1.0"
+function error_exit {
+    echo "$@" >&2
+    exit 1
+}
 
 while getopts ":g:h:o:e:a:l:c:f:" opt; do
     case $opt in
@@ -19,16 +20,26 @@ while getopts ":g:h:o:e:a:l:c:f:" opt; do
             hidden="${OPTARG}"
             ;;
         o)
-            out="${OPTARG}"
+            if [ "${OPTARG}" == "4" ] || [ "${OPTARG}" == "6" ]
+            then
+                out="${OPTARG}"
+            else
+                error_exit "-o {out} must b 4 or 6" >&2
+            fi
             ;;
         e)
-            encoding="${OPTARG}"
+            if [ "${OPTARG}" == "baine" ] || [ "${OPTARG}" == "tesauro" ]
+            then
+                encoding="${OPTARG}"
+            else
+                error_exit "-e {encoding} must be baine or tesauro" >&2
+            fi
             ;;
         a)
-            alpha="${OPTARG} "
+            alpha="${OPTARG}"
             ;;
         l)
-            lambda="${OPTARG} "
+            lambda="${OPTARG}"
             ;;
         *)
             exit 1
@@ -46,8 +57,15 @@ function train_fork {
 
     if [ -z "$games" ]
     then
-        echo "set games variable"
-        exit 1
+        error_exit "pass -g {games}"
+    fi
+    if [ -z "$alpha" ]
+    then
+        error_exit "pass -a <alpha> variable"
+    fi
+    if [ -z "${fork}" ]
+    then
+        error_exit "pass -f <fork>"
     fi
 
     docker run --rm \
@@ -56,12 +74,15 @@ function train_fork {
            td-gammon train \
            --fork "/${fork}" \
            --alpha "${alpha}" \
-           --lambda "${lambda}" \
            --iterations "${games}" \
            --save-dir "/${fork}-$(date +%s)"
 }
 
 function train_continue {
+    if [ -z "${continue}" ]
+    then
+        error_exit "pass -c {directory}"
+    fi
     docker run --rm \
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
@@ -73,23 +94,27 @@ function train_continue {
 function train_from_start {
     if [ -z "$games" ]
     then
-        echo "set games variable"
-        exit 1
+        error_exit "set games variable"
+    fi
+    if [ -z "$alpha" ]
+    then
+        error_exit "pass -a <alpha> variable"
+    fi
+    if [ -z "$lambda" ]
+    then
+        error_exit "pass -l <lambda> variable"
     fi
     if [ -z "$hidden" ]
     then
-        echo "set hidden variable"
-        exit 1
+        error_exit "pass -h <hidden> variable"
     fi
     if [ -z "$out" ]
     then
-        echo "set out variable"
-        exit 1
+        error_exit "pass -o {4,6}"
     fi
     if [ -z "$encoding" ]
     then
-        echo "set encoding variable"
-        exit 1
+        error_exit "set encoding variable"
     fi
 
     D=$(date +%s)

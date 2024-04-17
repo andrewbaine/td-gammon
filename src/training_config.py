@@ -1,14 +1,32 @@
 from collections import namedtuple
 
 Config = namedtuple(
-    "Config",
-    ["encoding", "hidden", "out", "α", "λ", "iterations", "parent"],
-    defaults=["baine", 40, 4, 0.05, 0.99, 1, ""],
+    "Config", ["encoding", "hidden", "out", "α", "λ", "iterations", "parent"]
 )
 
 
+def validated_config(encoding, hidden, out, α, λ, iterations, parent):
+    assert encoding == "baine" or encoding == "tesauro"
+    assert hidden > 0
+    assert encoding
+    assert hidden
+    assert out == 6 or out == 4
+    assert 0.0 < α <= 1.0
+    assert 0.0 <= λ <= 1.0
+    assert iterations > 0
+    return validated_config(
+        iterations=iterations,
+        encoding=encoding,
+        hidden=hidden,
+        out=out,
+        α=α,
+        λ=λ,
+        parent=parent,
+    )
+
+
 def from_args(args):
-    return Config(
+    return validated_config(
         iterations=args.iterations,
         encoding=args.encoding,
         hidden=args.hidden,
@@ -20,13 +38,19 @@ def from_args(args):
 
 
 def from_parent(config, args):
-    return config._replace(
-        parent=args.fork, iterations=args.iterations, α=args.α, λ=args.λ
+    return validated_config(
+        encoding=config.encoding,
+        hidden=config.hidden,
+        out=config.out,
+        iterations=args.iterations,
+        α=args.α,
+        λ=args.λ,
+        parent=args.fork,
     )
 
 
 def load(path):
-    config = Config()
+
     with open(path, "r") as input:
         for line in input:
             tokens = [x.strip() for x in line.split("=")]
@@ -34,24 +58,38 @@ def load(path):
             [key, value] = tokens
             match key:
                 case "encoding":
-                    config = config._replace(encoding=value)
+                    encoding = value
                 case "hidden":
-                    config = config._replace(hidden=int(value))
+                    hidden = int(value)
                 case "out":
-                    config = config._replace(out=int(value))
+                    out = int(value)
                 case "alpha":
-                    config = config._replace(α=float(value))
+                    α = float(value)
                 case "lambda":
-                    config = config._replace(λ=float(value))
+                    λ = float(value)
                 case "iterations":
-                    config = config._replace(iterations=int(value))
+                    iterations = int(value)
                 case "parent":
-                    config = config._replace(parent=value)
+                    parent = value
                 case "move-tensors":
                     pass
                 case _:
                     raise Exception("unknown key " + key)
-    return config
+    assert encoding
+    assert hidden
+    assert out == 6 or out == 4
+    assert 0.0 < α < 1.0
+    assert 0.0 <= λ <= 1.0
+    assert iterations
+    return validated_config(
+        encoding=encoding,
+        hidden=hidden,
+        out=out,
+        α=α,
+        λ=λ,
+        iterations=iterations,
+        parent=parent,
+    )
 
 
 def store(config, path):

@@ -21,16 +21,16 @@ import training_config
 
 
 def init_parser(parser):
-    parser.add_argument("--iterations", type=int, default=1)
-    parser.add_argument("--hidden", type=int, default=40)
+    parser.add_argument("--iterations", type=int)
+    parser.add_argument("--hidden", type=int)
     parser.add_argument("--save-dir", type=str, required=True)
-    parser.add_argument("--out", type=int, default=4)
+    parser.add_argument("--out", type=int)
     parser.add_argument(
         "--encoding", type=str, choices=["baine", "tesauro"], default="baine"
     )
     parser.add_argument("--force-cuda", type=bool, default=False)
-    parser.add_argument("--alpha", type=float, default=0.1, dest="α")
-    parser.add_argument("--lambda", type=float, default=0.7, dest="λ")
+    parser.add_argument("--alpha", type=float, dest="α")
+    parser.add_argument("--lambda", type=float, dest="λ")
     parser.add_argument("--continue", action="store_true", dest="cont")
     parser.add_argument("--fork", type=str)
 

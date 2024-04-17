@@ -57,7 +57,7 @@ def main(args):
 
 
 def init_parser(parser: argparse.ArgumentParser):
-    parser.add_argument("--games", type=int, default=1)
+    parser.add_argument("--games", type=int, required=True)
     parser.add_argument("--load-model", type=str, required=True)
     parser.add_argument("--force-cuda", type=bool, default=False)
 
