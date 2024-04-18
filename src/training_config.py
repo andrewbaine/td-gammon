@@ -14,13 +14,13 @@ def validated_config(encoding, hidden, out, α, λ, iterations, parent):
     assert 0.0 < α <= 1.0
     assert 0.0 <= λ <= 1.0
     assert iterations > 0
-    return validated_config(
-        iterations=iterations,
+    return Config(
         encoding=encoding,
         hidden=hidden,
         out=out,
         α=α,
         λ=λ,
+        iterations=iterations,
         parent=parent,
     )
 
