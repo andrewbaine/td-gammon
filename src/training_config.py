@@ -42,9 +42,9 @@ def from_parent(config, args):
         encoding=config.encoding,
         hidden=config.hidden,
         out=config.out,
+        λ=config.λ,
         iterations=args.iterations,
         α=args.α,
-        λ=args.λ,
         parent=args.fork,
     )
 
