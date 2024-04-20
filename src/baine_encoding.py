@@ -218,10 +218,3 @@ if __name__ == "__main__":
         ]
     )
     y = e.encode(board, False)
-
-#    print(board)
-#    print("y.size()", y.size())
-
-#    xs = torch.tensor([make_board(), make_board()])
-#    ys = e.encode_step_1(xs)
-#    print("ys.size()", ys.size())
