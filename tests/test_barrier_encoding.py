@@ -164,6 +164,58 @@ cases = [
             ]
         ),
     ),
+    Case(
+        input=f(
+            [
+                [0, 0, 0, 0, 0, 0],
+                [2, 2, -3, -3, 2, 2],
+                [-3, -3, 2, 2, -2, -1],
+                [2, 1, 0, 0, 0, 0],
+            ]
+        ),
+        expected=f(
+            [
+                [0, 0, 0, 0, 0, 0],
+                [2, 1, -1, -2, 2, 1],
+                [-1, -2, 2, 1, -1, 0],
+                [1, 0, 0, 0, 0, 0],
+            ]
+        ),
+        greatest_barrier_encoding=f(
+            [
+                [0, 0, 0, 0, 0, 0],
+                [2, 0, 0, -2, 2, 0],
+                [0, -2, 2, 0, -1, 0],
+                [1, 0, 0, 0, 0, 0],
+            ]
+        ),
+    ),
+    Case(
+        input=f(
+            [
+                [0, 0, 0, 0, 0, 0],
+                [2, -2, 3, -3, 2, -2],
+                [3, -3, 2, -2, 2, -2],
+                [1, -1, 0, 0, 0, 0],
+            ]
+        ),
+        expected=f(
+            [
+                [0, 0, 0, 0, 0, 0],
+                [1, -1, 1, -1, 1, -1],
+                [1, -1, 1, -1, 1, -1],
+                [0, 0, 0, 0, 0, 0],
+            ]
+        ),
+        greatest_barrier_encoding=f(
+            [
+                [0, 0, 0, 0, 0, 0],
+                [1, -1, 1, -1, 1, -1],
+                [1, -1, 1, -1, 1, -1],
+                [0, 0, 0, 0, 0, 0],
+            ]
+        ),
+    ),
 ]
 
 
@@ -181,6 +233,6 @@ def greatest_barrier_encoder():
 def test_barrier_encoding(greatest_barrier_encoder, barrier_encoder, t):
     x = torch.tensor([t.input])
     y = barrier_encoder(x)
-    assert y.tolist() == [t.expected]
+    assert y.tolist() == [[float(x) for x in t.expected]]
     y = greatest_barrier_encoder(y)
     assert y.tolist() == [[float(x) for x in t.greatest_barrier_encoding]]
