@@ -236,3 +236,12 @@ def test_barrier_encoding(greatest_barrier_encoder, barrier_encoder, t):
     assert y.tolist() == [[float(x) for x in t.expected]]
     y = greatest_barrier_encoder(y)
     assert y.tolist() == [[float(x) for x in t.greatest_barrier_encoding]]
+
+
+def test_matrix(greatest_barrier_encoder, barrier_encoder):
+    inputs = [c.input for c in cases]
+    y = barrier_encoder(torch.tensor(inputs))
+    expected = [c.expected for c in cases]
+    assert y.tolist() == expected
+    y = greatest_barrier_encoder(y)
+    assert y.tolist() == [c.greatest_barrier_encoding for c in cases]
