@@ -1,5 +1,24 @@
 import torch
 
+from typing import List, Tuple
+
+
+def tensor(data):
+    return torch.tensor(data, dtype=torch.float, requires_grad=False)
+
+
+class TurnEncoder(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.one = tensor([1])
+        self.two = tensor([2])
+
+    def forward(self, t):
+        assert torch.all(torch.logical_or(t == -1, t == 1))
+        y = (t + self.one) / self.two
+        assert torch.all(torch.logical_or(y == 1, y == 0))
+        return y
+
 
 def barrier_matrix(b):
     ms = []
@@ -88,9 +107,64 @@ class GreatestBarrier(Barrier):
     def forward(self, x):
         y = torch.maximum(x, self.zero24)
         r = torch.matmul(y, self.zeros_to_the_left)
+        # 3, 2, 1 => 3, 0, 0
         s = torch.where(r >= y, y, self.zero24)
 
+        #
         y2 = torch.minimum(x, self.zero24)
         r2 = torch.matmul(y2, self.zeros_to_the_right)
         s2 = torch.where(r2 <= y2, y2, self.zero24)
         return s + s2
+
+
+class OneHot(torch.nn.Module):
+    def __init__(self, buckets):
+        super().__init__()
+        weight = []
+        bias = []
+        caps = []
+        scale = []
+        for i in range(len(buckets)):
+            row = []
+            weight.append(row)
+            for j, bucket in enumerate(buckets):
+                for a, b, s in bucket:
+                    row.append((1 if a > 0 else -1) if i == j else 0)
+                    if i == 0:
+                        scale.append(s)
+                        bias.append((1 - a) if a > 0 else (a + 1))
+                        caps.append(1 + abs(b - a))
+        self.m = tensor(weight)
+        self.b = tensor(bias)
+
+        self.zeros = torch.zeros_like(self.b)
+        self.caps = tensor(caps)
+        self.scale = tensor(scale).diag()
+
+    def forward(self, x):
+        y = torch.matmul(x, self.m) + self.b
+        y = torch.maximum(y, self.zeros)
+        y = torch.where(y < self.caps, y, self.zeros)
+        y = torch.matmul(y, self.scale)
+        return y
+
+
+class Tesauro(OneHot):
+    def __init__(self):
+        buckets: List[List[Tuple[int, int, float]]] = []
+        buckets.append([(-1, -16, 0.5)])
+        for _ in range(24):
+            buckets.append(
+                [
+                    (1, 2, 1.0),
+                    (-1, -2, 1.0),
+                    (2, 3, 1.0),
+                    (-2, -3, 1.0),
+                    (3, 4, 1.0),
+                    (-3, -4, 1.0),
+                    (4, 16, 0.5),
+                    (-4, -16, 0.5),
+                ]
+            )
+        buckets.append([(1, 16, 1.0 / 0.5)])
+        super().__init__(buckets)

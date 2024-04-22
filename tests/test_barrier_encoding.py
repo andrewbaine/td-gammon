@@ -3,7 +3,7 @@ import pytest
 from collections import namedtuple
 
 import torch
-import barrier_encoding
+import encoders
 import backgammon
 
 Case = namedtuple("Case", ["input", "expected", "greatest_barrier_encoding"])
@@ -221,12 +221,12 @@ cases = [
 
 @pytest.fixture
 def barrier_encoder():
-    return barrier_encoding.Barrier()
+    return encoders.Barrier()
 
 
 @pytest.fixture
 def greatest_barrier_encoder():
-    return barrier_encoding.GreatestBarrier()
+    return encoders.GreatestBarrier()
 
 
 @pytest.mark.parametrize("t", cases)

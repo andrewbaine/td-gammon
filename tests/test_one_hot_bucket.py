@@ -1,11 +1,11 @@
-import one_hot_bucket
+import encoders
 import backgammon
 import torch
 import slow_but_right
 
 
 def test_starting_board():
-    t = one_hot_bucket.Tesauro()
+    t = encoders.Tesauro()
     board = torch.tensor(backgammon.make_board(), dtype=torch.float)
     encoded = t(board).tolist()
     tesauro_encoded = slow_but_right.tesauro_encode(
