@@ -20,26 +20,6 @@ def for_p2(x):
     return (moves, l, h, v)
 
 
-def find_index(a, b):
-    if a < b:
-        (a, b) = (b, a)
-    match a:
-        case 1:
-            return b - 1
-        case 2:  # 0
-            return b
-        case 3:  # 1, 2
-            return b + 2
-        case 4:  # 3, 4, 5
-            return b + 5
-        case 5:  # 6, 7, 8, 9
-            return b + 9
-        case 6:  # 10, 11, 12, 13, 14, 15
-            return b + 14
-        case _:
-            assert False
-
-
 class MoveTensors:
     def __init__(self):
 
@@ -104,7 +84,7 @@ class MoveTensors:
         x = (self.singles_player_1 if player_1 else self.singles_player_2)[d - 1]
         return self.movesies(board, [x, x, x, x], short_circuit=True)
 
-    def compute_move_vectors_v2(self, state):
+    def compute_move_vectors(self, state):
         (board, player_1, (d1, d2)) = state
         if d1 == d2:
             return self.dubsies(board, player_1, d1)
@@ -126,6 +106,3 @@ class MoveTensors:
             return d
         (_, _, _, move_vectors) = self.noop
         return move_vectors
-
-    def compute_move_vectors(self, state):
-        return self.compute_move_vectors_v2(state)
