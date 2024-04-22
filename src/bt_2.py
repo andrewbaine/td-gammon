@@ -28,6 +28,10 @@ def split_out(m):
     return ps, qs, rs
 
 
+def impossible_hit(start, end):
+    return ([start, end, 1], [0 for _ in r()], [0 for _ in r()], [0 for _ in r()])
+
+
 def all_moves_die_start(die, start):
     assert 0 < die < 7
     assert 0 < start < 26
@@ -38,13 +42,13 @@ def all_moves_die_start(die, start):
         low, high, vector = split_out(
             [empty_t if i > start else start_t if i == start else any_t for i in r()]
         )
-        return [([start, end, 0], low, high, vector)]
+        return [([start, end, 0], low, high, vector), impossible_hit(start, end)]
     elif end == 0:
         # exact bearoff
         low, high, vector = split_out(
             [empty_t if i > 6 else start_t if i == start else any_t for i in r()]
         )
-        return [([start, end, 0], low, high, vector)]
+        return [([start, end, 0], low, high, vector), impossible_hit(start, end)]
     else:
         assert end > 0
         if start == 25:
@@ -117,8 +121,9 @@ def tensorize(x):
                 hit_count += 1
             if end <= 0:
                 bearoff_count += 1
-        assert vector[0] == -1 * hit_count
-        assert sum(vector) == -1 * bearoff_count
+        if low < high:
+            assert vector[0] == -1 * hit_count
+            assert sum(vector) == -1 * bearoff_count
         moves_key = tuple(moves)
         assert moves_key not in moves_dict
         moves_dict.add(moves_key)
