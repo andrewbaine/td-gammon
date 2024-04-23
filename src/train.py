@@ -9,15 +9,13 @@ import shutil
 import torch
 
 import agent
-import backgammon
-import baine_encoding
 import done_check
 import eligibility_trace
 import network
 import read_move_tensors
 import td
-import tesauro
 import training_config
+import encoders
 
 
 def init_parser(parser):
@@ -74,7 +72,7 @@ def train(args):
         os.makedirs(args.save_dir, exist_ok=False)
         training_config.store(config, config_path)
 
-    board: torch.Tensor = torch.tensor(backgammon.make_board(), dtype=torch.float)
+    board: torch.Tensor = torch.tensor([[0 for _ in range(27)]], dtype=torch.float)
     match config.out:
         case 4:
             utility = network.utility_tensor()
@@ -85,33 +83,24 @@ def train(args):
 
     match config.encoding:
         case "baine":
-            encoder = baine_encoding.Encoder()
+            encoder = encoders.Baine()
         case "tesauro":
-            encoder = tesauro.Encoder()
+            encoder = encoders.Tesauro()
         case _:
             assert False
-    layers = [encoder.encode(board, True).numel(), config.hidden, config.out]
+    layers = [encoder(board).numel(), config.hidden, config.out]
     nn: torch.nn.Sequential = network.layered(*layers)
     if start:
         assert starting_model
         nn.load_state_dict(torch.load(starting_model))
 
     move_checker = done_check.Donecheck()
-
     move_tensors = read_move_tensors.MoveTensors()
 
-    if torch.cuda.is_available() or args.force_cuda:
-        device = torch.device("cuda")
-        board = board.to(device=device)
-        nn = nn.to(device=device)
-        move_checker.to_(device=device)
-        move_tensors.to_(device=device)
-        encoder.to_(device=device)
-        utility = utility.to(device=device)
-
     et = eligibility_trace.ElibilityTrace(nn, α=config.α, λ=config.λ)
-    a = agent.OnePlyAgent(nn, move_tensors, encoder, utility=utility)
-    temporal_difference = td.TD(board, move_checker, a, et)
+    evaluator = encoders.Evaluator(encoder, nn, utility)
+    a = agent.OnePlyAgent(evaluator, move_tensors)
+    temporal_difference = td.TD(move_checker, a, et)
 
     for i in range(start, config.iterations):
         if i % 1000 == 0:
@@ -123,6 +112,7 @@ def train(args):
 
 
 if __name__ == "__main__":
+    print("hi there")
     parser = argparse.ArgumentParser()
     init_parser(parser)
     args = parser.parse_args()

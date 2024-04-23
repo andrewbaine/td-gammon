@@ -5,3 +5,4 @@ __pycache__/
 /tmp/
 /var/
 /__pycache__/
+/epc.*.db/

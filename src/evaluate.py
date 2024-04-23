@@ -5,14 +5,13 @@ from pathlib import Path
 import torch
 
 import agent
-import agent
 import backgammon
-import baine_encoding
 import network
 import player
 import read_move_tensors
-import tesauro
 import training_config
+
+import encoders
 
 
 def main(args):
@@ -31,15 +30,18 @@ def main(args):
 
     match config.encoding:
         case "baine":
-            encoder = baine_encoding.Encoder()
+            encoder = encoders.Baine()
         case "tesauro":
-            encoder = tesauro.Encoder()
+            encoder = encoders.Tesauro()
         case _:
             assert False
 
-    t = encoder.encode(torch.tensor(backgammon.make_board(), dtype=torch.float), True)
+    board = torch.tensor(backgammon.make_board() + [1], dtype=torch.float)
+    t = encoder(board)
+    (m, n) = t.size()
+    assert m == 1
 
-    layers = [t.numel(), config.hidden, config.out]
+    layers = [n, config.hidden, config.out]
     nn: torch.nn.Sequential = network.layered(*layers)
     nn.load_state_dict(torch.load(model_path))
     move_tensors = read_move_tensors.MoveTensors()
@@ -52,8 +54,10 @@ def main(args):
         encoder.to_(device)
         utility = utility.to(device)
 
-    a = agent.OnePlyAgent(nn, move_tensors, encoder, utility=utility)
-    player.play(a, args.games, device=device)
+    evaluator = encoders.Evaluator(encoder, nn, utility)
+
+    a = agent.OnePlyAgent(evaluator, move_tensors)
+    player.play(a, args.games)
 
 
 def init_parser(parser: argparse.ArgumentParser):

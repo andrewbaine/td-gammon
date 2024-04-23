@@ -56,23 +56,26 @@ def test_game_play():
     for i in range(n):
         state = bck.s0()
         (board, player_1, dice) = state
-        tensor_board = torch.tensor(board, dtype=torch.float)
+        tensor_board = torch.tensor([board + [1 if player_1 else 0]], dtype=torch.float)
         while True:
             (board, player_1, dice) = state
-            assert [int(x) for x in tensor_board.tolist()] == board
+            assert [int(x) for x in tensor_board.tolist()[0][:-1]] == board
 
-            t = encoder.encode(tensor_board, player_1).tolist()[0]
+            t = encoder.encode(tensor_board[:, :-1], player_1).tolist()[0]
             t2 = slow_but_right.tesauro_encode(state)
 
             baine_encoded = slow_but_right.simple_baine_encoding_step_1(board)
-            be2 = [int(x) for x in enc.encode_step_1(tensor_board).squeeze().tolist()]
+            be2 = [
+                int(x)
+                for x in enc.encode_step_1(tensor_board[:, :-1]).squeeze().tolist()
+            ]
 
             #            print(backgammon.to_str(board))
             assert baine_encoded == be2
 
             be3 = [
                 int(x)
-                for x in enc.encode_step_2(enc.encode_step_1(tensor_board))
+                for x in enc.encode_step_2(enc.encode_step_1(tensor_board[:, :-1]))
                 .squeeze()
                 .tolist()
             ]
@@ -93,30 +96,37 @@ def test_game_play():
                 break
             else:
                 moves = bck.available_moves(state)
-                vectors = move_tensors.compute_move_vectors(
-                    (tensor_board, player_1, dice)
-                )
+                vectors = move_tensors.compute_move_vectors(tensor_board, dice)
                 next_states = vectors + tensor_board
-                encoded_next_states = enc.encode(next_states, not player_1).tolist()
+                encoded_next_states = enc.encode(
+                    next_states[:, :-1], not player_1
+                ).tolist()
                 other_way = [
-                    enc.encode(torch.tensor(x), not player_1).tolist()[0]
+                    enc.encode(torch.tensor(x)[:-1], not player_1).tolist()[0]
                     for x in next_states.tolist()
                 ]
                 one_final_way = [
                     slow_but_right.simple_baine_encoding((x, not player_1, (0, 0)))
-                    for x in next_states.tolist()
+                    for x in next_states[:, :-1].tolist()
                 ]
                 for x, y, z in zip_longest(
                     encoded_next_states, other_way, one_final_way
                 ):
+                    if x != y or x != z:
+                        print(backgammon.to_str(board))
+                        print(dice)
+                        print(player_1)
+                        print(x)
+                        print(y)
+                        print(z)
                     assert x == approx(y)
                     assert x == approx(z)
 
                 ### the states we can end up using vectors
                 s = set()
                 vv = dict()
-                for v in vectors:
-                    key = tuple(int(x) for x in (tensor_board + v).tolist())
+                for v in vectors + tensor_board:
+                    key = tuple(int(x) for x in v[:-1].tolist())
                     vv[key] = v
                     s.add(key)
 
@@ -135,15 +145,14 @@ def test_game_play():
                 assert mmm == moves
 
                 if moves:
-                    i = torch.randint(0, len(moves), (1,)).item()
+                    i = torch.randint(0, len(moves), (1,))[0]
                     move = moves[i]
                 else:
                     move = ()
 
                 state = bck.next(state, move)
                 (x, _, _) = state
-                vector_move = vv[tuple(x)]
-                tensor_board = tensor_board + vector_move
+                tensor_board = torch.unsqueeze(vv[tuple(x)], dim=0)
 
 
 if __name__ == "__main__":

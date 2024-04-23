@@ -32,6 +32,9 @@ class Donecheck:
         self.n1_neg = self.n1_neg.to(device=device)
 
     def check(self, board):
+        (_, n) = board.size()
+        assert n == 27
+        board = board[:, :26]
         a = maximum(board, self.zero)
         a_count = matmul(a, self.one_column)
         sign_a_count = minimum(a_count, self.n1)

@@ -59,7 +59,7 @@ class MoveTensors:
 
     def movesies(self, board, xs, short_circuit=True):
         (_, _, _, move_vectors) = self.noop
-        board = board.unsqueeze(dim=0)
+        (m, n) = board.size()
         for _, lower, upper, vector in xs:
             m = vector.size()[0]
             n = move_vectors.size()[0]
@@ -84,7 +84,10 @@ class MoveTensors:
         x = (self.singles_player_1 if player_1 else self.singles_player_2)[d - 1]
         return self.movesies(board, [x, x, x, x], short_circuit=True)
 
-    def compute_move_vectors(self, state):
+    def compute_move_vectors_old(
+        self,
+        state,
+    ):
         (board, player_1, (d1, d2)) = state
         if d1 == d2:
             return self.dubsies(board, player_1, d1)
@@ -106,3 +109,14 @@ class MoveTensors:
             return d
         (_, _, _, move_vectors) = self.noop
         return move_vectors
+
+    def compute_move_vectors(self, board, dice):
+        player_1 = board[0][26]
+        assert board.size() == (1, 27), board.size()
+        vs = self.compute_move_vectors_old((board[:, :26], player_1, dice))
+        (n, m) = vs.size()
+        assert m == 26
+        next_player = (1 - 2 * player_1).unsqueeze(dim=0).expand(n, 1)
+        result = torch.cat((vs, next_player), dim=1)
+        assert result.size() == (n, 27)
+        return result

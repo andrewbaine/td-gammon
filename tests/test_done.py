@@ -84,7 +84,7 @@ def dc():
 def test(bck, sbr, dc, t):
     player_1 = t.player_1_color == t.player
     board = backgammon.from_str(t.board, player_1_color=t.player_1_color)
-    tensor_board = torch.tensor(board, dtype=torch.float)
+    tensor_board = torch.tensor([board + [1 if player_1 else 0]], dtype=torch.float)
     state = (board, player_1, (0, 0))
     done = bck.done(state)
     done_slow_but_right = sbr.done(state)

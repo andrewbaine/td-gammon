@@ -1,6 +1,3 @@
-import sys
-import random
-
 import torch
 
 import backgammon_env
@@ -18,59 +15,40 @@ class RandomAgent(Agent):
         ms = self.bck.available_moves(state)
         if not ms:
             return None
-        i = random.randint(0, len(ms) - 1)
+        i = torch.randint(0, len(ms) - 1, (1,))[0]
         return ms[i]
 
 
 class OnePlyAgent(Agent):
-    def __init__(self, nn, move_tensors, encoder, utility):
+    def __init__(self, nn, move_tensors):
         self.nn = nn
-        self.utility = utility
-        self.encoder = encoder
         self.move_tensors = move_tensors
 
-    def f(self, tes):
-        vs = self.nn(tes)
-        y = torch.softmax(vs, dim=1)
-        y = torch.matmul(y, self.utility)
-        return y
+    def evaluate(self, board):
+        (_, n) = board.size()
+        assert n == 27
+        return self.nn(board)
 
-    def evaluate(self, state):
-        (board, player_1, _) = state
-        board = board.expand(size=(1, -1))
-        te = self.encoder.encode(board, player_1)
-        return self.f(te)
-
-    def next(self, state):
-        (board, player_1, _) = state
-        move_vectors = self.move_tensors.compute_move_vectors(state)
+    def next(self, board, dice):
+        move_vectors = self.move_tensors.compute_move_vectors(board, dice)
         next_states = torch.add(move_vectors, board)
-        tesauro_encoded = self.encoder.encode(next_states, not player_1)
-        utilities = self.f(tesauro_encoded)
-        index = (torch.argmax if player_1 else torch.argmin)(utilities)
+        (_, n) = next_states.size()
+        assert n == 27
+        utilities = self.evaluate(next_states)
+        us = (2 * (board[:, [26]].unsqueeze(1)) - 1) * utilities
+        index = torch.argmax(us)
         utility_next = utilities[index]
         board_next = next_states[index]
         return (utility_next, board_next)
 
-    def decide_action(self, state, device):
+    def decide_action(self, state, dice):
         state_old = state
-        (board, player_1, dice) = state
+        (_, board_next) = self.next(state, dice)
 
-        board = torch.tensor(board, dtype=torch.float, device=device)
-        state = (board, player_1, dice)
-
-        (move_vectors) = self.move_tensors.compute_move_vectors(state)
-        next_states = torch.add(move_vectors, board)
-        te = self.encoder.encode(next_states, not player_1)
-        utilities = self.f(te)
-
-        index = (torch.argmax if player_1 else torch.argmin)(utilities)
-
-        bbb = [int(x) for x in (move_vectors[index] + board).tolist()]
+        bbb = [int(x) for x in board_next.tolist()[:26]]
         bck = backgammon_env.Backgammon()
         for m in bck.available_moves(state_old):
-            (board, dice, player_1) = bck.next(state_old, m)
-            print("comparing {a} {b}".format(a=board, b=bbb), file=sys.stderr)
+            (board, _, _) = bck.next((state_old[0:26], state_old[26], dice), m)
             if board == bbb:
                 return m
         assert False

@@ -250,4 +250,5 @@ def simple_baine_encoding(state):
     w = tesauro_encode(state)
     assert len(t) == 192, len(t)
     assert len(w) == 198, len(t)
+    print(w[-6:])
     return w + t

@@ -15,30 +15,38 @@ def first_roll():
             return (d1, d2)
 
 
+import backgammon
+
+
 class TD:
 
-    def __init__(self, board, move_checker, agent, eligibility_trace):
-        self.board = board
-        self.move_checker = move_checker
+    def __init__(self, done_checker, agent, eligibility_trace):
+        self.starting_position = torch.tensor(
+            backgammon.make_board() + [0], dtype=torch.float
+        )
+        self.done_checker = done_checker
         self.agent = agent
         self.eligibility_trace = eligibility_trace
 
     def s0(self):
         (d1, d2) = first_roll()
-        player_1 = d1 > d2
-        return (self.board, player_1, (d1, d2))
+        player_1 = 1 if d1 > d2 else 0
+        self.starting_position[26] = player_1
+        return (self.starting_position, (d1, d2))
 
     def episode(self):
         # https://medium.com/clique-org/td-gammon-algorithm-78a600b039bb
-        state = self.s0()
+        (board, dice) = self.s0()
         for i in count():
-            (board, player_1, _) = state
-            v = self.agent.evaluate(state)
-            done = self.move_checker.check(board)
+            board = board.unsqueeze(dim=0)
+            v = self.agent.evaluate(board)
+            done = self.done_checker.check(board)
             if done:
                 self.eligibility_trace.update(v, done)
                 return (i, done)
             with torch.no_grad():
-                (v_next, board_next) = self.agent.next(state)
+                (v_next, board_next) = self.agent.next(board, dice)
             self.eligibility_trace.update(v, v_next)
-            state = (board_next, not player_1, roll())
+            board = board_next
+            v = v_next
+            dice = roll()

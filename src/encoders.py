@@ -149,7 +149,7 @@ class OneHot(torch.nn.Module):
         return y
 
 
-class Tesauro(OneHot):
+class TesauroOneHot(OneHot):
     def __init__(self):
         buckets: List[List[Tuple[int, int, float]]] = []
         buckets.append([(-1, -16, 0.5)])
@@ -168,3 +168,70 @@ class Tesauro(OneHot):
             )
         buckets.append([(1, 16, 1.0 / 0.5)])
         super().__init__(buckets)
+
+
+class GreatestBarrierBuckets(OneHot):
+    def __init__(self):
+        buckets = []
+        for i in range(0, 24):
+            bucket = []
+            buckets.append(bucket)
+            bucket.append((1, 2, 1.0))
+            bucket.append((-1, -2, 1.0))
+            if i < (24 - 1):
+                bucket.append((2, 3, 1.0))
+            if i > 0:
+                bucket.append((-2, -3, 1.0))
+            if i < (24 - 2):
+                bucket.append((3, 8, 0.5))
+            if i > 1:
+                bucket.append((-3, -8, 0.5))
+        super().__init__(buckets)
+
+
+class Baine(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.tesauro = TesauroOneHot()
+        self.greatest_barrier = GreatestBarrier()
+        self.greatest_barrier_buckets = GreatestBarrierBuckets()
+
+    def forward(self, state):
+        (_, n) = state.size()
+        assert n == 27
+        r = self.tesauro(state[:, 0:26])
+        s = self.greatest_barrier(state[:, 1:25])
+        t = self.greatest_barrier_buckets(s)
+        player_bit = state[:, 26:27]
+        return torch.cat((r, t, player_bit), dim=1)
+
+
+class Tesauro(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.tesauro = TesauroOneHot()
+
+    def forward(self, state):
+        (_, n) = state.size()
+        assert n == 27
+        r = self.tesauro(state)
+        player_bit = state[:, 26:27]
+        return torch.cat((r, player_bit), dim=1)
+
+
+class Evaluator(torch.nn.Module):
+    def __init__(self, encoder, network, utility):
+        super().__init__()
+        self.encoder = encoder
+        self.network = network
+        self.utility = utility
+
+    def forward(self, x):
+        a = self.encoder(x)
+        b = self.network(a)
+        print("before softmax", b)
+        c = torch.softmax(b, dim=1)
+        print("after softmax", c)
+        d = torch.matmul(c, self.utility)
+        print("after utility", d)
+        return d
