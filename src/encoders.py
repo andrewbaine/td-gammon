@@ -224,14 +224,18 @@ class Evaluator(torch.nn.Module):
         super().__init__()
         self.encoder = encoder
         self.network = network
-        self.utility = utility
+        assert utility.size() == (4,) or utility.size() == (6,)
+        self.utility = utility.unsqueeze(1)
 
     def forward(self, x):
+        (m, n) = x.size()
+        assert m > 0
+        assert n == 27
         a = self.encoder(x)
         b = self.network(a)
-        print("before softmax", b)
+        assert b.size() == (m, self.utility.size()[0])
         c = torch.softmax(b, dim=1)
-        print("after softmax", c)
+        assert c.size() == (m, self.utility.size()[0])
         d = torch.matmul(c, self.utility)
-        print("after utility", d)
+        assert d.size() == (m, 1)
         return d

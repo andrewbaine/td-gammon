@@ -5,9 +5,9 @@ import slow_but_right
 
 
 def test_starting_board():
-    t = encoders.Tesauro()
-    board = torch.tensor(backgammon.make_board(), dtype=torch.float)
-    encoded = t(board).tolist()
+    t = encoders.TesauroOneHot()
+    board = torch.tensor([backgammon.make_board()], dtype=torch.float)
+    encoded = t(board).tolist()[0]
     tesauro_encoded = slow_but_right.tesauro_encode(
         (backgammon.make_board(), True, (0, 0))
     )

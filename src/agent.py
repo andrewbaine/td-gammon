@@ -1,22 +1,22 @@
 import torch
 
-import backgammon_env
-
 
 class Agent:
     pass
 
 
 class RandomAgent(Agent):
-    def __init__(self):
-        self.bck = backgammon_env.Backgammon()
+    def __init__(self, move_tensors):
+        self.move_tensors = move_tensors
 
-    def decide_action(self, state):
-        ms = self.bck.available_moves(state)
-        if not ms:
-            return None
-        i = torch.randint(0, len(ms) - 1, (1,))[0]
-        return ms[i]
+    def next(self, board, dice):
+        move_vectors = self.move_tensors.compute_move_vectors(board, dice)
+        next_states = torch.add(move_vectors, board)
+        (m, n) = next_states.size()
+        assert n == 27
+
+        i = torch.randint(0, m, (1,))[0]
+        return (0.5, next_states[i])
 
 
 class OnePlyAgent(Agent):
@@ -30,25 +30,21 @@ class OnePlyAgent(Agent):
         return self.nn(board)
 
     def next(self, board, dice):
+        (m, n) = board.size()
+        assert m > 0
+        assert n == 27
         move_vectors = self.move_tensors.compute_move_vectors(board, dice)
         next_states = torch.add(move_vectors, board)
         (_, n) = next_states.size()
         assert n == 27
         utilities = self.evaluate(next_states)
-        us = (2 * (board[:, [26]].unsqueeze(1)) - 1) * utilities
+        player_bit = board[:, [26]]
+        us = 2 * player_bit - 1
+        us = us * utilities
+
         index = torch.argmax(us)
         utility_next = utilities[index]
-        board_next = next_states[index]
+        board_next = next_states[index].unsqueeze(0)
+        assert utility_next.size() == (m,), utility_next.size()
+        assert board_next.size() == (m, 27), board_next.size()
         return (utility_next, board_next)
-
-    def decide_action(self, state, dice):
-        state_old = state
-        (_, board_next) = self.next(state, dice)
-
-        bbb = [int(x) for x in board_next.tolist()[:26]]
-        bck = backgammon_env.Backgammon()
-        for m in bck.available_moves(state_old):
-            (board, _, _) = bck.next((state_old[0:26], state_old[26], dice), m)
-            if board == bbb:
-                return m
-        assert False

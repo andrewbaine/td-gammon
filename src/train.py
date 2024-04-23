@@ -112,7 +112,6 @@ def train(args):
 
 
 if __name__ == "__main__":
-    print("hi there")
     parser = argparse.ArgumentParser()
     init_parser(parser)
     args = parser.parse_args()

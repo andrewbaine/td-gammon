@@ -5,12 +5,27 @@ import regex
 
 import gnubg_codec
 
+import backgammon_env
+
 basicConfig(format="%(message)s")
 logger = getLogger(__name__)
 logger.setLevel(INFO)
 
 position_regex = regex.compile(r"^\s*GNU Backgammon  Position ID: (\S*)\s*$")
 match_regex = regex.compile(r"^\s*Match ID   : (\S*)\s*$")
+
+
+def decide_action(self, state, dice):
+    state_old = state
+    (_, board_next) = self.next(state, dice)
+
+    bbb = [int(x) for x in board_next.tolist()[:26]]
+    bck = backgammon_env.Backgammon()
+    for m in bck.available_moves(state_old):
+        (board, _, _) = bck.next((state_old[0:26], state_old[26], dice), m)
+        if board == bbb:
+            return m
+    assert False
 
 
 def response(position_id, match_id, agent):
