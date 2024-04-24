@@ -29,10 +29,12 @@ then
     echo "set MODEL variable"
     exit 1
 fi
+
+force_cuda=""
+declare -a gpu_args
 if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
-    GPU_ARGS="--gpus all";
-else
-    GPU_ARGS="";
+    read -r -a gpu_args < <(echo "--gpus all")
+    force_cuda="--force-cuda"
 fi
 
 WD=$(pwd)
@@ -47,8 +49,8 @@ PY_OUT=$(mktemp ${LOGS_DIR}/py.out.XXXXXX)
 
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-COMMAND_1="evaluate --load-model /var/model/$(basename ${MODEL}) --games $GAMES"
-docker run --rm ${GPU_ARGS} \
+COMMAND_1="evaluate ${force_cuda} --load-model /var/model/$(basename ${MODEL}) --games $GAMES"
+docker run --rm "${gpu_args[@]}" \
        --mount type=bind,src=${WD}/$(dirname ${MODEL}),target=/var/model \
        -i td-gammon $COMMAND_1 \
        >${PY_OUT} \

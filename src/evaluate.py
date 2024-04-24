@@ -8,6 +8,9 @@ from td_gammon import agent, backgammon, player, move_vectors, training_config, 
 
 
 def main(args):
+    device = torch.device(
+        "cuda" if (args.force_cuda or torch.cuda.is_available()) else "cpu"
+    )
 
     model_path = args.load_model
     config_path = os.path.join(Path(model_path).parent.absolute(), "config.txt")
@@ -15,9 +18,9 @@ def main(args):
 
     match config.out:
         case 4:
-            utility = encoders.utility_tensor()
+            utility = encoders.utility_tensor(device=device)
         case 6:
-            utility = encoders.backgammon_utility_tensor()
+            utility = encoders.backgammon_utility_tensor(device=device)
         case _:
             assert False
 
@@ -29,28 +32,24 @@ def main(args):
         case _:
             assert False
 
-    board = torch.tensor([backgammon.make_board() + [1]], dtype=torch.float)
+    board = torch.tensor(
+        [backgammon.make_board() + [1]], dtype=torch.float, device=device
+    )
     t = encoder(board)
     (m, n) = t.size()
     assert m == 1
 
     layers = [n, config.hidden, config.out]
-    nn: torch.nn.Sequential = encoders.layered(*layers)
+    nn: torch.nn.Sequential = encoders.layered(*layers, device=device)
     nn.load_state_dict(torch.load(model_path))
-    move_tensors = move_vectors.MoveTensors()
+    move_tensors = move_vectors.MoveTensors(device=device)
 
     device = torch.device("cpu")
-    if torch.cuda.is_available() or args.force_cuda:
-        device = torch.device("cuda")
-        nn = nn.to(device)
-        move_tensors.to_(device)
-        encoder.to_(device)
-        utility = utility.to(device)
 
     evaluator = encoders.Evaluator(encoder, nn, utility)
 
     a = agent.OnePlyAgent(evaluator, move_tensors)
-    player.play(a, args.games)
+    player.play(a, args.games, device)
 
 
 def init_parser(parser: argparse.ArgumentParser):
