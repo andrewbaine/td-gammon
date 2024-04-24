@@ -26,9 +26,9 @@ def main(args):
 
     match config.encoding:
         case "baine":
-            encoder = encoders.Baine()
+            encoder = encoders.Baine(device=device)
         case "tesauro":
-            encoder = encoders.Tesauro()
+            encoder = encoders.Tesauro(device=device)
         case _:
             assert False
 
