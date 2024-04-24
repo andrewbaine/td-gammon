@@ -44,8 +44,6 @@ def main(args):
     nn.load_state_dict(torch.load(model_path))
     move_tensors = move_vectors.MoveTensors(device=device)
 
-    device = torch.device("cpu")
-
     evaluator = encoders.Evaluator(encoder, nn, utility)
 
     a = agent.OnePlyAgent(evaluator, move_tensors)
