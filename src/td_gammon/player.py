@@ -34,7 +34,7 @@ def decide_action(agent: agent.Agent, state, dice):
     assert False
 
 
-def response(position_id, match_id, agent):
+def response(position_id, match_id, agent, device):
     position = gnubg_codec.decode_position(position_id)
     m = gnubg_codec.decode_match(match_id)
     logger.info("decoded position", position)
@@ -59,7 +59,9 @@ def response(position_id, match_id, agent):
         player_1 = False
 
         decision = decide_action(
-            agent, torch.tensor([position + [1 if player_1 else 0]]), m.dice
+            agent,
+            torch.tensor([position + [1 if player_1 else 0]], device=device),
+            m.dice,
         )
         if decision:
             tokens = ["move"]
@@ -76,7 +78,7 @@ def response(position_id, match_id, agent):
         return []
 
 
-def play(agent, n):
+def play(agent, n, device):
     print("new session {n}".format(n=n))
 
     state = (None, None)
@@ -94,6 +96,6 @@ def play(agent, n):
             next_match = m.group(1)
             if state != (next_position, next_match):
                 state = (next_position, next_match)
-                r = response(*state, agent)
+                r = response(*state, agent, device)
                 for line in r:
                     print(line)

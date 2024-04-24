@@ -48,9 +48,12 @@ done
 
 shift "$((OPTIND-1))"
 
+force_cuda=""
+
 declare -a gpu_args
 if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
     read -r -a gpu_args < <(echo "--gpus all")
+    force_cuda="--force-cuda"
 fi
 
 function train_fork {
@@ -72,6 +75,7 @@ function train_fork {
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
            td-gammon train \
+           ${force_cuda} \
            --fork "/${fork}" \
            --alpha "${alpha}" \
            --iterations "${games}" \
@@ -87,6 +91,7 @@ function train_continue {
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
            td-gammon train \
+           ${force_cuda} \
            --continue \
            --save-dir "/${continue}"
 }
@@ -124,6 +129,7 @@ function train_from_start {
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
            td-gammon train \
+           ${force_cuda} \
            --alpha "${alpha}" \
            --lambda "${lambda}" \
            --save-dir "/var/models/${model}" \

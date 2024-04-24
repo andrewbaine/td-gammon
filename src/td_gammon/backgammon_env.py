@@ -46,7 +46,7 @@ class Backgammon:
             return (board, not player_1, dice)
 
     def done(self, state: State):
-        (board, player_1, dice) = state
+        (board, player_1, _) = state
         my_checker_count = 0
         backgammoned = 0
         if player_1:

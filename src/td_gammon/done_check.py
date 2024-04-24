@@ -4,36 +4,27 @@ from torch import maximum, matmul, minimum
 
 
 class Donecheck:
-    def __init__(self):
-        self.zero = torch.tensor([0 for _ in range(26)], dtype=torch.float)
-        self.one_column = torch.tensor([[1] for _ in range(26)], dtype=torch.float)
+    def __init__(self, device=torch.device("cpu")):
+        self.zero = torch.tensor(
+            [0 for _ in range(26)], dtype=torch.float, device=device
+        )
+        self.one_column = torch.tensor(
+            [[1] for _ in range(26)], dtype=torch.float, device=device
+        )
 
         self.a_backgammoned = torch.tensor(
-            [[1 if i > 18 else 0] for i in range(26)], dtype=torch.float
+            [[1 if i > 18 else 0] for i in range(26)], dtype=torch.float, device=device
         )
         self.b_backgammoned = torch.tensor(
-            [[-1 if i < 7 else 0] for i in range(26)], dtype=torch.float
+            [[-1 if i < 7 else 0] for i in range(26)], dtype=torch.float, device=device
         )
-        self.fifteen = torch.tensor([[15]], dtype=torch.float)
-        self.fifteen_negated = torch.tensor([[-15]], dtype=torch.float)
-        self.n0 = torch.tensor([[0]], dtype=torch.float)
-        self.n1 = torch.tensor([[1]], dtype=torch.float)
+        self.fifteen = torch.tensor([[15]], dtype=torch.float, device=device)
+        self.fifteen_negated = torch.tensor([[-15]], dtype=torch.float, device=device)
+        self.n0 = torch.tensor([[0]], dtype=torch.float, device=device)
+        self.n1 = torch.tensor([[1]], dtype=torch.float, device=device)
         self.n1_neg = self.n1.neg()
 
-    def to_(self, device):
-        self.zero = self.zero.to(device=device)
-        self.one_column = self.one_column.to(device=device)
-        self.a_backgammoned = self.a_backgammoned.to(device=device)
-        self.b_backgammoned = self.b_backgammoned.to(device=device)
-        self.fifteen = self.fifteen.to(device=device)
-        self.fifteen_negated = self.fifteen_negated.to(device=device)
-        self.n0 = self.n0.to(device=device)
-        self.n1 = self.n1.to(device=device)
-        self.n1_neg = self.n1_neg.to(device=device)
-
     def check(self, board):
-        (_, n) = board.size()
-        assert n == 27
         board = board[:, :26]
         a = maximum(board, self.zero)
         a_count = matmul(a, self.one_column)

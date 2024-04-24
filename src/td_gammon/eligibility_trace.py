@@ -2,12 +2,13 @@ import torch
 
 
 class ElibilityTrace:
-    def __init__(self, nn, α, λ):
+    def __init__(self, nn, α, λ, device=torch.device("cpu")):
         self.α = α
         self.λ = λ
         self.nn = nn
         self.et = [
-            (w, torch.zeros_like(w, requires_grad=False)) for w in nn.parameters()
+            (w, torch.zeros_like(w, requires_grad=False, device=device))
+            for w in nn.parameters()
         ]
 
     def update(self, v_predicted, v_actual):

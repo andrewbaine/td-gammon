@@ -1,6 +1,5 @@
 from itertools import count
 import torch
-from . import backgammon
 
 
 def roll():
@@ -18,10 +17,8 @@ def first_roll():
 
 class TD:
 
-    def __init__(self, done_checker, agent, eligibility_trace):
-        self.starting_position = torch.tensor(
-            [backgammon.make_board() + [0]], dtype=torch.float
-        )
+    def __init__(self, done_checker, agent, eligibility_trace, starting_position):
+        self.starting_position = starting_position
         self.done_checker = done_checker
         self.agent = agent
         self.eligibility_trace = eligibility_trace

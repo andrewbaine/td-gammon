@@ -2,20 +2,18 @@ import itertools
 from typing import List, Tuple
 
 import torch
-import torch
 import torch.nn as nn
 
 
-def tensor(data):
-    return torch.tensor(data, dtype=torch.float, requires_grad=False)
-
-
-def layered(*layers):
+def layered(*layers, device=torch.device("cpu")):
     layers = list(
         itertools.chain(
             *[
                 (
-                    [nn.Linear(n, layers[i + 1]), nn.Sigmoid()]
+                    [
+                        nn.Linear(n, layers[i + 1], device=device),
+                        nn.Sigmoid(),
+                    ]
                     if i < (len(layers) - 1)
                     else []
                 )
@@ -26,19 +24,19 @@ def layered(*layers):
     return nn.Sequential(*layers)
 
 
-def utility_tensor():
-    return torch.tensor([-2, -1, 1, 2], dtype=torch.float)
+def utility_tensor(device=torch.device("cpu")):
+    return torch.tensor([-2, -1, 1, 2], dtype=torch.float, device=device)
 
 
-def backgammon_utility_tensor():
-    return torch.tensor([-3, -2, -1, 1, 2, 3], dtype=torch.float)
+def backgammon_utility_tensor(device=torch.device("cpu")):
+    return torch.tensor([-3, -2, -1, 1, 2, 3], dtype=torch.float, device=device)
 
 
 class TurnEncoder(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, device=torch.device("cpu")):
         super().__init__()
-        self.one = tensor([1])
-        self.two = tensor([2])
+        self.one = torch.tensor([1], dtype=torch.float, device=device)
+        self.two = torch.tensor([2], dtype=torch.float, device=device)
 
     def forward(self, t):
         assert torch.all(torch.logical_or(t == -1, t == 1))
@@ -47,7 +45,7 @@ class TurnEncoder(torch.nn.Module):
         return y
 
 
-def barrier_matrix(b):
+def barrier_matrix(b, device):
     ms = []
 
     scales = [
@@ -64,29 +62,33 @@ def barrier_matrix(b):
             for j in range(24):
                 x.append(1 if (-1 < ((i - j) if b else (j - i)) < n) else 0)
     return (
-        torch.tensor(ms, dtype=torch.float),
-        torch.tensor(scales, dtype=torch.float),
+        torch.tensor(ms, dtype=torch.float, device=device),
+        torch.tensor(scales, dtype=torch.float, device=device),
     )
 
 
 class Barrier(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, device=torch.device("cpu")):
         super().__init__()
         self.barrier_additions = torch.tensor(
-            [[n - 1 for _ in range(24)] for n in range(1, 8)], dtype=torch.float
+            [[n - 1 for _ in range(24)] for n in range(1, 8)],
+            dtype=torch.float,
+            device=device,
         )
         (self.player_1_barrier_matrix, self.barrier_scales_player_1) = barrier_matrix(
-            True
+            True, device
         )
         (self.player_2_barrier_matrix, self.barrier_scales_player_2) = barrier_matrix(
-            False
+            False, device
         )
-        self.zero24 = torch.tensor([0 for _ in range(24)], dtype=torch.float)
-        self.one24 = torch.tensor([1 for _ in range(24)], dtype=torch.float)
+        self.zero24 = torch.tensor(
+            [0 for _ in range(24)], dtype=torch.float, device=device
+        )
+        self.one24 = torch.tensor(
+            [1 for _ in range(24)], dtype=torch.float, device=device
+        )
 
     def forward(self, board):
-        #        if board.shape == (26,):
-        #            board = board.unsqueeze(0)
         (n, _) = board.shape
 
         additions = self.barrier_additions
@@ -114,14 +116,15 @@ class Barrier(torch.nn.Module):
 
 
 class GreatestBarrier(Barrier):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, device=torch.device("cpu")):
+        super().__init__(device=device)
         self.zeros_to_the_right = torch.tensor(
             [
                 [1 if i == j else -1 if j == i - 1 else 0 for j in range(24)]
                 for i in range(24)
             ],
             dtype=torch.float,
+            device=device,
         )
         self.zeros_to_the_left = torch.tensor(
             [
@@ -129,6 +132,7 @@ class GreatestBarrier(Barrier):
                 for i in range(24)
             ],
             dtype=torch.float,
+            device=device,
         )
 
     def forward(self, x):
@@ -137,7 +141,7 @@ class GreatestBarrier(Barrier):
         # 3, 2, 1 => 3, 0, 0
         s = torch.where(r >= y, y, self.zero24)
 
-        #
+        # -1, -2, -3 => 0, 0, -3
         y2 = torch.minimum(x, self.zero24)
         r2 = torch.matmul(y2, self.zeros_to_the_right)
         s2 = torch.where(r2 <= y2, y2, self.zero24)
@@ -145,7 +149,7 @@ class GreatestBarrier(Barrier):
 
 
 class OneHot(torch.nn.Module):
-    def __init__(self, buckets):
+    def __init__(self, buckets, device):
         super().__init__()
         weight = []
         bias = []
@@ -161,12 +165,12 @@ class OneHot(torch.nn.Module):
                         scale.append(s)
                         bias.append((1 - a) if a > 0 else (a + 1))
                         caps.append(1 + abs(b - a))
-        self.m = tensor(weight)
-        self.b = tensor(bias)
+        self.m = torch.tensor(weight, dtype=torch.float, device=device)
+        self.b = torch.tensor(bias, dtype=torch.float, device=device)
 
         self.zeros = torch.zeros_like(self.b)
-        self.caps = tensor(caps)
-        self.scale = tensor(scale).diag()
+        self.caps = torch.tensor(caps, dtype=torch.float, device=device)
+        self.scale = torch.tensor(scale, dtype=torch.float, device=device).diag()
 
     def forward(self, x):
         y = torch.matmul(x, self.m) + self.b
@@ -177,7 +181,7 @@ class OneHot(torch.nn.Module):
 
 
 class TesauroOneHot(OneHot):
-    def __init__(self):
+    def __init__(self, device=torch.device("cpu")):
         buckets: List[List[Tuple[int, int, float]]] = []
         buckets.append([(-1, -16, 0.5)])
         for _ in range(24):
@@ -194,11 +198,11 @@ class TesauroOneHot(OneHot):
                 ]
             )
         buckets.append([(1, 16, 1.0 / 0.5)])
-        super().__init__(buckets)
+        super().__init__(buckets, device=device)
 
 
 class GreatestBarrierBuckets(OneHot):
-    def __init__(self):
+    def __init__(self, device=torch.device("cpu")):
         buckets = []
         for i in range(0, 24):
             bucket = []
@@ -213,15 +217,15 @@ class GreatestBarrierBuckets(OneHot):
                 bucket.append((3, 8, 0.5))
             if i > 1:
                 bucket.append((-3, -8, 0.5))
-        super().__init__(buckets)
+        super().__init__(buckets, device=device)
 
 
 class Baine(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, device=torch.device("cpu")):
         super().__init__()
-        self.tesauro = TesauroOneHot()
-        self.greatest_barrier = GreatestBarrier()
-        self.greatest_barrier_buckets = GreatestBarrierBuckets()
+        self.tesauro = TesauroOneHot(device=device)
+        self.greatest_barrier = GreatestBarrier(device=device)
+        self.greatest_barrier_buckets = GreatestBarrierBuckets(device=device)
 
     def forward(self, state):
         (_, n) = state.size()
@@ -234,9 +238,9 @@ class Baine(torch.nn.Module):
 
 
 class Tesauro(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, device=torch.device("cpu")):
         super().__init__()
-        self.tesauro = TesauroOneHot()
+        self.tesauro = TesauroOneHot(device=device)
 
     def forward(self, state):
         (_, n) = state.size()

@@ -10,6 +10,7 @@ import torch
 
 from td_gammon import (
     agent,
+    backgammon,
     done_check,
     eligibility_trace,
     move_vectors,
@@ -27,7 +28,7 @@ def init_parser(parser):
     parser.add_argument(
         "--encoding", type=str, choices=["baine", "tesauro"], default="baine"
     )
-    parser.add_argument("--force-cuda", type=bool, default=False)
+    parser.add_argument("--force-cuda", action="store_true")
     parser.add_argument("--alpha", type=float, dest="α")
     parser.add_argument("--lambda", type=float, dest="λ")
     parser.add_argument("--continue", action="store_true", dest="cont")
@@ -36,6 +37,9 @@ def init_parser(parser):
 
 def train(args):
     logging.basicConfig(encoding="utf-8", level=logging.INFO)
+    device = torch.device(
+        "cuda" if (args.force_cuda or torch.cuda.is_available()) else "cpu"
+    )
     config_path = os.path.join(args.save_dir, "config.txt")
     start = 0
     starting_model = None
@@ -73,35 +77,43 @@ def train(args):
         os.makedirs(args.save_dir, exist_ok=False)
         training_config.store(config, config_path)
 
-    board: torch.Tensor = torch.tensor([[0 for _ in range(27)]], dtype=torch.float)
+    board: torch.Tensor = torch.tensor(
+        [[0 for _ in range(27)]], dtype=torch.float, device=device
+    )
     match config.out:
         case 4:
-            utility = encoders.utility_tensor()
+            utility = encoders.utility_tensor(device=device)
         case 6:
-            utility = encoders.backgammon_utility_tensor()
+            utility = encoders.backgammon_utility_tensor(device=device)
         case _:
             assert False
 
     match config.encoding:
         case "baine":
-            encoder = encoders.Baine()
+            encoder = encoders.Baine(device=device)
         case "tesauro":
-            encoder = encoders.Tesauro()
+            encoder = encoders.Tesauro(device=device)
         case _:
             assert False
     layers = [encoder(board).numel(), config.hidden, config.out]
-    nn: torch.nn.Sequential = encoders.layered(*layers)
+    nn: torch.nn.Sequential = encoders.layered(*layers, device=device)
     if start:
         assert starting_model
         nn.load_state_dict(torch.load(starting_model))
 
-    move_checker = done_check.Donecheck()
-    move_tensors = move_vectors.MoveTensors()
+    move_checker = done_check.Donecheck(device=device)
+    move_tensors = move_vectors.MoveTensors(device=device)
 
-    et = eligibility_trace.ElibilityTrace(nn, α=config.α, λ=config.λ)
+    et = eligibility_trace.ElibilityTrace(nn, α=config.α, λ=config.λ, device=device)
     evaluator = encoders.Evaluator(encoder, nn, utility)
     a = agent.OnePlyAgent(evaluator, move_tensors)
-    temporal_difference = td.TD(move_checker, a, et)
+
+    temporal_difference = td.TD(
+        move_checker,
+        a,
+        et,
+        torch.tensor([backgammon.make_board() + [0]], dtype=torch.float, device=device),
+    )
 
     for i in range(start, config.iterations):
         if i % 1000 == 0:

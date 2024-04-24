@@ -107,7 +107,7 @@ def noop():
     return [([], [-15 for _ in r()], [16 for _ in r()], [0 for _ in r()])]
 
 
-def tensorize(x):
+def tensorize(x, device):
     moves_tensor = []
     lower_bounds = []
     upper_bounds = []
@@ -133,25 +133,25 @@ def tensorize(x):
         upper_bounds.append(high)
         vectors_tensor.append(vector)
     return (
-        tensor(moves_tensor, dtype=torch.float),
-        tensor(lower_bounds, dtype=torch.float),
-        tensor(upper_bounds, dtype=torch.float),
-        tensor(vectors_tensor, dtype=torch.float),
+        tensor(moves_tensor, dtype=torch.float, device=device),
+        tensor(lower_bounds, dtype=torch.float, device=device),
+        tensor(upper_bounds, dtype=torch.float, device=device),
+        tensor(vectors_tensor, dtype=torch.float, device=device),
     )
 
 
-def transform():
+def transform(device):
     rows = []
     for i in range(26):
         col = [-1 if ((25 - j) == i) else 0 for j in range(26)]
         rows.append(col)
-    return torch.tensor(rows, dtype=torch.float)
+    return torch.tensor(rows, dtype=torch.float, device=device)
 
 
-def for_p2(x):
+def for_p2(x, device):
     (moves, low, high, vector) = x
-    t = transform()
-    one = torch.tensor([1 for _ in range(26)], dtype=torch.float)
+    t = transform(device)
+    one = torch.tensor([1 for _ in range(26)], dtype=torch.float, device=device)
     v = torch.matmul(vector, t)
     h = torch.matmul(low, t).add(one)
     l = torch.matmul(high, t).add(one)
@@ -159,40 +159,13 @@ def for_p2(x):
 
 
 class MoveTensors:
-    def __init__(self):
+    def __init__(self, device=torch.device("cpu")):
 
-        singles = [tensorize(all_moves_die(d)) for d in range(1, 7)]
+        singles = [tensorize(all_moves_die(d), device=device) for d in range(1, 7)]
 
         self.singles_player_1 = singles
-        self.singles_player_2 = [for_p2(x) for x in singles]
-        self.noop = tensorize(noop())
-
-    def to_(self, device):
-        self.singles_player_1 = [
-            (
-                m.to(device=device),
-                l.to(device=device),
-                u.to(device=device),
-                v.to(device=device),
-            )
-            for (m, l, u, v) in self.singles_player_1
-        ]
-        self.singles_player_2 = [
-            (
-                m.to(device=device),
-                l.to(device=device),
-                u.to(device=device),
-                v.to(device=device),
-            )
-            for (m, l, u, v) in self.singles_player_2
-        ]
-        (m, l, u, v) = self.noop
-        self.noop = (
-            m.to(device=device),
-            l.to(device=device),
-            u.to(device=device),
-            v.to(device=device),
-        )
+        self.singles_player_2 = [for_p2(x, device=device) for x in singles]
+        self.noop = tensorize(noop(), device=device)
 
     def movesies(self, board, xs, short_circuit=True):
         (_, _, _, move_vectors) = self.noop
