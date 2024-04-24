@@ -4,10 +4,9 @@ import random
 import pytest
 import torch
 
-import backgammon
-import backgammon_env
-import done_check
-import slow_but_right
+from td_gammon import backgammon, backgammon_env, done_check
+
+from . import slow_but_right
 
 Case = namedtuple(
     "Case", ["board", "player_1_color", "player", "done", "comment"], defaults=[""]

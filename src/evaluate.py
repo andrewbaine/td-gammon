@@ -4,14 +4,7 @@ from pathlib import Path
 
 import torch
 
-import agent
-import backgammon
-import network
-import player
-import read_move_tensors
-import training_config
-
-import encoders
+from td_gammon import agent, backgammon, player, move_vectors, training_config, encoders
 
 
 def main(args):
@@ -22,9 +15,9 @@ def main(args):
 
     match config.out:
         case 4:
-            utility = network.utility_tensor()
+            utility = encoders.utility_tensor()
         case 6:
-            utility = network.backgammon_utility_tensor()
+            utility = encoders.backgammon_utility_tensor()
         case _:
             assert False
 
@@ -36,15 +29,15 @@ def main(args):
         case _:
             assert False
 
-    board = torch.tensor(backgammon.make_board() + [1], dtype=torch.float)
+    board = torch.tensor([backgammon.make_board() + [1]], dtype=torch.float)
     t = encoder(board)
     (m, n) = t.size()
     assert m == 1
 
     layers = [n, config.hidden, config.out]
-    nn: torch.nn.Sequential = network.layered(*layers)
+    nn: torch.nn.Sequential = encoders.layered(*layers)
     nn.load_state_dict(torch.load(model_path))
-    move_tensors = read_move_tensors.MoveTensors()
+    move_tensors = move_vectors.MoveTensors()
 
     device = torch.device("cpu")
     if torch.cuda.is_available() or args.force_cuda:

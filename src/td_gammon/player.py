@@ -3,9 +3,11 @@ import sys
 
 import regex
 
-import gnubg_codec
+import torch
 
-import backgammon_env
+from . import gnubg_codec
+
+from . import backgammon_env
 
 basicConfig(format="%(message)s")
 logger = getLogger(__name__)
@@ -14,15 +16,19 @@ logger.setLevel(INFO)
 position_regex = regex.compile(r"^\s*GNU Backgammon  Position ID: (\S*)\s*$")
 match_regex = regex.compile(r"^\s*Match ID   : (\S*)\s*$")
 
+from . import agent
 
-def decide_action(self, state, dice):
+
+def decide_action(agent: agent.Agent, state, dice):
     state_old = state
-    (_, board_next) = self.next(state, dice)
+    (_, board_next) = agent.next(state, dice)
 
-    bbb = [int(x) for x in board_next.tolist()[:26]]
+    bbb = [int(x) for x in board_next.tolist()[0][:26]]
     bck = backgammon_env.Backgammon()
-    for m in bck.available_moves(state_old):
-        (board, _, _) = bck.next((state_old[0:26], state_old[26], dice), m)
+    x = state_old.tolist()[0]
+    s = (x[0:26], bool(x[26]), dice)
+    for m in bck.available_moves(s):
+        (board, _, _) = bck.next(s, m)
         if board == bbb:
             return m
     assert False
@@ -31,7 +37,7 @@ def decide_action(self, state, dice):
 def response(position_id, match_id, agent):
     position = gnubg_codec.decode_position(position_id)
     m = gnubg_codec.decode_match(match_id)
-    logger.info(position)
+    logger.info("decoded position", position)
     logger.info(m)
     if m.gamestate != gnubg_codec.GameState.PLAYING:
         logger.info("gamestate %s", m.gamestate)
@@ -51,9 +57,10 @@ def response(position_id, match_id, agent):
         assert d2 != 0
         # its always player 2?
         player_1 = False
-        state = (position, player_1, m.dice)
 
-        decision = agent.decide_action(state)
+        decision = decide_action(
+            agent, torch.tensor([position + [1 if player_1 else 0]]), m.dice
+        )
         if decision:
             tokens = ["move"]
             for s, e in decision:

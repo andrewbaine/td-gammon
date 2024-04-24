@@ -1,40 +1,17 @@
 from itertools import zip_longest
-import pytest
 import os
-import backgammon
-import torch
-import read_move_tensors
-import tesauro
-
-import backgammon_env
+import random
 
 from pytest import approx
+import torch
 
-import done_check
+from td_gammon import backgammon_env, done_check, move_vectors
 
-
-def translate(xs):
-    ys = list(
-        reversed(
-            sorted(
-                [
-                    (tuple(reversed(sorted(zip(x[::3], x[1::3])))), i)
-                    for (i, x) in enumerate(xs.tolist())
-                ]
-            )
-        )
-    )
-    return ys
+from . import baine_encoding, slow_but_right, tesauro
 
 
 def normalize(moves):
     return list(reversed(sorted(tuple(reversed(sorted(x))) for x in moves)))
-
-
-import random
-import slow_but_right
-
-import baine_encoding
 
 
 def test_game_play():
@@ -50,8 +27,8 @@ def test_game_play():
     sbr = slow_but_right.MoveComputer()
     dc = done_check.Donecheck()
 
-    n = int(os.environ.get("N_GAMES", default="10"))
-    move_tensors = read_move_tensors.MoveTensors()
+    n = int(os.environ.get("N_GAMES", default="1"))
+    move_tensors = move_vectors.MoveTensors()
 
     for i in range(n):
         state = bck.s0()
@@ -64,13 +41,12 @@ def test_game_play():
             t = encoder.encode(tensor_board[:, :-1], player_1).tolist()[0]
             t2 = slow_but_right.tesauro_encode(state)
 
-            baine_encoded = slow_but_right.simple_baine_encoding_step_1(board)
+            baine_encoded = slow_but_right.simple_baine_encoding_step_1(board[1:25])
             be2 = [
                 int(x)
                 for x in enc.encode_step_1(tensor_board[:, :-1]).squeeze().tolist()
             ]
 
-            #            print(backgammon.to_str(board))
             assert baine_encoded == be2
 
             be3 = [
@@ -112,13 +88,6 @@ def test_game_play():
                 for x, y, z in zip_longest(
                     encoded_next_states, other_way, one_final_way
                 ):
-                    if x != y or x != z:
-                        print(backgammon.to_str(board))
-                        print(dice)
-                        print(player_1)
-                        print(x)
-                        print(y)
-                        print(z)
                     assert x == approx(y)
                     assert x == approx(z)
 

@@ -1,5 +1,6 @@
 from itertools import count
 import torch
+from . import backgammon
 
 
 def roll():
@@ -13,9 +14,6 @@ def first_roll():
         (d1, d2) = roll()
         if d1 != d2:
             return (d1, d2)
-
-
-import backgammon
 
 
 class TD:

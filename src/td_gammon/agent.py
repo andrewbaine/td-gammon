@@ -1,8 +1,13 @@
 import torch
 
+from typing import Tuple
+
 
 class Agent:
-    pass
+    def next(
+        self, board: torch.Tensor, dice: Tuple[int, int]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        assert False
 
 
 class RandomAgent(Agent):
@@ -29,7 +34,7 @@ class OnePlyAgent(Agent):
         assert n == 27
         return self.nn(board)
 
-    def next(self, board, dice):
+    def next(self, board: torch.Tensor, dice):
         (m, n) = board.size()
         assert m > 0
         assert n == 27

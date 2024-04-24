@@ -1,7 +1,7 @@
 from typing import List, Tuple, Union, Set
 import random
 
-import backgammon
+from . import backgammon
 
 State = Tuple[List[int], bool, Tuple[int, int]]
 

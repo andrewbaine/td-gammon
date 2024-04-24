@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "td_gammon"
+version = "1.0.0"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+minversion = "6.0"
+testpaths = [
+    "tests",
+]
+
+pythonpath = [
+  "."
+]

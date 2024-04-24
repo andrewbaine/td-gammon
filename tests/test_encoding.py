@@ -1,10 +1,10 @@
-import pytest
-
 from collections import namedtuple
 
+import pytest
 import torch
-import encoders
-import backgammon
+
+from td_gammon import backgammon, encoders
+from . import slow_but_right
 
 Case = namedtuple("Case", ["input", "expected", "greatest_barrier_encoding"])
 
@@ -262,6 +262,8 @@ def test_barrier_encoding(greatest_barrier_encoder, barrier_encoder, t):
     assert y.tolist() == [[float(x) for x in t.expected]]
     y = greatest_barrier_encoder(y)
     assert y.tolist() == [[float(x) for x in t.greatest_barrier_encoding]]
+    yy = slow_but_right.simple_baine_encoding_step_1(t.input)
+    assert [yy] == y.tolist()
 
 
 def test_matrix(greatest_barrier_encoder, barrier_encoder):
@@ -271,3 +273,5 @@ def test_matrix(greatest_barrier_encoder, barrier_encoder):
     assert y.tolist() == expected
     y = greatest_barrier_encoder(y)
     assert y.tolist() == [c.greatest_barrier_encoding for c in cases]
+    yy = [slow_but_right.simple_baine_encoding_step_1(t.input) for t in cases]
+    assert yy == y.tolist()

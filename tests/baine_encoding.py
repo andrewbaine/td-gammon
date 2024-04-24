@@ -1,7 +1,7 @@
 import torch
 from torch import float, logical_and, matmul, maximum, minimum, sub, tensor, where
 
-import tesauro
+from . import tesauro
 
 
 def tensor(data):

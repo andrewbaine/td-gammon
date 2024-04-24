@@ -8,14 +8,15 @@ import shutil
 
 import torch
 
-import agent
-import done_check
-import eligibility_trace
-import network
-import read_move_tensors
-import td
-import training_config
-import encoders
+from td_gammon import (
+    agent,
+    done_check,
+    eligibility_trace,
+    move_vectors,
+    td,
+    training_config,
+    encoders,
+)
 
 
 def init_parser(parser):
@@ -75,9 +76,9 @@ def train(args):
     board: torch.Tensor = torch.tensor([[0 for _ in range(27)]], dtype=torch.float)
     match config.out:
         case 4:
-            utility = network.utility_tensor()
+            utility = encoders.utility_tensor()
         case 6:
-            utility = network.backgammon_utility_tensor()
+            utility = encoders.backgammon_utility_tensor()
         case _:
             assert False
 
@@ -89,13 +90,13 @@ def train(args):
         case _:
             assert False
     layers = [encoder(board).numel(), config.hidden, config.out]
-    nn: torch.nn.Sequential = network.layered(*layers)
+    nn: torch.nn.Sequential = encoders.layered(*layers)
     if start:
         assert starting_model
         nn.load_state_dict(torch.load(starting_model))
 
     move_checker = done_check.Donecheck()
-    move_tensors = read_move_tensors.MoveTensors()
+    move_tensors = move_vectors.MoveTensors()
 
     et = eligibility_trace.ElibilityTrace(nn, α=config.α, λ=config.λ)
     evaluator = encoders.Evaluator(encoder, nn, utility)
