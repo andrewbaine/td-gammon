@@ -34,3 +34,6 @@ Profiling
 python -m cProfile -o y.prof src/train.py --encoding baine --hidden 160 --out 4 --save-dir tmp --iterations 10
 ```
 
+
+References
+http://gnu.ist.utl.pt/manual/gnubg/html_node/Introduction-to-bearoff-databases.html
