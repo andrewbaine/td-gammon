@@ -41,7 +41,7 @@ def main(args):
 
     layers = [n, config.hidden, config.out]
     nn: torch.nn.Sequential = encoders.layered(*layers, device=device)
-    nn.load_state_dict(torch.load(model_path))
+    nn.load_state_dict(torch.load(model_path, map_location=device))
     move_tensors = move_vectors.MoveTensors(device=device)
 
     evaluator = encoders.Evaluator(encoder, nn, utility)
