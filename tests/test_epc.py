@@ -29,7 +29,7 @@ cases = [
 
 @pytest.fixture
 def db():
-    with plyvel.DB("epc.test.db", create_if_missing=False) as db:
+    with plyvel.DB("epc.7.v3.db", create_if_missing=False) as db:
         yield db
 
 

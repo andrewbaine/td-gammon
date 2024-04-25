@@ -2,7 +2,6 @@ import struct
 import plyvel
 
 from td_gammon.epc import make_key
-from td_gammon import backgammon_env
 
 
 def inc(board):
@@ -40,33 +39,150 @@ def g(cache, db, board):
     return v
 
 
-def f(bck, cache, db, board):
-    # assert sum(board) == 15
+def f(cache, db, board):
     if board[0] == 15:
         return 0
-
-    board = board + [0 for _ in range(26 - len(board))]
-    # assert len(board) == 26
-
-    expectation = 0
-    ec = 0
-
+    greatest_pip = len(board) - 1
+    #    board_before = tuple(board)
+    count = 0
+    sum = 0
     for d1 in range(1, 7):
         for d2 in range(d1, 7):
-            state = (board, True, (d1, d2))
+            gp = greatest_pip
             best = None
-            for m in bck.available_moves(state):
-                (b2, _, _) = bck.next(state, m)
-                v = g(cache, db, b2)
-                if best is None or v < best:
-                    best = v
-            # assert best is not None
-            factor = 1 if d1 == d2 else 2
-            expectation += best * factor
-            ec += factor
-
-    # assert ec == 36
-    return 1 + expectation / ec
+            if d1 == d2:
+                factor = 1
+                for s1 in range(len(board) - 1, 0, -1):
+                    if board[s1] == 0:
+                        if gp == s1:
+                            gp -= 1
+                    else:
+                        #                        assert board[s1] > 0
+                        e1 = s1 - d1
+                        if e1 > 0 or (e1 == 0 and gp < 7) or gp == s1:
+                            e1 = max(e1, 0)
+                            board[s1] -= 1
+                            board[e1] += 1
+                            v = g(cache, db, board)
+                            if best is None or v < best:
+                                best = v
+                            for s2 in range(s1, 0, -1):
+                                if board[s2] == 0:
+                                    if gp == s2:
+                                        gp -= 1
+                                else:
+                                    e2 = s2 - d1
+                                    if e2 > 0 or (e2 == 0 and gp < 7) or gp == s2:
+                                        e2 = max(e2, 0)
+                                        board[s2] -= 1
+                                        board[e2] += 1
+                                        v = g(cache, db, board)
+                                        #                                        assert best is not None
+                                        if v < best:
+                                            best = v
+                                        for s3 in range(s2, 0, -1):
+                                            if board[s3] == 0:
+                                                if gp == s3:
+                                                    gp -= 1
+                                            else:
+                                                #                                                assert board[s3] > 0
+                                                e3 = s3 - d1
+                                                if (
+                                                    e3 > 0
+                                                    or (e3 == 0 and gp < 7)
+                                                    or (e3 < 0 and gp == s3)
+                                                ):
+                                                    e3 = max(e3, 0)
+                                                    board[s3] -= 1
+                                                    board[e3] += 1
+                                                    v = g(cache, db, board)
+                                                    #                                                    assert best is not None
+                                                    if v < best:
+                                                        best = v
+                                                    for s4 in range(s3, 0, -1):
+                                                        if board[s4] == 0:
+                                                            if gp == s4:
+                                                                gp -= 1
+                                                        else:
+                                                            #                                                            assert board[s4] > 0
+                                                            e4 = s4 - d1
+                                                            if (
+                                                                e4 > 0
+                                                                or (e4 == 0 and gp < 7)
+                                                                or gp == s4
+                                                            ):
+                                                                e4 = max(e4, 0)
+                                                                board[s4] -= 1
+                                                                board[e4] += 1
+                                                                v = g(
+                                                                    cache,
+                                                                    db,
+                                                                    board,
+                                                                )
+                                                                #                                                                assert best is not None
+                                                                if v < best:
+                                                                    best = v
+                                                                board[e4] -= 1
+                                                                board[s4] += 1
+                                                                gp = max(gp, s4)
+                                                    board[e3] -= 1
+                                                    board[s3] += 1
+                                                    gp = max(gp, s3)
+                                        board[e2] -= 1
+                                        board[s2] += 1
+                                        gp = max(gp, s2)
+                            board[e1] -= 1
+                            board[s1] += 1
+                            gp = max(gp, s1)
+            #                    assert tuple(board) == board_before
+            else:
+                factor = 2
+                for a, b in [(d1, d2), (d2, d1)]:
+                    gp = greatest_pip
+                    for s1 in range(len(board) - 1, 0, -1):
+                        if board[s1] == 0:
+                            if gp == s1:
+                                gp -= 1
+                        else:
+                            #                            assert board[s1] > 0
+                            e1 = s1 - a
+                            if e1 > 0 or (e1 == 0 and gp < 7) or (e1 < 0 and gp == s1):
+                                e1 = max(e1, 0)
+                                board[s1] -= 1
+                                board[e1] += 1
+                                v = g(cache, db, board)
+                                if best is None or v < best:
+                                    best = v
+                                for s2 in range(s1, 0, -1):
+                                    if board[s2] == 0:
+                                        if gp == s2:
+                                            gp -= 1
+                                    else:
+                                        #                                        assert board[s2] > 0
+                                        e2 = s2 - b
+                                        if (
+                                            e2 > 0
+                                            or (e2 == 0 and gp < 7)
+                                            or (e2 < 0 and gp == s2)
+                                        ):
+                                            e2 = max(e2, 0)
+                                            board[s2] -= 1
+                                            board[e2] += 1
+                                            v = g(cache, db, board)
+                                            #                                            assert v is not None
+                                            if v < best:
+                                                best = v
+                                            board[e2] -= 1
+                                            board[s2] += 1
+                                            gp = max(gp, s2)
+                                board[e1] -= 1
+                                board[s1] += 1
+                                gp = max(gp, s1)
+            #                        assert tuple(board) == board_before
+            #            assert best is not None
+            sum += factor * best
+            count += factor
+    return 1 + sum / count
 
 
 import random
@@ -74,13 +190,12 @@ import random
 
 def main(n, db, start, batch_size):
     cache = {}
-    bck = backgammon_env.Backgammon()
     with plyvel.DB(db, create_if_missing=True) as db:
         for board in iterations(n, start):
-            y = f(bck, cache, db, board)
+            y = f(cache, db, board)
             key = make_key(board)
             cache[key] = y
-            if random.random() < 0.0005:
+            if random.random() < 0.001:
                 print(board, "\t", list(key), "\t", y)
             if len(cache) >= batch_size:
                 with db.write_batch() as wb:
