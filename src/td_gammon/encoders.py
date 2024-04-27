@@ -1,8 +1,11 @@
 import itertools
+import struct
 from typing import List, Tuple
 
 import torch
 import torch.nn as nn
+
+from . import epc
 
 
 def layered(*layers, device=torch.device("cpu")):
@@ -248,6 +251,47 @@ class Tesauro(torch.nn.Module):
         r = self.tesauro(state)
         player_bit = state[:, 26:27]
         return torch.cat((r, player_bit), dim=1)
+
+
+class EPC(torch.nn.Module):
+    def __init__(self, db, places, device=torch.device("cpu")):
+        super().__init__()
+        self.db = db
+        self.places = places
+        self.device = device
+
+    def f(self, x):
+        a = [x if x > 0 else 0 for x in x[0:26]]
+        b = [-1 * x if x < 0 else 0 for x in reversed(x[0:26])]
+
+        result = []
+        for a in (a, b):
+            for s, e in self.places:
+                k = epc.make_key(a[s - 1 : e])
+                v = self.db.get(k)
+                assert v is not None
+                (v,) = struct.unpack("f", v)
+                result.append(v)
+        return result
+
+    def forward(self, x):
+        (m, n) = x.size()
+        assert m > 0
+        assert n == 27
+        data = [self.f([int(a) for a in x]) for x in x[:, :26].tolist()]
+        return torch.tensor(data, dtype=torch.float, device=self.device)
+
+
+class BaineEPC(torch.nn.Module):
+    def __init__(self, db, places, device) -> None:
+        super().__init__()
+        self.epc = EPC(db, places, device=device)
+        self.baine = Baine(device=device)
+
+    def forward(self, x):
+        a = self.baine(x)
+        b = self.epc(x)
+        return torch.cat((a, b), dim=1)
 
 
 class Evaluator(torch.nn.Module):

@@ -1,4 +1,6 @@
+import argparse
 import struct
+
 import plyvel
 
 from td_gammon.epc import make_key
@@ -185,34 +187,32 @@ def f(cache, db, board):
     return 1 + sum / count
 
 
-import random
-
-
 def main(n, db, start, batch_size):
     cache = {}
     with plyvel.DB(db, create_if_missing=True) as db:
+        i = 0
         for board in iterations(n, start):
             y = f(cache, db, board)
             key = make_key(board)
             cache[key] = y
-            if random.random() < 0.001:
+            if not (i % 1000):
                 print(board, "\t", list(key), "\t", y)
+            i += 1
             if len(cache) >= batch_size:
                 with db.write_batch() as wb:
                     for k, v in cache.items():
                         wb.put(k, struct.pack("f", v))
+                cache.clear()
         with db.write_batch() as wb:
             for k, v in cache.items():
                 wb.put(k, struct.pack("f", v))
 
 
-import argparse
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--pips", type=int)
     parser.add_argument("--start", type=str, default="")
-    parser.add_argument("--batch", type=int, default=10000000)
+    parser.add_argument("--batch", type=int, default=1000000)
     parser.add_argument("db", type=str)
     args = parser.parse_args()
     xs = [int(x) for x in args.start.split(",")] if args.start else []

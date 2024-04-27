@@ -1,3 +1,7 @@
+import plyvel
+from contextlib import nullcontext
+
+
 import argparse
 import glob
 import logging
@@ -26,13 +30,17 @@ def init_parser(parser):
     parser.add_argument("--save-dir", type=str, required=True)
     parser.add_argument("--out", type=int)
     parser.add_argument(
-        "--encoding", type=str, choices=["baine", "tesauro"], default="baine"
+        "--encoding",
+        type=str,
+        choices=["baine", "tesauro", "baine_epc"],
+        default="baine_epc",
     )
     parser.add_argument("--force-cuda", action="store_true")
     parser.add_argument("--alpha", type=float, dest="α")
     parser.add_argument("--lambda", type=float, dest="λ")
     parser.add_argument("--continue", action="store_true", dest="cont")
     parser.add_argument("--fork", type=str)
+    parser.add_argument("--epc-db", type=str)
 
 
 def train(args):
@@ -88,40 +96,53 @@ def train(args):
         case _:
             assert False
 
+    cm = nullcontext()
     match config.encoding:
         case "baine":
-            encoder = encoders.Baine(device=device)
+            encoder_builder = lambda ctx: encoders.Baine(device=device)
         case "tesauro":
-            encoder = encoders.Tesauro(device=device)
+            encoder_builder = lambda ctx: encoders.Tesauro(device=device)
+        case "baine_epc":
+            epc_db = args.epc_db
+            assert epc_db is not None
+            cm = plyvel.DB(epc_db, create_if_missing=False)
+            places = [(1, 7), (7, 19), (19, 26)]
+
+            encoder_builder = lambda ctx: encoders.BaineEPC(ctx, places, device=device)
         case _:
             assert False
-    layers = [encoder(board).numel(), config.hidden, config.out]
-    nn: torch.nn.Sequential = encoders.layered(*layers, device=device)
-    if start:
-        assert starting_model
-        nn.load_state_dict(torch.load(starting_model))
 
-    move_checker = done_check.Donecheck(device=device)
-    move_tensors = move_vectors.MoveTensors(device=device)
+    with cm:
+        encoder = encoder_builder(cm)
+        layers = [encoder(board).numel(), config.hidden, config.out]
+        nn: torch.nn.Sequential = encoders.layered(*layers, device=device)
+        if start:
+            assert starting_model
+            nn.load_state_dict(torch.load(starting_model))
 
-    et = eligibility_trace.ElibilityTrace(nn, α=config.α, λ=config.λ, device=device)
-    evaluator = encoders.Evaluator(encoder, nn, utility)
-    a = agent.OnePlyAgent(evaluator, move_tensors)
+        move_checker = done_check.Donecheck(device=device)
+        move_tensors = move_vectors.MoveTensors(device=device)
 
-    temporal_difference = td.TD(
-        move_checker,
-        a,
-        et,
-        torch.tensor([backgammon.make_board() + [0]], dtype=torch.float, device=device),
-    )
+        et = eligibility_trace.ElibilityTrace(nn, α=config.α, λ=config.λ, device=device)
+        evaluator = encoders.Evaluator(encoder, nn, utility)
+        a = agent.OnePlyAgent(evaluator, move_tensors)
 
-    for i in range(start, config.iterations):
-        if i % 1000 == 0:
-            filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
-            torch.save(nn.state_dict(), f=filename)
-        temporal_difference.episode()
-    filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
-    torch.save(nn.state_dict(), f=filename)
+        temporal_difference = td.TD(
+            move_checker,
+            a,
+            et,
+            torch.tensor(
+                [backgammon.make_board() + [0]], dtype=torch.float, device=device
+            ),
+        )
+
+        for i in range(start, config.iterations):
+            if i % 1000 == 0:
+                filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
+                torch.save(nn.state_dict(), f=filename)
+            temporal_difference.episode()
+        filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
+        torch.save(nn.state_dict(), f=filename)
 
 
 if __name__ == "__main__":

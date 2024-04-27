@@ -1,3 +1,4 @@
+import plyvel
 from collections import namedtuple
 
 import pytest
@@ -275,3 +276,27 @@ def test_matrix(greatest_barrier_encoder, barrier_encoder):
     assert y.tolist() == [c.greatest_barrier_encoding for c in cases]
     yy = [slow_but_right.simple_baine_encoding_step_1(t.input) for t in cases]
     assert yy == y.tolist()
+
+
+@pytest.fixture
+def db():
+    with plyvel.DB("epc.12.v3.db", create_if_missing=False) as db:
+        yield db
+
+
+def test_epc(db):
+    board = backgammon.make_board()
+    places = [(1, 7), (7, 19), (19, 26)]
+    baine_epc = encoders.EPC(db, places)
+    t = torch.tensor([board + [1]])
+    y = baine_epc(t).tolist()
+    assert y == [
+        [
+            4.51819372177124,
+            6.55345344543457,
+            2.1096107959747314,
+            4.51819372177124,
+            6.55345344543457,
+            2.1096107959747314,
+        ]
+    ]

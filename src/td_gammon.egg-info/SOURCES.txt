@@ -1,0 +1,80 @@
+.dockerignore
+.gitignore
+.projectile
+Dockerfile
+Makefile
+README.Docker.md
+README.md
+back_and_forth.py
+compose.yaml
+gnubg-release-1.08.002-sources.tar.gz
+gnubg.html
+head_to_head.py
+mat_parser.py
+parse_playground.py
+playground.py
+plot.py
+pyproject.toml
+pyrightconfig.json
+requirements.txt
+setup.py
+todo.org
+try_gnubg.py
+gnubg/Dockerfile
+gnubg/gnubg-release-1.08.002-sources.tar.gz
+gnubg/var/input.txt
+gnubg/var/pipe
+scripts/evaluate.sh
+scripts/plot.sh
+scripts/train.sh
+src/td_gammon/__init__.py
+src/td_gammon/agent.py
+src/td_gammon/backgammon.py
+src/td_gammon/backgammon_env.py
+src/td_gammon/baine_encoding.py
+src/td_gammon/done_check.py
+src/td_gammon/eligibility_trace.py
+src/td_gammon/encoders.py
+src/td_gammon/move_vectors.py
+src/td_gammon/td.py
+src/td_gammon/tesauro.py
+src/td_gammon/train.py
+src/td_gammon/training_config.py
+src/td_gammon.egg-info/PKG-INFO
+src/td_gammon.egg-info/SOURCES.txt
+src/td_gammon.egg-info/dependency_links.txt
+src/td_gammon.egg-info/top_level.txt
+test_data/001-gnubg-BGBlitz 3-pt 1 (BGBlitz).mat
+test_data/001-gnubg-BGBlitz 3-pt 2 (BGBlitz).mat
+test_data/001-gnubg-BGBlitz 3-pt 3 (gnubg).mat
+test_data/001-gnubg-BGBlitz 7-pt 1 (gnubg).mat
+test_data/001-gnubg-BGBlitz 7-pt 2 (BGBlitz).mat
+test_data/001-gnubg-BGBlitz 7-pt 3 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 1 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 10 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 11 (BGBlitz).mat
+test_data/002-gnubg-BGBlitz 7-pt 12 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 13 (BGBlitz).mat
+test_data/002-gnubg-BGBlitz 7-pt 14 (BGBlitz).mat
+test_data/002-gnubg-BGBlitz 7-pt 15 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 16 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 17 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 18 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 19 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 2 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 20 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 21 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 3 (BGBlitz).mat
+test_data/002-gnubg-BGBlitz 7-pt 4 (BGBlitz).mat
+test_data/002-gnubg-BGBlitz 7-pt 5 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 6 (BGBlitz).mat
+test_data/002-gnubg-BGBlitz 7-pt 7 (gnubg).mat
+test_data/002-gnubg-BGBlitz 7-pt 8 (BGBlitz).mat
+test_data/002-gnubg-BGBlitz 7-pt 9 (gnubg).mat
+test_data/173915-WCfinal.mat
+test_data/2001nordic_final_trabolt-klammer.txt
+test_data/Cluedo - snarheim 13pt Backgammon Studio 2024_03_26 16_57_49_1711472580.txt
+test_data/monte-carlo-2001-final.mat
+tests/test_done.py
+tests/test_encoding.py
+tests/test_game_play.py

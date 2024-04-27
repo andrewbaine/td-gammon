@@ -5,7 +5,7 @@ function error_exit {
     exit 1
 }
 
-while getopts ":g:h:o:e:a:l:c:f:" opt; do
+while getopts ":g:h:o:e:a:l:c:d:f:" opt; do
     case $opt in
         f)
             fork="${OPTARG}"
@@ -13,6 +13,9 @@ while getopts ":g:h:o:e:a:l:c:f:" opt; do
         c)
             continue="${OPTARG}"
             ;;
+	d)
+	    epc_db="${OPTARG}"
+	    ;;
         g)
             games="${OPTARG}"
             ;;
@@ -28,7 +31,7 @@ while getopts ":g:h:o:e:a:l:c:f:" opt; do
             fi
             ;;
         e)
-            if [ "${OPTARG}" == "baine" ] || [ "${OPTARG}" == "tesauro" ]
+            if [ "${OPTARG}" == "baine" ] || [ "${OPTARG}" == "baine_epc" ] || [ "${OPTARG}" == "tesauro" ]
             then
                 encoding="${OPTARG}"
             else
@@ -56,6 +59,14 @@ if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
     force_cuda="--force-cuda"
 fi
 
+declare -a epc_db_args
+declare -a epc_docker_args
+if [ -n "$epc_db" ]
+then
+    read -r -a epc_db_args < <(echo "--epc-db /var/epc_db")
+    read -r -a epc_docker_args < <(echo "--mount type=bind,src=$(pwd)/${epc_db},target=/var/epc_db")
+fi
+
 function train_fork {
 
     if [ -z "$games" ]
@@ -74,11 +85,13 @@ function train_fork {
     docker run --rm \
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
+	   "${epc_docker_args[@]}" \
            td-gammon train \
            ${force_cuda} \
            --fork "/${fork}" \
            --alpha "${alpha}" \
            --iterations "${games}" \
+	   "${epc_db_args[@]}" \
            --save-dir "/${fork}-$(date +%s)"
 }
 
@@ -90,9 +103,11 @@ function train_continue {
     docker run --rm \
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
+	   "${epc_docker_args[@]}" \
            td-gammon train \
            ${force_cuda} \
            --continue \
+	   "${epc_db_args[@]}" \
            --save-dir "/${continue}"
 }
 
@@ -128,6 +143,7 @@ function train_from_start {
     docker run --rm \
            "${gpu_args[@]}" \
            --mount "type=bind,src=$(pwd)/var/models,target=/var/models" \
+	   "${epc_docker_args[@]}" \
            td-gammon train \
            ${force_cuda} \
            --alpha "${alpha}" \
@@ -136,6 +152,7 @@ function train_from_start {
            --out "${out}" \
            --encoding "${encoding}" \
            --hidden "${hidden}" \
+	   "${epc_db_args[@]}" \
            --iterations "${games}"
 }
 
