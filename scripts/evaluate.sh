@@ -3,11 +3,14 @@
 set -e
 set -x
 
-GAMES="100"
-while getopts ":g:" opt; do
+games="100"
+while getopts ":d:g:" opt; do
     case $opt in
+	d)
+	    epc_db="${OPTARG}"
+	    ;;
         g)
-            GAMES="${OPTARG}"
+            games="${OPTARG}"
             ;;
         *)
             echo "bad command"
@@ -23,10 +26,10 @@ then
     exit 1
 fi
 
-MODEL=$1
-if [ -z "$MODEL" ]
+model=$1
+if [ -z "$model" ]
 then
-    echo "set MODEL variable"
+    echo "set model variable"
     exit 1
 fi
 
@@ -35,6 +38,14 @@ declare -a gpu_args
 if docker run --rm --gpus all hello-world >/dev/null 2>/dev/null; then
     read -r -a gpu_args < <(echo "--gpus all")
     force_cuda="--force-cuda"
+fi
+
+declare -a epc_db_args
+declare -a epc_docker_args
+if [ -n "$epc_db" ]
+then
+    read -r -a epc_db_args < <(echo "--epc-db /var/epc_db")
+    read -r -a epc_docker_args < <(echo "--mount type=bind,src=$(pwd)/${epc_db},target=/var/epc_db")
 fi
 
 WD=$(pwd)
@@ -49,10 +60,10 @@ PY_OUT=$(mktemp ${LOGS_DIR}/py.out.XXXXXX)
 
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
-COMMAND_1="evaluate ${force_cuda} --load-model /var/model/$(basename ${MODEL}) --games $GAMES"
 docker run --rm "${gpu_args[@]}" \
-       --mount type=bind,src=${WD}/$(dirname ${MODEL}),target=/var/model \
-       -i td-gammon $COMMAND_1 \
+       --mount type=bind,src=${WD}/$(dirname ${model}),target=/var/model \
+       "${epc_docker_args[@]}" \
+       -i td-gammon evaluate ${force_cuda} --load-model "/var/model/$(basename ${model})" --games "${games}" "${epc_db_args[@]}" \
        >${PY_OUT} \
        2>$PY_ERR \
        < <(tail -f ${GNUBG_OUT}) &
