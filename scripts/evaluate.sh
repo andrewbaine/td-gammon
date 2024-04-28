@@ -20,9 +20,9 @@ done
 
 shift "$((OPTIND-1))"
 
-if [ -z "$GAMES" ]
+if [ -z "$games" ]
 then
-    echo "set GAMES variable"
+    echo "set games variable"
     exit 1
 fi
 
