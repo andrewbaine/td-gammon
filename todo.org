@@ -1,17 +1,7 @@
 #+STARTUP: indent
 * Performance
-** TODO Stop passint device around during initialization
-** TODO implement next state as a tensor op
-
-
-- DONE stop passing device around during initiation
-Use a context manager instead
-- TODO run profiler on a training session
-training is still slow on the gpu. why is this?
-
-*** DONE implement available moves as a tensor operation
-
-*** DONE implement next state as a tensor operation
+** DONE Stop passint device around during initialization
+** DONE implement next state as a tensor op
 
 * TODO Beat Jenny [1/3]
 Here are the tasks to do

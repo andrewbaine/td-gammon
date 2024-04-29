@@ -2,8 +2,13 @@
 set -e
 set -x
 
-while getopts ":g:" opt; do
+
+declare -a epc_db_args
+while getopts ":g:d:" opt; do
     case $opt in
+	d)
+	    read -r -a epc_db_args < <(echo "-d ${OPTARG}")
+	    ;;
         g)
             games="${OPTARG}"
             ;;
@@ -32,12 +37,12 @@ fi
 plot_file=${dir}/plot-${games}.txt
 touch "${plot_file}"
 chmod a+w "${plot_file}"
-for x in "${dir}"/model.*.pt
+for x in $(ls "${dir}"/model.*.pt | sort -rn)
 do
     m=$(basename "${x}")
     grep "$m" "$plot_file" || \
             (
-                data=$(./scripts/evaluate.sh -g "${games}" "${x}")
+                data=$(./scripts/evaluate.sh "${epc_db_args[@]}" -g "${games}" "${x}")
                 printf "%s\t%s\n" "$m" "${data}" | tee -a "${plot_file}"
             )
 done
