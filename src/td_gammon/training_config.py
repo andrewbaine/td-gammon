@@ -1,33 +1,26 @@
 from collections import namedtuple
 
-Config = namedtuple(
-    "Config", ["encoding", "hidden", "out", "α", "λ", "iterations", "parent"]
-)
+Config = namedtuple("Config", ["encoding", "hidden", "out", "α", "λ", "parent"])
 
 
-def validated_config(encoding, hidden, out, α, λ, iterations, parent):
+def validated_config(encoding, hidden, out, α, λ, parent):
     assert encoding == "baine" or encoding == "tesauro" or encoding == "baine_epc"
     assert hidden > 0
-    assert encoding
-    assert hidden
     assert out == 6 or out == 4
     assert 0.0 < α <= 1.0
     assert 0.0 <= λ <= 1.0
-    assert iterations > 0
     return Config(
         encoding=encoding,
         hidden=hidden,
         out=out,
         α=α,
         λ=λ,
-        iterations=iterations,
         parent=parent,
     )
 
 
 def from_args(args):
     return validated_config(
-        iterations=args.iterations,
         encoding=args.encoding,
         hidden=args.hidden,
         out=args.out,
@@ -43,7 +36,6 @@ def from_parent(config, args):
         hidden=config.hidden,
         out=config.out,
         λ=config.λ,
-        iterations=args.iterations,
         α=args.α,
         parent=args.fork,
     )
@@ -67,10 +59,10 @@ def load(path):
                     α = float(value)
                 case "lambda":
                     λ = float(value)
-                case "iterations":
-                    iterations = int(value)
                 case "parent":
                     parent = value
+                case "iterations":
+                    pass
                 case "move-tensors":
                     pass
                 case _:
@@ -80,14 +72,12 @@ def load(path):
     assert out == 6 or out == 4
     assert 0.0 < α < 1.0
     assert 0.0 <= λ <= 1.0
-    assert iterations
     return validated_config(
         encoding=encoding,
         hidden=hidden,
         out=out,
         α=α,
         λ=λ,
-        iterations=iterations,
         parent=parent,
     )
 
@@ -95,7 +85,6 @@ def load(path):
 def store(config, path):
     with open(path, "w") as out:
         for line in [
-            "iterations={n}".format(n=config.iterations),
             "encoding={e}".format(e=config.encoding),
             "hidden={n}".format(n=config.hidden),
             "out={n}".format(n=config.out),

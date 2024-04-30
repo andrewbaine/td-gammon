@@ -25,7 +25,7 @@ from td_gammon import (
 
 
 def init_parser(parser):
-    parser.add_argument("--iterations", type=int)
+    parser.add_argument("--iterations", type=int, required=True)
     parser.add_argument("--hidden", type=int)
     parser.add_argument("--save-dir", type=str, required=True)
     parser.add_argument("--out", type=int)
@@ -56,14 +56,14 @@ def train(args):
         fs = sorted(glob.glob("{dir}/model.*.pt".format(dir=args.save_dir)))
         if fs:
             m = re.match(r".*/model.(\d+).pt", fs[-1])
-            assert m
-            start = int(m.group(1))
-            starting_model = m.group(0)
-            logging.info(
-                "continuing from config {x} model {y}".format(
-                    x=config_path, y=starting_model
+            if m:
+                start = int(m.group(1))
+                starting_model = m.group(0)
+                logging.info(
+                    "continuing from config {x} model {y}".format(
+                        x=config_path, y=starting_model
+                    )
                 )
-            )
     elif args.fork:
 
         filename = os.path.basename(args.fork)
@@ -72,7 +72,6 @@ def train(args):
         shutil.copyfile(args.fork, starting_model)
         m = re.match(r"model.(\d+).pt", filename)
         assert m
-        start = int(m.group(1))
         config = training_config.from_parent(
             training_config.load(
                 os.path.join(os.path.dirname(args.fork), "config.txt")
@@ -116,8 +115,7 @@ def train(args):
         encoder = encoder_builder(cm)
         layers = [encoder(board).numel(), config.hidden, config.out]
         nn: torch.nn.Sequential = encoders.layered(*layers, device=device)
-        if start:
-            assert starting_model
+        if starting_model:
             nn.load_state_dict(torch.load(starting_model))
 
         move_checker = done_check.Donecheck(device=device)
@@ -136,7 +134,7 @@ def train(args):
             ),
         )
 
-        for i in range(start, config.iterations):
+        for i in range(start, start + args.iterations):
             if i % 1000 == 0:
                 filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
                 torch.save(nn.state_dict(), f=filename)
