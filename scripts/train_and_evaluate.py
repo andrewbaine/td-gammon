@@ -31,7 +31,7 @@ if __name__ == "__main__":
     use_cuda = args.force_cuda or use_docker_to_check_cuda()
 
     i = 0
-    while i < args.games:
+    while i < args.iterations:
 
         command = ["docker", "run", "--rm"]
         if use_cuda:
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             encoding=args.encoding,
             hidden=args.hidden,
             out=args.outputs,
-            games=args.games,
+            games=args.iterations,
             t=int(time.time()),
         )
         command += ["--save-dir", "/var/models/{model}".format(model=model)]
