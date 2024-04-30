@@ -51,7 +51,7 @@ if __name__ == "__main__":
         command += ["td-gammon", "train"]
         if use_cuda:
             command += ["--force-cuda"]
-        command += ["--alpha", str(args.alpha)]
+        command += ["--alpha", str(args.α)]
         command += ["--lambda", str(args.λ)]
 
         model = "{encoding}-{hidden}-{out}-{games}-{t}".format(
