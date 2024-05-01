@@ -40,6 +40,8 @@ if __name__ == "__main__":
         t=int(time.time()),
     )
 
+    os.makedirs("{pwd}/var/models/{model}".format(model=model, pwd=os.getcwd()))
+
     command = ["docker", "run", "--rm"]
     if use_cuda:
         command = command + ["--gpus", "all"]
