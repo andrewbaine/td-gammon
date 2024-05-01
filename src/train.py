@@ -136,10 +136,10 @@ def train(args):
 
         i = 0
         for i in range(start + 1, start + 1 + args.iterations):
+            temporal_difference.episode()
             if i % 1000 == 0:
                 filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
                 torch.save(nn.state_dict(), f=filename)
-            temporal_difference.episode()
         filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
         torch.save(nn.state_dict(), f=filename)
 

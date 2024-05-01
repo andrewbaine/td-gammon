@@ -100,4 +100,10 @@ if __name__ == "__main__":
         command += ["--iterations", "{n}".format(n=args.step)]
         cp = subprocess.run(command)
         logging.info(cp)
+        print("train result", cp)
+        plot_command = ["{pwd}/scripts/plot.sh", "-g", "10"]
+        if args.epc_db is not None:
+            command += ["-d", args.epc_db]
+        cp = subprocess.run(command)
+        print("plot result", cp)
         i += args.step
