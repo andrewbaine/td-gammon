@@ -103,6 +103,7 @@ if __name__ == "__main__":
         plot_command = ["{pwd}/scripts/plot.sh".format(pwd=os.getcwd()), "-g", "10"]
         if args.epc_db is not None:
             plot_command += ["-d", args.epc_db]
+        plot_command += ["{pwd}/var/models/{model}".format(pwd=os.getcwd())]
         cp = subprocess.run(plot_command)
         print("plot result", cp)
         i += args.step
