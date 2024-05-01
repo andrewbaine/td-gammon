@@ -81,7 +81,7 @@ def train(args):
         training_config.store(config, config_path)
     else:
         config = training_config.from_args(args)
-        os.makedirs(args.save_dir, exist_ok=False)
+        os.makedirs(args.save_dir, exist_ok=True)
         training_config.store(config, config_path)
 
     board: torch.Tensor = torch.tensor(
