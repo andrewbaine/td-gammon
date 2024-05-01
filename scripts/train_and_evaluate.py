@@ -31,8 +31,51 @@ if __name__ == "__main__":
     use_cuda = args.force_cuda or use_docker_to_check_cuda()
 
     i = 0
-    while i < args.iterations:
 
+    model = "{encoding}-{hidden}-{out}-{games}-{t}".format(
+        encoding=args.encoding,
+        hidden=args.hidden,
+        out=args.outputs,
+        games=args.iterations,
+        t=int(time.time()),
+    )
+
+    command = ["docker", "run", "--rm"]
+    if use_cuda:
+        command = command + ["--gpus", "all"]
+
+    command = command + [
+        "--mount",
+        "type=bind,src={pwd}/var/models,target=/var/models".format(pwd=os.getcwd()),
+    ]
+    if args.epc_db is not None:
+        command = command + [
+            "--mount",
+            "type=bind,src={pwd}/{epc_db},target=/var/epc_db".format(
+                pwd=os.getcwd(), epc_db=args.epc_db
+            ),
+        ]
+    command += ["td-gammon", "train"]
+    if use_cuda:
+        command += ["--force-cuda"]
+    command += ["--alpha", str(args.α)]
+    command += ["--lambda", str(args.λ)]
+
+    command += ["--save-dir", "/var/models/{model}".format(model=model)]
+    command += ["--out", str(args.outputs)]
+    command += ["--encoding", args.encoding]
+    command += ["--hidden", str(args.hidden)]
+    if args.epc_db is not None:
+        command += ["--epc-db", "/var/epc_db"]
+    print(command)
+    iterations = i + args.step
+    command += ["--iterations", "{n}".format(n=0)]
+
+    cp = subprocess.run(command)
+    logging.info(cp)
+    logging.info("\n".join(command))
+
+    while i < args.iterations:
         command = ["docker", "run", "--rm"]
         if use_cuda:
             command = command + ["--gpus", "all"]
@@ -48,30 +91,11 @@ if __name__ == "__main__":
                     pwd=os.getcwd(), epc_db=args.epc_db
                 ),
             ]
-        command += ["td-gammon", "train"]
+        command += ["td-gammon", "train", "--continue"]
         if use_cuda:
             command += ["--force-cuda"]
-        command += ["--alpha", str(args.α)]
-        command += ["--lambda", str(args.λ)]
-
-        model = "{encoding}-{hidden}-{out}-{games}-{t}".format(
-            encoding=args.encoding,
-            hidden=args.hidden,
-            out=args.outputs,
-            games=args.iterations,
-            t=int(time.time()),
-        )
         command += ["--save-dir", "/var/models/{model}".format(model=model)]
-        command += ["--out", str(args.outputs)]
-        command += ["--encoding", args.encoding]
-        command += ["--hidden", str(args.hidden)]
         if args.epc_db is not None:
             command += ["--epc-db", "/var/epc_db"]
-        print(command)
-        iterations = i + args.step
-        command += ["--iterations", "{n}".format(n=iterations)]
-
-        cp = subprocess.run(command)
-        logging.info(cp)
-        logging.info("\n".join(command))
+        command += ["--iterations", "{n}".format(n=args.step)]
         i += args.step
