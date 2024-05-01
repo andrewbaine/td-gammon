@@ -68,7 +68,6 @@ if __name__ == "__main__":
     if args.epc_db is not None:
         command += ["--epc-db", "/var/epc_db"]
     print(command)
-    iterations = i + args.step
     command += ["--iterations", "{n}".format(n=0)]
 
     cp = subprocess.run(command)
