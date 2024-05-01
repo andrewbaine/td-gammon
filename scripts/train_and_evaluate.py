@@ -100,7 +100,7 @@ if __name__ == "__main__":
         cp = subprocess.run(command)
         logging.info(cp)
         print("train result", cp)
-        plot_command = ["{pwd}/scripts/plot.sh", "-g", "10"]
+        plot_command = ["{pwd}/scripts/plot.sh".format(pwd=os.getcwd()), "-g", "10"]
         if args.epc_db is not None:
             plot_command += ["-d", args.epc_db]
         cp = subprocess.run(plot_command)
