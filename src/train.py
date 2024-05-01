@@ -135,7 +135,7 @@ def train(args):
         )
 
         i = 0
-        for i in range(start, start + args.iterations):
+        for i in range(start + 1, start + 1 + args.iterations):
             if i % 1000 == 0:
                 filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
                 torch.save(nn.state_dict(), f=filename)
