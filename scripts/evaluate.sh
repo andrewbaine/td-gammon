@@ -61,7 +61,7 @@ PY_OUT=$(mktemp ${LOGS_DIR}/py.out.XXXXXX)
 touch $GNUBG_ERR $GNUBG_OUT $PY_ERR $PY_OUT
 
 docker run --rm "${gpu_args[@]}" \
-       --mount type=bind,src=${WD}/$(dirname ${model}),target=/var/model \
+       --mount "type=bind,src=$(dirname ${model}),target=/var/model" \
        "${epc_docker_args[@]}" \
        -i td-gammon evaluate ${force_cuda} --load-model "/var/model/$(basename ${model})" --games "${games}" "${epc_db_args[@]}" \
        >${PY_OUT} \
