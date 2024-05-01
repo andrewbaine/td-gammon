@@ -75,6 +75,7 @@ if __name__ == "__main__":
     logging.info(cp)
     logging.info("\n".join(command))
 
+    i = 0
     while i < args.iterations:
         command = ["docker", "run", "--rm"]
         if use_cuda:
