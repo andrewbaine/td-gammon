@@ -67,7 +67,7 @@ def train(args):
     elif args.fork:
 
         filename = os.path.basename(args.fork)
-        os.makedirs(args.save_dir, exist_ok=False)
+        os.makedirs(args.save_dir, exist_ok=True)
         starting_model = os.path.join(args.save_dir, filename)
         shutil.copyfile(args.fork, starting_model)
         m = re.match(r"model.(\d+).pt", filename)
