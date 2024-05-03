@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 import time
+import os.path
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,62 +19,74 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=int, default=10)
     parser.add_argument("-i", "--iterations", type=int, default=100)
     parser.add_argument("-f", "--fork", type=str)
-    parser.add_argument("-c", "--continue", type=str)
-    parser.add_argument("-d", "--epc-db", type=str, required=False)
-    parser.add_argument("--hidden", type=int, required=False)
-    parser.add_argument("-o", "--outputs", type=int, required=False)
+    parser.add_argument("-c", "--continue", type=str, dest="cont")
+    parser.add_argument("-d", "--epc-db", type=str, default="epc.13.v3.db")
+    parser.add_argument("--hidden", type=int, default=160)
+    parser.add_argument("-o", "--outputs", type=int, default=6)
     parser.add_argument("-a", "--alpha", type=float, default=0.06, dest="α")
     parser.add_argument("-l", "--lambda", type=float, default=0.1, dest="λ")
-    parser.add_argument("-e", "--encoding", choices=["baine", "baine_epc", "tesauro"])
+    parser.add_argument(
+        "-e",
+        "--encoding",
+        choices=["baine", "baine_epc", "tesauro"],
+        default="baine_epc",
+    )
     parser.add_argument("--force-cuda", action="store_true")
+    parser.add_argument("--evaluation-games", type=int, default=100)
     args = parser.parse_args()
 
     use_cuda = args.force_cuda or use_docker_to_check_cuda()
 
     i = 0
 
-    model = "{encoding}-{hidden}-{out}-{games}-{t}".format(
-        encoding=args.encoding,
-        hidden=args.hidden,
-        out=args.outputs,
-        games=args.iterations,
-        t=int(time.time()),
-    )
+    if args.cont:
+        model_path_src = os.path.abspath(args.cont)
+    else:
+        model = "{encoding}-{hidden}-{out}-{games}-{t}".format(
+            encoding=args.encoding,
+            hidden=args.hidden,
+            out=args.outputs,
+            games=args.iterations,
+            t=int(time.time()),
+        )
 
-    os.makedirs("{pwd}/var/models/{model}".format(model=model, pwd=os.getcwd()))
+        model_path_src = "{pwd}/var/models/{model}".format(model=model, pwd=os.getcwd())
+        os.makedirs(model_path_src)
 
-    command = ["docker", "run", "--rm"]
-    if use_cuda:
-        command = command + ["--gpus", "all"]
+        command = ["docker", "run", "--rm"]
+        if use_cuda:
+            command = command + ["--gpus", "all"]
 
-    command = command + [
-        "--mount",
-        "type=bind,src={pwd}/var/models,target=/var/models".format(pwd=os.getcwd()),
-    ]
-    if args.epc_db is not None:
         command = command + [
             "--mount",
-            "type=bind,src={pwd}/{epc_db},target=/var/epc_db".format(
-                pwd=os.getcwd(), epc_db=args.epc_db
+            "type=bind,src={model_path_src},target=/var/model".format(
+                model_path_src=model_path_src
             ),
         ]
-    command += ["td-gammon", "train"]
-    if use_cuda:
-        command += ["--force-cuda"]
-    command += ["--alpha", str(args.α)]
-    command += ["--lambda", str(args.λ)]
+        if args.epc_db is not None:
+            command = command + [
+                "--mount",
+                "type=bind,src={pwd}/{epc_db},target=/var/epc_db".format(
+                    pwd=os.getcwd(), epc_db=args.epc_db
+                ),
+            ]
+        command += ["td-gammon", "train"]
+        if use_cuda:
+            command += ["--force-cuda"]
+        command += ["--alpha", str(args.α)]
+        command += ["--lambda", str(args.λ)]
 
-    command += ["--save-dir", "/var/models/{model}".format(model=model)]
-    command += ["--out", str(args.outputs)]
-    command += ["--encoding", args.encoding]
-    command += ["--hidden", str(args.hidden)]
-    if args.epc_db is not None:
-        command += ["--epc-db", "/var/epc_db"]
-    print(command)
-    command += ["--iterations", "{n}".format(n=0)]
+        command += ["--save-dir", "/var/model"]
+        command += ["--out", str(args.outputs)]
+        command += ["--encoding", args.encoding]
+        command += ["--hidden", str(args.hidden)]
+        if args.epc_db is not None:
+            command += ["--epc-db", "/var/epc_db"]
+        print(command)
+        command += ["--iterations", "{n}".format(n=0)]
 
-    cp = subprocess.run(command)
-    logging.info(cp)
+        cp = subprocess.run(command)
+        logging.info(cp)
 
     i = 0
     while i < args.iterations:
@@ -83,7 +96,9 @@ if __name__ == "__main__":
 
         command = command + [
             "--mount",
-            "type=bind,src={pwd}/var/models,target=/var/models".format(pwd=os.getcwd()),
+            "type=bind,src={model_path_src},target=/var/model".format(
+                model_path_src=model_path_src
+            ),
         ]
         if args.epc_db is not None:
             command = command + [
@@ -95,19 +110,21 @@ if __name__ == "__main__":
         command += ["td-gammon", "train", "--continue"]
         if use_cuda:
             command += ["--force-cuda"]
-        command += ["--save-dir", "/var/models/{model}".format(model=model)]
+        command += ["--save-dir", "/var/model", "--save-step", "0"]
         if args.epc_db is not None:
             command += ["--epc-db", "/var/epc_db"]
         command += ["--iterations", "{n}".format(n=args.step)]
         cp = subprocess.run(command)
         logging.info(cp)
         print("train result", cp)
-        plot_command = ["{pwd}/scripts/plot.sh".format(pwd=os.getcwd()), "-g", "10"]
+        plot_command = [
+            "{pwd}/scripts/plot.sh".format(pwd=os.getcwd()),
+            "-g",
+            "{n}".format(n=args.evaluation_games),
+        ]
         if args.epc_db is not None:
             plot_command += ["-d", args.epc_db]
-        plot_command += [
-            "{pwd}/var/models/{model}".format(pwd=os.getcwd(), model=model)
-        ]
+        plot_command += [model_path_src]
         cp = subprocess.run(plot_command)
         print("plot result", cp)
         i += args.step

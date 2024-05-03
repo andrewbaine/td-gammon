@@ -41,6 +41,7 @@ def init_parser(parser):
     parser.add_argument("--continue", action="store_true", dest="cont")
     parser.add_argument("--fork", type=str)
     parser.add_argument("--epc-db", type=str)
+    parser.add_argument("--save-step", type=int, default=1)
 
 
 def train(args):
@@ -137,7 +138,7 @@ def train(args):
         i = 0
         for i in range(start + 1, start + 1 + args.iterations):
             temporal_difference.episode()
-            if i % 1000 == 0:
+            if args.save_step and i % args.save_step == 0:
                 filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
                 torch.save(nn.state_dict(), f=filename)
         filename = "{dir}/model.{i:08d}.pt".format(i=i, dir=args.save_dir)
