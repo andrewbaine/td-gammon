@@ -4,7 +4,12 @@ Config = namedtuple("Config", ["encoding", "hidden", "out", "α", "λ", "parent"
 
 
 def validated_config(encoding, hidden, out, α, λ, parent):
-    assert encoding == "baine" or encoding == "tesauro" or encoding == "baine_epc"
+    assert (
+        encoding == "baine"
+        or encoding == "tesauro"
+        or encoding == "baine_epc"
+        or encoding == "baine_epc_with_hit_availability"
+    )
     assert hidden > 0
     assert out == 6 or out == 4
     assert 0.0 < α <= 1.0

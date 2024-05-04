@@ -28,8 +28,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e",
         "--encoding",
-        choices=["baine", "baine_epc", "tesauro"],
-        default="baine_epc",
+        choices=["baine", "baine_epc", "tesauro", "baine_epc_with_hit_availability"],
+        default="baine_epc_with_hit_availability",
     )
     parser.add_argument("--force-cuda", action="store_true")
     parser.add_argument("--evaluation-games", type=int, default=100)
