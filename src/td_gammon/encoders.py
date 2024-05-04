@@ -291,28 +291,34 @@ class HitAvailabilityOneHot(torch.nn.Module):
     def forward(self, x: torch.Tensor):
         (m, n) = x.size()
         assert n == 27
-        result = torch.zeros((m, 4), device=self.device)
-        factor_1 = torch.ones((m, 1), device=self.device) * 1 / 36
-        factor_2 = factor_1 * 2
-        zeros = torch.zeros((m, 1), device=self.device)
-        for d1 in range(1, 7):
-            for d2 in range(d1, 7):
-                factor = factor_1 if d1 == d2 else factor_2
-                vectors = self.move_vectors.compute_move_vectors(x, (d1, d2))
-                a = torch.min(vectors[:, 0])
-                b = torch.max(vectors[:, 25])
-                c = torch.cat(
-                    (
-                        torch.where(a < -1, factor, zeros),
-                        torch.where(a == -1, factor, zeros),
-                        torch.where(b == 1, factor, zeros),
-                        torch.where(b > 1, factor, zeros),
-                    ),
-                    dim=-1,
-                )
-                assert c.size() == (m, 4)
-                result = result + c
-        return result
+        xs = x.unbind(dim=0)
+        results = []
+        for x in xs:
+            assert x.size() == (1, 27)
+            result = torch.zeros((4,), device=self.device)
+            factor_1 = torch.ones((1,), device=self.device) * 1 / 36
+            factor_2 = factor_1 * 2
+            zeros = torch.zeros((1,), device=self.device)
+            for d1 in range(1, 7):
+                for d2 in range(d1, 7):
+                    factor = factor_1 if d1 == d2 else factor_2
+                    vectors = self.move_vectors.compute_move_vectors(x, (d1, d2))
+                    a = torch.min(vectors[:, 0])
+                    b = torch.max(vectors[:, 25])
+                    c = torch.cat(
+                        (
+                            torch.where(a < -1, factor, zeros),
+                            torch.where(a == -1, factor, zeros),
+                            torch.where(b == 1, factor, zeros),
+                            torch.where(b > 1, factor, zeros),
+                        ),
+                        dim=-1,
+                    )
+                    assert c.size() == (4,)
+                    result = result + c
+            results.append(result)
+        results = torch.cat(tuple(results), dim=0)
+        assert results.size() == (m, 4)
 
 
 class BaineEPC(torch.nn.Module):
