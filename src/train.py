@@ -32,8 +32,8 @@ def init_parser(parser):
     parser.add_argument(
         "--encoding",
         type=str,
-        choices=["baine", "tesauro", "baine_epc"],
-        default="baine_epc",
+        choices=["baine", "tesauro", "baine_epc", "baine_epc_with_hit_availability"],
+        default="baine_epc_with_hit_availability",
     )
     parser.add_argument("--force-cuda", action="store_true")
     parser.add_argument("--alpha", type=float, dest="α")
@@ -97,11 +97,12 @@ def train(args):
             assert False
 
     cm = nullcontext()
+    move_tensors = move_vectors.MoveTensors(device=device)
     match config.encoding:
         case "baine":
-            encoder_builder = lambda ctx: encoders.Baine(device=device)
+            encoder_builder = lambda _: encoders.Baine(device=device)
         case "tesauro":
-            encoder_builder = lambda ctx: encoders.Tesauro(device=device)
+            encoder_builder = lambda _: encoders.Tesauro(device=device)
         case "baine_epc":
             epc_db = args.epc_db
             assert epc_db is not None
@@ -109,6 +110,16 @@ def train(args):
             places = [(1, 7), (7, 19), (19, 26)]
 
             encoder_builder = lambda ctx: encoders.BaineEPC(ctx, places, device=device)
+        case "baine_epc_with_hit_availability":
+            epc_db = args.epc_db
+            assert epc_db is not None
+            cm = plyvel.DB(epc_db, create_if_missing=False)
+            places = [(1, 7), (7, 19), (19, 26)]
+
+            encoder_builder = lambda ctx: encoders.BaineEPCwithHitAvailability(
+                ctx, places, move_tensors, device=device
+            )
+
         case _:
             assert False
 
@@ -120,7 +131,6 @@ def train(args):
             nn.load_state_dict(torch.load(starting_model))
 
         move_checker = done_check.Donecheck(device=device)
-        move_tensors = move_vectors.MoveTensors(device=device)
 
         et = eligibility_trace.ElibilityTrace(nn, α=config.α, λ=config.λ, device=device)
         evaluator = encoders.Evaluator(encoder, nn, utility)
