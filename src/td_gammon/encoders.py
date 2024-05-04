@@ -294,6 +294,7 @@ class HitAvailabilityOneHot(torch.nn.Module):
         xs = x.unbind(dim=0)
         results = []
         for x in xs:
+            x = x.unsqueeze(dim=0)
             assert x.size() == (1, 27)
             result = torch.zeros((4,), device=self.device)
             factor_1 = torch.ones((1,), device=self.device) * 1 / 36

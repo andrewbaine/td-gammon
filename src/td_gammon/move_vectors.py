@@ -222,8 +222,7 @@ class MoveTensors:
 
     def compute_move_vectors(self, board, dice):
         player_1 = board[0][26]
-        (_, bsize_d2) = board.size()
-        assert bsize_d2 == 27
+        assert board.size() == (1, 27)
         vs = self.compute_move_vectors_old((board[:, :26], player_1, dice))
         (n, m) = vs.size()
         assert m == 26
