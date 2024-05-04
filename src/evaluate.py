@@ -39,6 +39,15 @@ def main(args):
             places = [(1, 7), (7, 19), (19, 26)]
 
             encoder_builder = lambda ctx: encoders.BaineEPC(ctx, places, device=device)
+        case "baine_epc_with_hit_availability":
+            epc_db = args.epc_db
+            assert epc_db is not None
+            cm = plyvel.DB(epc_db, create_if_missing=False)
+            places = [(1, 7), (7, 19), (19, 26)]
+
+            encoder_builder = lambda ctx: encoders.BaineEPCwithHitAvailability(
+                ctx, places, move_tensors, device=device
+            )
         case _:
             assert False
 
