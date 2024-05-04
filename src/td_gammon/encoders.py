@@ -325,6 +325,7 @@ class HitAvailabilityOneHot(torch.nn.Module):
         results = torch.cat(tuple(results), dim=0)
         print(results.size())
         assert results.size() == (m, 4)
+        return results
 
 
 class BaineEPC(torch.nn.Module):
