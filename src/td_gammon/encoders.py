@@ -316,6 +316,8 @@ class HitAvailabilityOneHot(torch.nn.Module):
                         dim=-1,
                     )
                     assert c.size() == (4,)
+                    c = c.unsqueeze(dim=0)
+                    assert c.size() == (1, 4)
                     result = result + c
             results.append(result)
         print(results)
