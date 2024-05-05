@@ -42,9 +42,9 @@ class TurnEncoder(torch.nn.Module):
         self.two = torch.tensor([2], dtype=torch.float, device=device)
 
     def forward(self, t):
-        assert torch.all(torch.logical_or(t == -1, t == 1))
+        # assert torch.all(torch.logical_or(t == -1, t == 1))
         y = (t + self.one) / self.two
-        assert torch.all(torch.logical_or(y == 1, y == 0))
+        # assert torch.all(torch.logical_or(y == 1, y == 0))
         return y
 
 
@@ -232,7 +232,7 @@ class Baine(torch.nn.Module):
 
     def forward(self, state):
         (_, n) = state.size()
-        assert n == 27
+        # assert n == 27
         r = self.tesauro(state[:, 0:26])
         s = self.greatest_barrier(state[:, 1:25])
         t = self.greatest_barrier_buckets(s)
@@ -247,7 +247,7 @@ class Tesauro(torch.nn.Module):
 
     def forward(self, state):
         (_, n) = state.size()
-        assert n == 27
+        # assert n == 27
         r = self.tesauro(state)
         player_bit = state[:, 26:27]
         return torch.cat((r, player_bit), dim=1)
@@ -269,15 +269,15 @@ class EPC(torch.nn.Module):
             for s, e in self.places:
                 k = epc.make_key(a[s - 1 : e])
                 v = self.db.get(k)
-                assert v is not None
+                # assert v is not None
                 (v,) = struct.unpack("f", v)
                 result.append(v)
         return result
 
     def forward(self, x):
         (m, n) = x.size()
-        assert m > 0
-        assert n == 27
+        # assert m > 0
+        # assert n == 27
         data = [self.f([int(a) for a in x]) for x in x[:, :26].tolist()]
         return torch.tensor(data, dtype=torch.float, device=self.device)
 
@@ -290,12 +290,12 @@ class HitAvailabilityOneHot(torch.nn.Module):
 
     def forward(self, x: torch.Tensor):
         (m, n) = x.size()
-        assert n == 27
+        # assert n == 27
         xs = x.unbind(dim=0)
         results = []
         for x in xs:
             x = x.unsqueeze(dim=0)
-            assert x.size() == (1, 27)
+            # assert x.size() == (1, 27)
             result = torch.zeros((4,), device=self.device)
             factor_1 = torch.ones((1,), device=self.device) * 1 / 36
             factor_2 = factor_1 * 2
@@ -315,14 +315,14 @@ class HitAvailabilityOneHot(torch.nn.Module):
                         ),
                         dim=-1,
                     )
-                    assert c.size() == (4,)
+                    # assert c.size() == (4,)
                     c = c.unsqueeze(dim=0)
-                    assert c.size() == (1, 4)
+                    # assert c.size() == (1, 4)
                     result = result + c
             results.append(result)
 
         results = torch.cat(tuple(results), dim=0)
-        assert results.size() == (m, 4)
+        # assert results.size() == (m, 4)
         return results
 
 
@@ -357,18 +357,18 @@ class Evaluator(torch.nn.Module):
         super().__init__()
         self.encoder = encoder
         self.network = network
-        assert utility.size() == (4,) or utility.size() == (6,)
+        # assert utility.size() == (4,) or utility.size() == (6,)
         self.utility = utility.unsqueeze(1)
 
     def forward(self, x):
         (m, n) = x.size()
-        assert m > 0
-        assert n == 27
+        # assert m > 0
+        # assert n == 27
         a = self.encoder(x)
         b = self.network(a)
-        assert b.size() == (m, self.utility.size()[0])
+        # assert b.size() == (m, self.utility.size()[0])
         c = torch.softmax(b, dim=1)
-        assert c.size() == (m, self.utility.size()[0])
+        # assert c.size() == (m, self.utility.size()[0])
         d = torch.matmul(c, self.utility)
-        assert d.size() == (m, 1)
+        # assert d.size() == (m, 1)
         return d

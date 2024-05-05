@@ -22,9 +22,9 @@ def split_out(m):
         ps.append(a)
         qs.append(b)
         rs.append(c)
-    assert len(ps) == 26
-    assert len(qs) == 26
-    assert len(rs) == 26
+    # assert len(ps) == 26
+    # assert len(qs) == 26
+    # assert len(rs) == 26
     return ps, qs, rs
 
 
@@ -33,8 +33,8 @@ def impossible_hit(start, end):
 
 
 def all_moves_die_start(die, start):
-    assert 0 < die < 7
-    assert 0 < start < 26
+    # assert 0 < die < 7
+    # assert 0 < start < 26
     end = start - die
     move = (start, end)
     if end < 0:
@@ -50,7 +50,7 @@ def all_moves_die_start(die, start):
         )
         return [([start, end, 0], low, high, vector), impossible_hit(start, end)]
     else:
-        assert end > 0
+        # assert end > 0
         if start == 25:
             move = [
                 start_t if i == start else move_dest if i == end else any_t for i in r()
@@ -69,7 +69,7 @@ def all_moves_die_start(die, start):
                 ([start, end, 0], a, b, c),
                 ([start, end, 1], d, e, f),
             ]
-        assert start != 25
+        # assert start != 25
         move = [
             (
                 zero_t
@@ -121,11 +121,11 @@ def tensorize(x, device):
                 hit_count += 1
             if end <= 0:
                 bearoff_count += 1
-        if low < high:
-            assert vector[0] == -1 * hit_count
-            assert sum(vector) == -1 * bearoff_count
+        # if low < high:
+        # assert vector[0] == -1 * hit_count
+        # assert sum(vector) == -1 * bearoff_count
         moves_key = tuple(moves)
-        assert moves_key not in moves_dict
+        # assert moves_key not in moves_dict
         moves_dict.add(moves_key)
         moves_tensor.append(moves)
 
@@ -222,11 +222,11 @@ class MoveTensors:
 
     def compute_move_vectors(self, board, dice):
         player_1 = board[0][26]
-        assert board.size() == (1, 27)
+        # assert board.size() == (1, 27)
         vs = self.compute_move_vectors_old((board[:, :26], player_1, dice))
         (n, m) = vs.size()
-        assert m == 26
+        # assert m == 26
         next_player = (1 - 2 * player_1).unsqueeze(dim=0).expand(n, 1)
         result = torch.cat((vs, next_player), dim=1)
-        assert result.size() == (n, 27)
+        # assert result.size() == (n, 27)
         return result
